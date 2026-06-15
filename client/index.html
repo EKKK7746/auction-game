@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>马王堆·宝物拍卖</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="app">
+
+    <!-- 音效开关 -->
+    <button id="soundToggle" class="sound-toggle" onclick="toggleSound()" title="音效开关">
+      🔊
+    </button>
+
+    <!-- ========== 视图 A：登录页 ========== -->
+    <section id="view-login" class="view active">
+      <div class="login-container">
+        <div class="logo-area">
+          <div class="logo-icon">🏺</div>
+          <h1 class="game-title">马王堆·宝物拍卖</h1>
+          <p class="game-subtitle">汉代文物收藏家</p>
+        </div>
+
+        <div class="login-form">
+          <input
+            type="text"
+            id="nicknameInput"
+            class="input-primary"
+            placeholder="输入你的昵称"
+            maxlength="8"
+            autocomplete="off"
+          >
+
+          <label class="visibility-toggle">
+            <input type="checkbox" id="isPublicToggle" checked />
+            <span class="visibility-label">🌐 公开房间（允许其他玩家浏览加入）</span>
+          </label>
+
+          <button id="btnCreate" class="btn btn-primary" disabled>
+            创建房间
+          </button>
+
+          <div class="divider">
+            <span class="divider-line"></span>
+            <span class="divider-text">或</span>
+            <span class="divider-line"></span>
+          </div>
+
+          <div class="join-row">
+            <input
+              type="text"
+              id="roomInput"
+              class="input-primary"
+              placeholder="房间号"
+              maxlength="6"
+              inputmode="numeric"
+              autocomplete="off"
+            >
+            <button id="btnJoin" class="btn btn-secondary" disabled>
+              加入
+            </button>
+          </div>
+
+          <button id="btnBrowseRooms" class="btn btn-outline" style="width:100%;margin-top:8px;">
+            🔍 浏览公开房间
+          </button>
+
+          <!-- 游戏介绍按钮 -->
+          <button id="btnIntro" class="btn btn-outline" style="width:100%;margin-top:8px;">
+            📖 游戏介绍
+          </button>
+
+          <p id="loginError" class="error-msg"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 视图 B：等待大厅 ========== -->
+    <section id="view-lobby" class="view">
+      <div class="lobby-container">
+        <div class="room-id-area">
+          <div class="room-id-label">房间号</div>
+          <div class="room-id-value" id="roomIdDisplay">------</div>
+          <button id="btnCopy" class="btn btn-outline">📋 复制房间号</button>
+        </div>
+
+        <div class="player-section">
+          <h2 class="section-title">👥 玩家列表</h2>
+          <ul class="player-list" id="playerList"></ul>
+        </div>
+
+        <div class="waiting-text" id="waitingText">
+          <span class="dot-pulse">等待中</span>
+        </div>
+
+        <div class="lobby-actions">
+          <button id="btnStart" class="btn btn-primary btn-start" style="display:none;">
+            开始游戏
+          </button>
+          <button id="btnAddBot" class="btn btn-secondary" style="display:none;">
+            🤖 添加机器人
+          </button>
+          <button id="btnLeaveLobby" class="btn btn-danger">
+            离开房间
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 视图 D：房间等待界面（再来一局）========== -->
+    <section id="view-room-wait" class="view">
+      <div class="room-wait-container">
+        <h2>🏠 房间 <span id="waitRoomId"></span></h2>
+        <div class="wait-player-list" id="waitPlayerList"></div>
+        <div id="hostControls" style="display:none;">
+          <button id="waitStartBtn" class="btn btn-primary btn-start" onclick="startGameFromWait()">▶️ 开始游戏</button>
+        </div>
+        <div id="guestMessage" style="display:none;">
+          <p>⏳ 等待房主开始游戏...</p>
+        </div>
+        <button class="btn btn-secondary" onclick="leaveRoomFromWait()" style="margin-top:10px;">🚪 离开房间</button>
+      </div>
+    </section>
+
+    <!-- ========== 视图 C：游戏界面 ========== -->
+    <section id="view-game" class="view">
+      <div class="game-container">
+
+        <!-- 状态栏 -->
+        <div class="game-status-bar" id="gameStatusBar">
+          <span class="game-round" id="gameRoundLabel">第 1/10 轮</span>
+          <span class="game-phase" id="gamePhaseLabel">拍卖阶段</span>
+        </div>
+
+        <!-- 当前展示卡牌 -->
+        <div class="game-card-area" id="gameCardArea">
+          <div class="artifact-card" id="gameCardDisplay">
+            <div class="card-visual">
+              <div class="card-emoji" id="cardEmoji">🏺</div>
+              <div class="card-badge" id="cardBadge" style="display:none;"></div>
+            </div>
+            <div class="card-body">
+              <div class="card-name" id="cardName">---</div>
+              <div class="card-score" id="cardScore">---</div>
+              <div class="card-effect" id="cardEffect"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 操作区（动态） -->
+        <div class="game-action-area" id="gameActionArea"></div>
+
+        <!-- 我的状态 -->
+        <div class="game-my-status" id="gameMyStatus">
+          <div class="my-status-item">💰 <span id="myFunds">0</span></div>
+          <div class="my-status-item">🃏 <span id="myCardCount">0</span></div>
+          <div class="my-status-item" id="myEffects"></div>
+        </div>
+
+        <!-- 其他玩家 -->
+        <div class="game-other-players" id="gameOtherPlayers">
+          <div class="other-toggle" id="otherToggle">玩家列表 ▼</div>
+          <div class="other-list" id="otherList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 游戏介绍模态框 ========== -->
+    <div id="introModal" class="modal-overlay" style="display:none;">
+      <div class="modal-box intro-modal">
+        <button class="modal-close" onclick="closeIntro()">✕</button>
+        <h2 class="intro-title">🏺 马王堆·宝物拍卖</h2>
+
+        <div class="intro-section">
+          <h3>🎮 游戏简介</h3>
+          <p>马王堆·宝物拍卖是一款支持2-6人的策略桌游。玩家通过竞标成为拍卖师，租用骰子争夺汉代文物卡牌，最终以收藏总分决胜负。</p>
+        </div>
+
+        <div class="intro-section">
+          <h3>📋 游戏流程</h3>
+          <p>每轮开始时，玩家竞标拍卖师资格（报出最低的佣金比例）。当选拍卖师展示一张文物卡后，其他玩家秘密租用骰子（d4/d6/d12/d20），骰子点数最高者获得该文物。拍卖师不参与掷骰，但可按佣金比例收取其他玩家的骰子租用费作为收入。</p>
+          <p>连任拍卖师会递增惩罚：连续第2次当选扣$1、第3次扣$2，以此类推，防止同一玩家长期垄断拍卖师位置。</p>
+          <p>持有特殊卡牌组合可触发强力效果：龙凤帛画联动（1分卡全部+1分）、君幸食漆盘+耳杯重掷、对书俑升级骰子、市券佣金翻倍等。游戏共10轮，终局时收藏总分最高者获胜，剩余资金仅用于平局决胜。</p>
+        </div>
+
+        <div class="intro-section">
+          <h3>🏛️ 文化背景</h3>
+          <p>马王堆汉墓位于湖南省长沙市芙蓉区，是西汉初期长沙国丞相利苍及其家族的墓葬群。1972年至1974年间考古发掘出土了大量珍贵文物，包括素纱襌衣、T形帛画、漆器、竹简、帛书等3000余件，震惊世界。</p>
+          <p>马王堆出土文物现收藏于湖南省博物馆（今湖南博物院），是该馆最具代表性的常设展览之一。本游戏中的十件文物均取材于马王堆及湖南地区出土的珍贵历史文物，玩家将在拍卖与博弈中感受两千年前的文明辉煌。</p>
+        </div>
+
+        <div class="intro-section">
+          <h3>🏺 文物介绍</h3>
+          <div class="intro-cards-list">
+
+            <!-- 素纱襌衣 -->
+            <div class="intro-card-row">
+              <img class="intro-card-img" src="assets/cards/ssdc.png" alt="素纱襌衣">
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>素纱襌衣</strong>
+                  <span class="intro-card-score">3分</span>
+                </div>
+                <p class="intro-card-artifact">素纱襌衣，西汉长沙国利苍妻辛追墓出土。衣长128cm，袖长190cm，重仅49克，折叠可塞入火柴盒。是世界上最轻的古代丝织品，展现了西汉缫丝技术的巅峰。</p>
+                <p class="intro-card-effect">无特殊效果</p>
+              </div>
+            </div>
+
+            <!-- 皿方罍 -->
+            <div class="intro-card-row">
+              <img class="intro-card-img" src="assets/cards/mfl.png" alt="皿方罍">
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>皿方罍</strong>
+                  <span class="intro-card-score">3分</span>
+                </div>
+                <p class="intro-card-artifact">皿方罍，商代晚期青铜盛酒器。1919年出土于湖南桃源，器身与盖分离近百年。器身饰兽面纹，铸造工艺登峰造极。</p>
+                <p class="intro-card-effect">无特殊效果</p>
+              </div>
+            </div>
+
+            <!-- 双鸾双兽镜 -->
+            <div class="intro-card-row">
+              <img class="intro-card-img" src="assets/cards/slj.png" alt="双鸾双兽镜">
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>双鸾双兽镜</strong>
+                  <span class="intro-card-score">2分</span>
+                </div>
+                <p class="intro-card-artifact">双鸾双兽镜，西汉铜镜精品。镜背铸有双鸾双兽纹饰，造型灵动。镜中世界暗藏玄机——持有此镜者，终局时可发起"镜中决斗"，与对手各押一宝，出价高者夺得对方珍品。</p>
+                <p class="intro-card-effect">无特殊效果</p>
+              </div>
+            </div>
+
+            <!-- 神兽玉樽 -->
+            <div class="intro-card-row">
+              <img class="intro-card-img" src="assets/cards/ssyz.png" alt="神兽玉樽">
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>神兽玉樽</strong>
+                  <span class="intro-card-score">2分</span>
+                </div>
+                <p class="intro-card-artifact">神兽玉樽，西汉贵族酒器。以和田白玉雕琢，器身浮雕青龙白虎朱雀玄武四神兽。是西汉"事死如生"丧葬观念的物证。</p>
+                <p class="intro-card-effect">无特殊效果</p>
+              </div>
+            </div>
+
+            <!-- 龙凤帛画 -->
+            <div class="intro-card-row">
+              <img class="intro-card-img" src="assets/cards/lfh.png" alt="龙凤帛画">
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>龙凤帛画</strong>
+                  <span class="intro-card-score">1分</span>
+                </div>
+                <p class="intro-card-artifact">龙凤帛画，战国楚墓出土。画中龙凤飞舞，引导墓主人灵魂升天。是中国现存最早的绢帛绘画之一。</p>
+                <p class="intro-card-effect effect-positive">【联动】与御龙帛画同时持有：所有1分卡+1分</p>
+              </div>
+            </div>
+
+            <!-- 御龙帛画 -->
+            <div class="intro-card-row">
+              <img class="intro-card-img" src="assets/cards/yulb.png" alt="御龙帛画">
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>御龙帛画</strong>
+                  <span class="intro-card-score">2分</span>
+                </div>
+                <p class="intro-card-artifact">御龙帛画，战国楚墓出土。男子御龙驰骋天际，龙、鹭、鱼相伴。与龙凤帛画并称"楚帛双璧"。</p>
+                <p class="intro-card-effect effect-positive">【联动】与龙凤帛画同时持有：所有1分卡+1分</p>
+              </div>
+            </div>
+
+            <!-- 君幸食漆盘 -->
+            <div class="intro-card-row">
+              <img class="intro-card-img" src="assets/cards/jxsp.png" alt="君幸食漆盘">
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>君幸食漆盘</strong>
+                  <span class="intro-card-score">1分</span>
+                </div>
+                <p class="intro-card-artifact">君幸食漆盘。"君幸食"意为"请愉快用餐"。马王堆出土漆器逾500件，反映了西汉贵族精致的生活品味。</p>
+                <p class="intro-card-effect effect-positive">【联动】与君幸酒耳杯同时持有：掷骰可重掷取高值</p>
+              </div>
+            </div>
+
+            <!-- 君幸酒耳杯 -->
+            <div class="intro-card-row">
+              <img class="intro-card-img" src="assets/cards/jxjeb.png" alt="君幸酒耳杯">
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>君幸酒耳杯</strong>
+                  <span class="intro-card-score">2分</span>
+                </div>
+                <p class="intro-card-artifact">君幸酒耳杯。"君幸酒"意为"请愉快饮酒"。耳杯因两侧新月形耳而得名，是汉代最流行的饮酒器。</p>
+                <p class="intro-card-effect effect-positive">【联动】与君幸食漆盘同时持有：掷骰可重掷取高值</p>
+              </div>
+            </div>
+
+            <!-- 对书俑 -->
+            <div class="intro-card-row">
+              <img class="intro-card-img" src="assets/cards/dsy.png" alt="对书俑">
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>对书俑</strong>
+                  <span class="intro-card-score">1分</span>
+                </div>
+                <p class="intro-card-artifact">对书俑，西晋时期陶瓷俑。两人对坐，一人执笔书写，一人手捧简册审校。是中国现存最早的书生形象陶瓷雕塑。</p>
+                <p class="intro-card-effect effect-special">【限一次】掷骰前免费升级骰子一级（d20不可升级）</p>
+              </div>
+            </div>
+
+            <!-- 市券 -->
+            <div class="intro-card-row">
+              <img class="intro-card-img" src="assets/cards/sq.png" alt="市券">
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>市券</strong>
+                  <span class="intro-card-score">1分</span>
+                </div>
+                <p class="intro-card-artifact">市券，汉代商业凭证。汉代"市"为官方设立的市场，交易者须持市券。持券者担任拍卖师时可获双倍佣金。</p>
+                <p class="intro-card-effect effect-special">【佣金翻倍】担任拍卖师时佣金收入翻倍</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="margin-top:20px;width:100%;" onclick="closeIntro()">知道了</button>
+      </div>
+    </div>
+
+    <!-- ========== 公开房间列表弹窗 ========== -->
+    <div id="roomListModal" class="room-list-modal" style="display:none;">
+      <div class="room-list-dialog">
+        <div class="room-list-header">
+          <h3>🌐 公开房间</h3>
+          <button class="room-list-close" onclick="closeRoomListModal()">✕</button>
+        </div>
+        <div class="room-list-body">
+          <div id="roomListLoading" class="room-list-loading">加载中...</div>
+          <div id="roomListContent"></div>
+        </div>
+        <div class="room-list-footer">
+          <button class="btn btn-primary btn-sm" onclick="closeRoomListModal()">关闭</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========== 连接状态提示 ========== -->
+  <div id="connectionToast" class="toast">
+    <span id="toastText"></span>
+  </div>
+
+  <!-- Socket.IO -->
+  <script src="/socket.io/socket.io.js"></script>
+
+  <!-- 客户端模块（按依赖顺序） -->
+  <script src="js/state.js"></script>
+  <script src="js/socket.js"></script>
+  <script src="js/router.js"></script>
+  <script src="js/room.js"></script>
+  <script src="js/lobby.js"></script>
+  <script src="js/cards.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/soundManager.js"></script>
+  <script src="js/roomlist.js"></script>
+  <script src="js/intro.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

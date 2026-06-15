@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Step 1 验收测试 — 马王堆·宝物拍卖</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: #F5F0E8; padding: 20px; max-width: 500px; margin: 0 auto; }
+    h1 { text-align: center; color: #C43A31; margin-bottom: 6px; font-size: 20px; }
+    .subtitle { text-align: center; color: #5B7B5E; font-size: 13px; margin-bottom: 20px; }
+    .status { text-align: center; font-size: 14px; margin-bottom: 16px; padding: 8px; border-radius: 6px; }
+    .status.connected { background: #d4edda; color: #155724; }
+    .status.disconnected { background: #f8d7da; color: #721c24; }
+    .status.loading { background: #fff3cd; color: #856404; }
+    .card {
+      background: white; border-radius: 10px; padding: 16px; margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+    .card h3 { font-size: 16px; color: #3C2415; margin-bottom: 12px; }
+    .input-group { display: flex; gap: 8px; margin-bottom: 10px; }
+    input {
+      flex: 1; padding: 10px 12px; border: 2px solid #ddd; border-radius: 6px;
+      font-size: 16px; outline: none; transition: border-color 0.2s;
+    }
+    input:focus { border-color: #C43A31; }
+    button {
+      padding: 10px 18px; border: none; border-radius: 6px; font-size: 16px;
+      cursor: pointer; font-weight: bold; transition: all 0.2s;
+      min-width: 80px;
+    }
+    button:active { transform: scale(0.96); }
+    .btn-create { background: #C43A31; color: white; }
+    .btn-join { background: #5B7B5E; color: white; }
+    .btn-leave { background: #e0a800; color: #3C2415; }
+    .btn-reset { background: #6c757d; color: white; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .room-id { font-size: 32px; text-align: center; font-weight: bold; color: #C43A31;
+      letter-spacing: 6px; padding: 12px; background: #F5F0E8; border-radius: 8px;
+      margin-bottom: 10px; }
+    .player-list { list-style: none; }
+    .player-list li {
+      padding: 8px 12px; border-bottom: 1px solid #eee; display: flex;
+      align-items: center; gap: 8px; font-size: 15px;
+    }
+    .player-list li:last-child { border-bottom: none; }
+    .host-badge { color: #C9A96E; font-size: 14px; }
+    .log-box {
+      background: #1e1e1e; color: #4ec9b0; font-family: 'Courier New', monospace;
+      font-size: 12px; padding: 12px; border-radius: 8px; max-height: 300px;
+      overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+    }
+    .log-box .error { color: #f44747; }
+    .log-box .warn { color: #e0a800; }
+    .log-box .info { color: #569cd6; }
+    .section { margin-top: 12px; font-size: 13px; color: #6c757d; }
+    .section code { background: #f0f0f0; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+  <h1>🏺 马王堆·宝物拍卖</h1>
+  <p class="subtitle">Step 1 验收测试 — Socket.IO 房间系统</p>
+
+  <div id="status" class="status loading">⏳ 正在连接服务器…</div>
+
+  <!-- 创建/加入 -->
+  <div class="card" id="loginCard">
+    <h3>📝 第一步：进入房间</h3>
+    <div class="input-group">
+      <input type="text" id="nicknameInput" placeholder="输入你的昵称（2-8字）" maxlength="8">
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn-create" id="btnCreate" disabled>创建房间</button>
+      <input type="text" id="roomInput" placeholder="6位房间号" maxlength="6" style="max-width:120px;">
+      <button class="btn-join" id="btnJoin" disabled>加入房间</button>
+    </div>
+    <div class="section">
+      事件协议：<code>room:create(nickname, cb)</code> <code>room:join(roomId, nickname, cb)</code> <code>room:leave(roomId)</code>
+    </div>
+  </div>
+
+  <!-- 房间信息 -->
+  <div class="card" id="roomCard" style="display:none;">
+    <h3>🏠 当前房间</h3>
+    <div class="room-id" id="roomIdDisplay">------</div>
+    <button id="btnCopy" style="width:100%;margin-bottom:12px;background:#C9A96E;color:white;">📋 复制房间号</button>
+    <h3>👥 玩家列表 (<span id="playerCount">0</span>)</h3>
+    <ul class="player-list" id="playerList"></ul>
+    <button class="btn-leave" id="btnLeave" style="width:100%;margin-top:12px;">🚪 离开房间</button>
+  </div>
+
+  <!-- 事件日志 -->
+  <div class="card">
+    <h3>📡 事件日志（实时）</h3>
+    <div class="log-box" id="logBox">等待事件…</div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const logBox = document.getElementById('logBox');
+    const statusEl = document.getElementById('status');
+
+    function log(msg, cls = '') {
+      const time = new Date().toLocaleTimeString();
+      const entry = cls ? `<span class="${cls}">[${time}] ${msg}</span>` : `[${time}] ${msg}`;
+      logBox.innerHTML += entry + '\n';
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // 连接状态
+    socket.on('connect', () => {
+      statusEl.className = 'status connected';
+      statusEl.textContent = '✅ 已连接到服务器';
+      log('✅ 已连接 — Socket ID: ' + socket.id, 'info');
+    });
+
+    socket.on('disconnect', (reason) => {
+      statusEl.className = 'status disconnected';
+      statusEl.textContent = '❌ 已断开连接: ' + reason;
+      log('❌ 断开连接: ' + reason, 'error');
+    });
+
+    // 监听所有服务端事件
+    socket.onAny((event, ...args) => {
+      if (event === 'players:update') return; // 跳过高频事件
+      log(`📩 收到: ${event} | 数据: ${JSON.stringify(args).slice(0, 200)}`);
+    });
+
+    let currentRoom = null;
+
+    socket.on('room:created', (data) => {
+      currentRoom = data.roomId;
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('roomCard').style.display = 'block';
+      document.getElementById('roomIdDisplay').textContent = data.roomId;
+      renderPlayers(data.players);
+      log(`🎉 房间创建成功！房间号: ${data.roomId}`, 'info');
+    });
+
+    socket.on('room:joined', (data) => {
+      currentRoom = data.roomId;
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('roomCard').style.display = 'block';
+      document.getElementById('roomIdDisplay').textContent = data.roomId;
+      renderPlayers(data.players);
+      log(`🚪 加入房间成功！`, 'info');
+    });
+
+    socket.on('room:player_joined', (data) => {
+      renderPlayers(data.players);
+      log(`👤 新玩家加入: ${data.player.nickname}`, 'info');
+    });
+
+    socket.on('room:player_left', (data) => {
+      renderPlayers(data.players);
+      log(`👋 玩家离开: ${data.player.nickname}`, 'warn');
+    });
+
+    socket.on('room:left', () => {
+      currentRoom = null;
+      document.getElementById('loginCard').style.display = 'block';
+      document.getElementById('roomCard').style.display = 'none';
+      log('🚪 你已离开房间', 'warn');
+    });
+
+    function renderPlayers(players) {
+      const list = document.getElementById('playerList');
+      const count = document.getElementById('playerCount');
+      count.textContent = players.length;
+      list.innerHTML = players.map((p, i) => `
+        <li>
+          ${i === 0 ? '👑' : '🎭'}
+          <span>${p.nickname}</span>
+          ${i === 0 ? '<span class="host-badge">房主</span>' : ''}
+        </li>
+      `).join('');
+    }
+
+    // UI 交互
+    const nicknameInput = document.getElementById('nicknameInput');
+    const roomInput = document.getElementById('roomInput');
+
+    nicknameInput.addEventListener('input', () => {
+      const name = nicknameInput.value.trim();
+      document.getElementById('btnCreate').disabled = name.length < 2;
+      document.getElementById('btnJoin').disabled = name.length < 2 || roomInput.value.trim().length !== 6;
+    });
+
+    roomInput.addEventListener('input', () => {
+      roomInput.value = roomInput.value.replace(/\D/g, '').slice(0, 6);
+      document.getElementById('btnJoin').disabled =
+        nicknameInput.value.trim().length < 2 || roomInput.value.trim().length !== 6;
+    });
+
+    document.getElementById('btnCreate').addEventListener('click', () => {
+      const nickname = nicknameInput.value.trim();
+      if (nickname.length < 2) return;
+      log(`📤 发送: room:create ('${nickname}', callback)`, 'info');
+      socket.emit('room:create', nickname, (response) => {
+        log('📩 回调返回: ' + JSON.stringify(response), 'info');
+      });
+    });
+
+    document.getElementById('btnJoin').addEventListener('click', () => {
+      const roomId = roomInput.value.trim();
+      const nickname = nicknameInput.value.trim();
+      if (roomId.length !== 6 || nickname.length < 2) return;
+      log(`📤 发送: room:join ('${roomId}', '${nickname}', callback)`, 'info');
+      socket.emit('room:join', roomId, nickname, (response) => {
+        log('📩 回调返回: ' + JSON.stringify(response), 'info');
+      });
+    });
+
+    document.getElementById('btnLeave').addEventListener('click', () => {
+      if (!currentRoom) return;
+      log(`📤 发送: room:leave ('${currentRoom}')`, 'info');
+      socket.emit('room:leave', currentRoom);
+    });
+
+    document.getElementById('btnCopy').addEventListener('click', () => {
+      navigator.clipboard.writeText(currentRoom).then(() => {
+        log('📋 房间号已复制到剪贴板', 'info');
+      });
+    });
+
+    nicknameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && nicknameInput.value.trim().length >= 2) {
+        document.getElementById('btnCreate').click();
+      }
+    });
+    roomInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && roomInput.value.trim().length === 6 &&
+          nicknameInput.value.trim().length >= 2) {
+        document.getElementById('btnJoin').click();
+      }
+    });
+
+    log('🚀 测试页加载完毕', 'info');
+  </script>
+</body>
+</html>
