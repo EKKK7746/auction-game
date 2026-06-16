@@ -9,6 +9,7 @@ const { Server } = require('socket.io');
 const roomManager = require('./roomManager');
 const gameEngine = require('./gameEngine');
 const { BotManager, createBotPlayer } = require('./bot');
+const SecurityMiddleware = require('./security');
 
 const PORT = process.env.PORT || 3000;
 
@@ -30,10 +31,28 @@ gameEngine.setIO(io);
 const botManager = new BotManager(io, gameEngine);
 gameEngine.setOnBroadcast((roomId) => botManager.processBots(roomId));
 
+const security = new SecurityMiddleware(io);
+
 // ==================== 连接管理 ====================
 
 io.on('connection', (socket) => {
   console.log(`[连接] 玩家上线: ${socket.id}`);
+
+  // 安全中间件：所有事件先过安全检查
+  socket.use((packet, next) => {
+    const eventName = packet[0];
+    const args = packet.slice(1);
+    const result = security.check(socket, eventName, ...args);
+    if (!result.allowed) {
+      // 如果事件有 callback，返回错误信息
+      const lastArg = args[args.length - 1];
+      if (typeof lastArg === 'function') {
+        lastArg({ success: false, error: result.reason });
+      }
+      return next(new Error(result.reason));
+    }
+    next();
+  });
 
   // ------ 房间操作 ------
 
@@ -268,6 +287,8 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`[连接] 玩家下线: ${socket.id}`);
+
+    security.cleanup(socket.id);
 
     const results = roomManager.handleDisconnect(socket);
     for (const r of results) {
