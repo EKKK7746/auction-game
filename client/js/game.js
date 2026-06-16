@@ -1395,10 +1395,7 @@ function _renderPlayerList(view) {
   // 计算最高卡牌分和最高资金
   let maxScore = -1, maxFunds = -1;
   for (const p of allPlayers) {
-    if (p.cards && p.cards.length) {
-      const s = p.cards.reduce((sum, c) => sum + (c.score || 0), 0);
-      if (s > maxScore) maxScore = s;
-    }
+    if (p.cardScore > maxScore) maxScore = p.cardScore;
     if (p.funds > maxFunds) maxFunds = p.funds;
   }
 
@@ -1412,14 +1409,11 @@ function _renderPlayerList(view) {
     if (p.cards && p.cards.some(c => c.id === 'slj' && !c.used)) effectIcons.push('🪞');
     const effects = effectIcons.join(' ');
 
-    // 计算卡牌分
-    let cardScore = -1;
-    if (p.cards && p.cards.length) {
-      cardScore = p.cards.reduce((sum, c) => sum + (c.score || 0), 0);
-    }
+    // 卡牌分（来自服务端，含龙凤联动加成）
+    const cardScore = p.cardScore || 0;
 
     // 标记
-    const isTopScore = cardScore > -1 && cardScore === maxScore && maxScore > 0;
+    const isTopScore = cardScore > 0 && cardScore === maxScore && maxScore > 0;
     const isRichest = p.funds === maxFunds && maxFunds > 0;
 
     const botTag = p.isBot ? ' <span class="bot-tag">AI</span>' : '';
@@ -1466,7 +1460,7 @@ function _renderPlayerList(view) {
           ${p.isMe ? '<span class="me-tag">你</span>' : ''}
           ${isRichest ? '<span class="pl-badge pl-badge-rich">💎</span>' : ''}
         </span>
-        <span class="pl-stats">💰$${p.funds} 🃏${p.cardCount}张 ${effects}</span>
+        <span class="pl-stats">💰$${p.funds} ⭐${cardScore}分 🃏${p.cardCount}张 ${effects}</span>
         <span class="pl-expand-icon">${isOpen ? '▲' : '▼'}</span>
         <div class="player-detail${isOpen ? ' open' : ''}">
           ${cardDetail ? `<div class="pl-cards">卡牌：${cardDetail}</div>` : ''}

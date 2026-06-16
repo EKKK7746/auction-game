@@ -639,6 +639,13 @@ function resolveRoll(roomId) {
   if (!state) return { error: '游戏不存在' };
   if (state.phase !== 'rollDice') return { error: '当前不是掷骰结算阶段' };
 
+  // 清理已离开玩家的骰子结果
+  for (const pid of Object.keys(state.diceResults)) {
+    if (!state.players.some(p => p.id === pid)) {
+      delete state.diceResults[pid];
+    }
+  }
+
   // --- 佣金结算 ---
   _settleCommission(state);
 
@@ -1364,6 +1371,7 @@ function getPlayerView(fullState, playerId) {
       nickname: p.nickname,
       funds: p.funds,
       cardCount: p.cards.length,
+      cardScore: calculateCardScore(p.cards),
       isBot: !!p.isBot,
       // 始终发送完整卡牌信息
       cards: p.cards.map(c => ({ id: c.id, name: c.name, score: c.score, effect: c.effect, used: !!c.used })),
@@ -1515,28 +1523,230 @@ function destroyGame(roomId) {
   console.log(`[引擎] 房间 ${roomId} 游戏数据已清除`);
 }
 
+// -------------------- 阶段修复辅助（玩家断连/离开）--------------------
+
+/**
+ * auction 阶段：玩家离开后的修复
+ */
+function _fixAuctionAfterLeave(state, roomId, leftPlayerId) {
+  const leftIdx = state.biddingOrder.indexOf(leftPlayerId);
+  if (leftIdx === -1) return;
+
+  state.biddingOrder = state.biddingOrder.filter(id => id !== leftPlayerId);
+
+  if (leftIdx < state.currentBidderIdx) {
+    state.currentBidderIdx = Math.max(0, state.currentBidderIdx - 1);
+  }
+
+  if (state.currentBidderIdx >= state.biddingOrder.length) {
+    state.currentBidderIdx = state.biddingOrder.length - 1;
+  }
+
+  if (state.biddingOrder.length === 0) {
+    initBiddingOrder(state);
+    return;
+  }
+
+  if (allBidsIn(state)) {
+    _settleAuctionAfterAllBids(state, roomId);
+    return;
+  }
+
+  setTurnTimer(roomId, TURN_TIMEOUT, 'auction', () => {
+    const s = games.get(roomId);
+    if (!s || s.phase !== 'auction') return;
+    const nextPid = s.biddingOrder[s.currentBidderIdx];
+    if (nextPid && !s.bids.some(b => b.playerId === nextPid)) {
+      submitBid(roomId, nextPid, null);
+    }
+  });
+}
+
+/**
+ * 所有人报价完毕后的拍卖结算（从 submitBid 提取的公共逻辑）
+ */
+function _settleAuctionAfterAllBids(state, roomId) {
+  const validBids = state.bids.filter(b => b.percentage !== null);
+
+  if (validBids.length === 0) {
+    state.lastAuctioneerId = null;
+    state.auctioneerId = null;
+    state.commissionRate = 0;
+    state.auctioneerStreak = 0;
+    const idx = crypto.randomInt(0, state.deck.length);
+    state.revealedCard = state.deck[idx];
+    state.deck.splice(idx, 1);
+    console.log(`[引擎] 全员跳过，无拍卖师，随机翻牌: ${state.revealedCard.name}`);
+    state.phase = 'rentDice';
+    state.bids = [];
+    state.diceSelections = {};
+    setTurnTimer(roomId, TURN_TIMEOUT, 'rentDice', () => {
+      const s = games.get(roomId);
+      if (!s || s.phase !== 'rentDice') return;
+      for (const p of s.players) {
+        if (!s.diceSelections.hasOwnProperty(p.id)) {
+          s.diceSelections[p.id] = 'pass';
+        }
+      }
+      s.phase = 'rollDice';
+      _computeAllRolls(s);
+      broadcast(roomId);
+      setTimeout(() => resolveRoll(roomId), 5000);
+    });
+    broadcast(roomId);
+    return;
+  }
+
+  const winner = validBids.reduce((min, b) =>
+    b.percentage < min.percentage ? b : min
+  );
+  const winnerId = winner.playerId;
+  const commissionRate = winner.percentage;
+
+  if (state.auctioneerId === winnerId) {
+    state.auctioneerStreak++;
+  } else {
+    state.auctioneerStreak = 1;
+  }
+  state.lastAuctioneerId = winnerId;
+  state.auctioneerId = winnerId;
+  state.commissionRate = commissionRate;
+
+  const winnerNick = state.players.find(p => p.id === winnerId)?.nickname || '?';
+  console.log(`[引擎] 拍卖师产生: ${winnerNick} (${commissionRate}%)`);
+
+  state.phase = 'selectCard';
+  state.bids = [];
+  broadcast(roomId);
+}
+
+/**
+ * selectCard 阶段：拍卖师离开后的修复
+ */
+function _fixSelectCardAfterLeave(state, roomId, leftPlayerId) {
+  if (state.auctioneerId !== leftPlayerId) return;
+
+  state.auctioneerId = null;
+  state.commissionRate = 0;
+  const idx = crypto.randomInt(0, state.deck.length);
+  state.revealedCard = state.deck[idx];
+  state.deck.splice(idx, 1);
+  console.log(`[引擎] 拍卖师离开，随机翻牌: ${state.revealedCard.name}`);
+
+  state.phase = 'rentDice';
+  state.diceSelections = {};
+
+  for (const p of state.players) {
+    state.diceSelections[p.id] = 'pass';
+  }
+  state.phase = 'rollDice';
+  _computeAllRolls(state);
+  broadcast(roomId);
+  setTimeout(() => resolveRoll(roomId), 2000);
+}
+
+/**
+ * rentDice 阶段：玩家离开后的修复
+ */
+function _fixRentDiceAfterLeave(state, roomId, leftPlayerId) {
+  if (allDiceIn(state)) {
+    const allDone = state.players.every(p => {
+      if (state.auctioneerId && p.id === state.auctioneerId) return true;
+      if (state.diceSelections[p.id] === 'pass') return true;
+      return state.playersDone.has(p.id);
+    });
+    if (allDone) {
+      clearTurnTimer(roomId);
+      state.phase = 'rollDice';
+      _computeAllRolls(state);
+      broadcast(roomId);
+      setTimeout(() => resolveRoll(roomId), 5000);
+    }
+  }
+}
+
+/**
+ * rollDice 阶段：玩家离开后的修复
+ */
+function _fixRollDiceAfterLeave(state, roomId, leftPlayerId) {
+  const allRolled = state.players.every(p => {
+    if (p.id === state.auctioneerId) return true;
+    if (state.diceSelections[p.id] === 'pass') return true;
+    return state.diceResults && state.diceResults.hasOwnProperty(p.id);
+  });
+
+  if (allRolled) {
+    setTimeout(() => resolveRoll(roomId), 1000);
+  }
+}
+
+/**
+ * duel 阶段：玩家离开后的修复
+ */
+function _fixDuelAfterLeave(state, roomId, leftPlayerId) {
+  if (!state.duel) return;
+
+  const isParticipant = (state.duel.initiatorId === leftPlayerId ||
+                         state.duel.targetId === leftPlayerId);
+  if (!isParticipant) return;
+
+  console.log(`[引擎] 决斗参与者 ${leftPlayerId} 离开，决斗取消`);
+  state.duel.done = true;
+  state.duel.winnerId = null;
+  state.duel.loserId = leftPlayerId;
+  state.phase = 'finished';
+  console.log(`[引擎] 房间 ${roomId} 决斗中断，游戏结束`);
+  const fr = calculateFinalScores(roomId);
+  state.finalResults = fr;
+  broadcast(roomId);
+}
+
+// -------------------- 玩家断连/离开 --------------------
+
 function removePlayer(roomId, playerId) {
   const state = games.get(roomId);
   if (!state) return;
+
+  if (!state.players.some(p => p.id === playerId)) return;
+
+  const phase = state.phase;
 
   state.players = state.players.filter(p => p.id !== playerId);
   state.bids = state.bids.filter(b => b.playerId !== playerId);
   delete state.diceSelections[playerId];
   delete state.diceResults[playerId];
   if (state._roundExpense) delete state._roundExpense[playerId];
+  state.playersDone.delete(playerId);
 
   if (state.auctioneerId === playerId) {
     state.auctioneerId = state.players.length > 0 ? state.players[0].id : null;
     state.auctioneerStreak = 0;
   }
 
-  if (state.players.length < 2) {
+  // 真人检查：只剩0个真人 → 游戏结束
+  const humanCount = state.players.filter(p => !p.isBot).length;
+  if (humanCount === 0) {
     state.phase = 'finished';
-    console.log(`[引擎] 房间 ${roomId} 玩家不足，游戏终止`);
+    console.log(`[引擎] 房间 ${roomId} 无真人玩家，游戏终止`);
     const fr = calculateFinalScores(roomId);
     state.finalResults = fr;
     broadcast(roomId);
     return fr;
+  }
+
+  // 按阶段修复游戏流
+  clearTurnTimer(roomId);
+
+  if (phase === 'auction') {
+    _fixAuctionAfterLeave(state, roomId, playerId);
+  } else if (phase === 'selectCard') {
+    _fixSelectCardAfterLeave(state, roomId, playerId);
+  } else if (phase === 'rentDice') {
+    _fixRentDiceAfterLeave(state, roomId, playerId);
+  } else if (phase === 'rollDice') {
+    _fixRollDiceAfterLeave(state, roomId, playerId);
+  } else if (phase === 'duel') {
+    _fixDuelAfterLeave(state, roomId, playerId);
   }
 
   broadcast(roomId);
