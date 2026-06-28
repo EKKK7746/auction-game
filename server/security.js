@@ -76,28 +76,22 @@ const GAME_RULES = {
       return { allowed: false, reason: '你不在本局游戏中' };
     }
 
-    // 2. 玩家必须在 biddingOrder 中且轮到该玩家
-    if (!state.biddingOrder || state.biddingOrder.length === 0) {
-      return { allowed: false, reason: '竞标尚未开始' };
-    }
-    const currentTurn = state.biddingOrder[state.currentBidderIdx];
-    if (currentTurn !== socket.id) {
-      return { allowed: false, reason: '还没轮到你报价' };
+    // 2. 当前阶段必须是 auction（暗标制：所有人同时报价）
+    if (state.phase !== 'auction') {
+      return { allowed: false, reason: '当前不是拍卖阶段' };
     }
 
-    // 3. 佣金比例校验（非 null 时）
+    // 3. 暗标制：每人只能报价一次
+    if (state.bids && state.bids.some(b => b.playerId === socket.id)) {
+      return { allowed: false, reason: '你已经报过价了' };
+    }
+
+    // 4. 佣金比例校验（非 null 时）
     const percentage = args[1];
     if (percentage !== null && percentage !== undefined) {
       const pct = Number(percentage);
       if (!VALID_COMMISSIONS.includes(pct)) {
         return { allowed: false, reason: '佣金比例必须为 10/20/30/40/50 之一' };
-      }
-      const validBids = state.bids.filter(b => b.percentage !== null);
-      if (validBids.length > 0) {
-        const currentMin = Math.min(...validBids.map(b => b.percentage));
-        if (pct >= currentMin) {
-          return { allowed: false, reason: `报价必须低于 ${currentMin}%` };
-        }
       }
     }
 
