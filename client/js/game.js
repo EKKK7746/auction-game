@@ -175,51 +175,31 @@ function _renderActionContent(view, container) {
 
 function _renderAuction(view, container) {
   const myBid = view.bids.find(b => b.playerId === socket.id);
-  const currentBidder = view.currentBidder;
-  const isMyTurn = currentBidder === socket.id;
 
-  // 我已报过 → 等待
+  // 我已报价 → 等待其他人
   if (myBid && myBid.submitted) {
-    const pending = view.players.filter(p => !view.bids.find(b => b.playerId === p.id && b.submitted));
-    const nextP = view.players.find(p => p.id === view.currentBidder);
-    const label = nextP ? `等待 ${nextP.nickname} 出价` : '等待其他玩家出价';
+    const submitted = view.bidsCount || 0;
+    const total = view.bidsTotal || view.players.length;
     _renderWaiting(
       container,
-      label,
-      view.currentMin !== null ? `当前最低: ${view.currentMin}%` : '等待首个报价'
+      `已提交暗标（${submitted}/${total}人）`,
+      '等待其他玩家报价中...'
     );
     return;
   }
 
-  // 不是我的回合 → 显示当前轮到谁
-  if (!isMyTurn) {
-    const currentPlayer = view.players.find(p => p.id === currentBidder);
-    const label = `当前轮到: ${currentPlayer?.nickname || '?'} 报价`;
-    _renderWaiting(
-      container,
-      label,
-      view.currentMin !== null ? `当前最低: ${view.currentMin}%` : '等待首个报价'
-    );
-    return;
-  }
-
-  // 轮到我了 → 报价按钮
+  // 未报价 → 显示报价按钮（所有人同时可操作）
   container.className = 'game-action-area my-turn';
 
-  let minHint = '';
-  if (view.currentMin !== null) {
-    minHint = `当前最低: ${view.currentMin}% — 你必须出更低的`;
-  }
-
   container.innerHTML = `
-    <div class="action-title">💰 拍卖 — 竞标佣金比例</div>
-    ${minHint ? `<p style="text-align:center;font-size:13px;color:#C43A31;margin-bottom:10px;">${minHint}</p>` : ''}
+    <div class="action-title">💰 暗标竞拍 — 秘密报价佣金比例</div>
+    <p style="text-align:center;font-size:13px;color:#8B7B6B;margin-bottom:10px;">所有玩家同时秘密报价，佣金最低者当选拍卖师</p>
     <div class="bid-grid">
-      ${_bidBtn(10, view.currentMin)}
-      ${_bidBtn(20, view.currentMin)}
-      ${_bidBtn(30, view.currentMin)}
-      ${_bidBtn(40, view.currentMin)}
-      ${_bidBtn(50, view.currentMin)}
+      <button class="bid-btn" onclick="doBid(10)"><span>10%</span></button>
+      <button class="bid-btn" onclick="doBid(20)"><span>20%</span></button>
+      <button class="bid-btn" onclick="doBid(30)"><span>30%</span></button>
+      <button class="bid-btn" onclick="doBid(40)"><span>40%</span></button>
+      <button class="bid-btn" onclick="doBid(50)"><span>50%</span></button>
       <button class="bid-btn pass-btn" onclick="doBid(null)">放弃</button>
     </div>
     <div class="turn-timer-bar" id="turnTimerBar"><div class="turn-timer-fill"></div></div>
@@ -240,11 +220,6 @@ function _bidBtn(pct, currentMin) {
 }
 
 function doBid(percentage) {
-  // Bug2: 防止点击 disabled 按钮（手机端兼容）
-  if (percentage !== null && _lastView && _lastView.currentMin !== null
-      && percentage >= _lastView.currentMin) {
-    return; // 无效报价，静默忽略
-  }
   if (typeof playSound === 'function') playSound('bid');
   socket.emit('game:bid', GameState.roomId, percentage, (res) => {
     if (!res.success) {
@@ -1072,7 +1047,12 @@ const CARD_NAMES = {
   slj:  '双鸾双兽镜', ssyz: '神兽玉樽',
   lfh:  '龙凤帛画', yulb: '御龙帛画',
   jxsp: '君幸食漆盘', jxjeb: '君幸酒耳杯',
-  dsy:  '对书俑', sq: '市券'
+  dsy:  '对书俑', sq: '市券',
+  txbh: 'T形帛画', td: '铜鼎',
+  dmz:  '玳瑁樽', qlh: '漆奁盒',
+  ywqf: '云纹漆钫', yb: '玉璧',
+  cmwy: '彩绘木俑', se: '瑟',
+  bsl:  '博山炉', zs: '缯书'
 };
 
 const CARD_LORE = {
@@ -1085,7 +1065,17 @@ const CARD_LORE = {
   jxsp: '君幸食漆盘。"君幸食"意为"请愉快用餐"。马王堆出土漆器逾500件，反映了西汉贵族精致的生活品味。',
   jxjeb: '君幸酒耳杯。"君幸酒"意为"请愉快饮酒"。耳杯因两侧新月形耳而得名，是汉代最流行的饮酒器。',
   dsy: '对书俑，西晋时期陶瓷俑。两人对坐，一人执笔书写，一人手捧简册审校。是中国现存最早的书生形象陶瓷雕塑。',
-  sq: '市券，汉代商业凭证。汉代"市"为官方设立的市场，交易者须持市券。持券者担任拍卖师时可获双倍佣金。'
+  sq: '市券，汉代商业凭证。汉代"市"为官方设立的市场，交易者须持市券。持券者担任拍卖师时可获双倍佣金。',
+  txbh: 'T形帛画，马王堆一号汉墓出土。帛画呈T形，描绘天上、人间、地下三界，是汉代绘画艺术的巅峰之作。持有此画者，终局计分额外加成。',
+  td: '铜鼎，马王堆汉墓出土青铜礼器。鼎为古代国之重器，象征权力与地位。此鼎铸造精良，器形庄重。',
+  dmz: '玳瑁樽，马王堆出土玳瑁质酒器。玳瑁为海龟甲壳，色泽温润。持有此樽者，掷骰时可窥探天机，重掷取高值。',
+  qlh: '漆奁盒，马王堆出土双层漆奁。奁为古代女子梳妆盒，此奁设计精巧，内含多个小盒。持有此盒者，担任拍卖师时连任惩罚减半。',
+  ywqf: '云纹漆钫，马王堆出土漆器。钫为方形酒器，器身绘有飘逸云纹，体现了汉代漆器工艺的高超水平。',
+  yb: '玉璧，马王堆出土玉器。璧为古代礼天之器，"苍璧礼天"源自周礼。玉质温润，纹饰古朴。',
+  cmwy: '彩绘木俑，马王堆汉墓出土大量木俑。木俑为陪葬明器，象征仆从侍女。持有此俑者，每轮可获额外资金补给。',
+  se: '瑟，马王堆汉墓出土乐器。瑟为古代拨弦乐器，二十五弦。墓中出土的瑟是现存最早的完整瑟之一。',
+  bsl: '博山炉，汉代熏香器具。炉盖铸成山形，香烟从山间缝隙飘出，如仙山云雾。是汉代神仙思想的物证。',
+  zs: '缯书，马王堆汉墓出土帛书。书写于丝帛之上的文献，内容涉及天文、地理、医学，是研究西汉文化的珍贵资料。'
 };
 
 const CARD_COLORS = { 1: '#2E5C8A', 2: '#8B6914', 3: '#C43A31' };
@@ -1407,6 +1397,9 @@ function _renderPlayerList(view) {
     if (p.hasDoubleComm) effectIcons.push('💰');
     if (p.hasUpgrade) effectIcons.push('⬆️');
     if (p.cards && p.cards.some(c => c.id === 'slj' && !c.used)) effectIcons.push('🪞');
+    if (p.cards && p.cards.some(c => c.id === 'txbh')) effectIcons.push('📜');
+    if (p.cards && p.cards.some(c => c.id === 'cmwy')) effectIcons.push('🧱');
+    if (p.cards && p.cards.some(c => c.id === 'qlh')) effectIcons.push('🛡️');
     const effects = effectIcons.join(' ');
 
     // 卡牌分（来自服务端，含龙凤联动加成）
@@ -1449,6 +1442,9 @@ function _renderPlayerList(view) {
       const sljCard = p.cards.find(c => c.id === 'slj');
       skillDetail.push(sljCard?.used ? '🪞 镜中决斗（已使用）' : '🪞 镜中决斗');
     }
+    if (p.cards && p.cards.some(c => c.id === 'txbh')) skillDetail.push('📜 终局加分');
+    if (p.cards && p.cards.some(c => c.id === 'cmwy')) skillDetail.push('🧱 每轮收入');
+    if (p.cards && p.cards.some(c => c.id === 'qlh')) skillDetail.push('🛡️ 惩罚减半');
     const skillStr = skillDetail.length ? `<div class="pl-skills">${skillDetail.join(' | ')}</div>` : '';
 
     const isOpen = expandedMap[p.id] === true;

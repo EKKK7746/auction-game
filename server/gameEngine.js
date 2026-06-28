@@ -8,6 +8,7 @@ const crypto = require('crypto');
 // -------------------- 卡牌数据（10 张马王堆文物） --------------------
 
 const CARDS = [
+  // --- 原始 10 张 ---
   { id: 'ssdc', name: '素纱襌衣',    score: 3, effect: null },
   { id: 'mfl',  name: '皿方罍',      score: 3, effect: null },
   { id: 'slj',  name: '双鸾双兽镜',  score: 2, effect: 'duel' },
@@ -18,6 +19,17 @@ const CARDS = [
   { id: 'jxjeb',name: '君幸酒耳杯',  score: 2, effect: 'rerollDice' },
   { id: 'dsy',  name: '对书俑',      score: 1, effect: 'upgradeDice' },
   { id: 'sq',   name: '市券',        score: 1, effect: 'doubleCommission' },
+  // --- 扩充 10 张（每局从 20 张池中随机抽 10 张）---
+  { id: 'txbh', name: 'T形帛画',     score: 3, effect: 'extraScore' },       // 终局额外+2分
+  { id: 'td',   name: '铜鼎',         score: 3, effect: null },
+  { id: 'dmz',  name: '玳瑁樽',       score: 2, effect: 'soloReroll' },       // 独立重掷
+  { id: 'qlh',  name: '漆奁盒',       score: 2, effect: 'streakShield' },     // 连任惩罚减半
+  { id: 'ywqf', name: '云纹漆钫',     score: 2, effect: null },
+  { id: 'yb',   name: '玉璧',         score: 2, effect: null },
+  { id: 'cmwy', name: '彩绘木俑',     score: 1, effect: 'passiveIncome' },    // 每轮+$1
+  { id: 'se',   name: '瑟',           score: 1, effect: null },
+  { id: 'bsl',  name: '博山炉',       score: 1, effect: null },
+  { id: 'zs',   name: '缯书',         score: 1, effect: null },
 ];
 
 // -------------------- 常量 --------------------
@@ -60,6 +72,17 @@ function rollDice(sides) {
 
 function playerIndex(state, playerId) {
   return state.players.findIndex(p => p.id === playerId);
+}
+
+/**
+ * 判断玩家是否拥有重掷能力
+ * - rerollDice：君幸食漆盘 + 君幸酒耳杯 组合
+ * - soloReroll：玳瑁樽（独立生效）
+ */
+function hasRerollAbility(player) {
+  if (!player) return false;
+  return (player.cards.some(c => c.id === 'jxsp') && player.cards.some(c => c.id === 'jxjeb'))
+      || player.cards.some(c => c.id === 'dmz');
 }
 
 function allBidsIn(state) {
@@ -140,7 +163,7 @@ function setTurnTimer(roomId, duration, phase, onTimeout) {
 // -------------------- 1. 初始化游戏 --------------------
 
 function initGame(roomId, players) {
-  const deck = shuffle(CARDS);
+  const deck = shuffle(CARDS).slice(0, MAX_ROUNDS); // 从20张池随机抽10张
   const state = {
     roomId,
     round: 1,
@@ -177,34 +200,26 @@ function initGame(roomId, players) {
   return state;
 }
 
-// --- 竞标顺序初始化 ---
+// --- 暗标竞标初始化（所有人同时秘密报价） ---
 function initBiddingOrder(state) {
-  const players = state.players;
-  let startIdx = 0;
-  if (state.lastAuctioneerId) {
-    const found = players.findIndex(p => p.id === state.lastAuctioneerId);
-    if (found >= 0) startIdx = (found + 1) % players.length;
-  } else {
-    // 首轮：资金最少的先开始
-    const minFunds = Math.min(...players.map(p => p.funds));
-    startIdx = players.findIndex(p => p.funds === minFunds);
-  }
-  state.biddingOrder = [
-    ...players.slice(startIdx).map(p => p.id),
-    ...players.slice(0, startIdx).map(p => p.id),
-  ];
+  state.biddingOrder = [];
   state.currentBidderIdx = 0;
+  state.bids = [];
 
-  // ★ 设置首位报价者的倒计时
+  // 设置统一倒计时——所有人同时报价
   const roomId = [...games.entries()].find(([, s]) => s === state)?.[0];
   if (roomId) {
     setTurnTimer(roomId, TURN_TIMEOUT, 'auction', () => {
       const s = games.get(roomId);
       if (!s || s.phase !== 'auction') return;
-      const nextPid = s.biddingOrder[s.currentBidderIdx];
-      if (nextPid && !s.bids.some(b => b.playerId === nextPid)) {
-        submitBid(roomId, nextPid, null);
+      // 超时：所有未报价的玩家自动 Pass
+      for (const p of s.players) {
+        if (!s.bids.some(b => b.playerId === p.id)) {
+          s.bids.push({ playerId: p.id, percentage: null });
+          console.log(`[引擎] ${p.nickname} 超时自动跳过`);
+        }
       }
+      _settleAuctionAfterAllBids(s, roomId);
     });
   }
 }
@@ -214,9 +229,10 @@ function initBiddingOrder(state) {
 /**
  * submitBid(roomId, playerId, percentage|null)
  * 
- * 佣金竞标：报价 10/20/30/40/50，数字最低者当选拍卖师
- * 后报价者必须低于当前最低
- * 拍卖师收取佣金（非支付），全员Pass则随机选拍卖师（10%）
+ * 暗标制：所有玩家同时秘密报价 10/20/30/40/50
+ * 所有人报价完毕后统一结算，最低独占者当选拍卖师
+ * 多人报同价 → 随机选一个
+ * 全员 Pass → 无拍卖师，随机翻牌
  */
 function submitBid(roomId, playerId, percentage) {
   const state = games.get(roomId);
@@ -227,16 +243,6 @@ function submitBid(roomId, playerId, percentage) {
   const idx = playerIndex(state, playerId);
   if (idx === -1) return { error: '你不是本局玩家' };
 
-  // 强制竞标顺序
-  if (!state.biddingOrder || state.biddingOrder.length === 0) {
-    initBiddingOrder(state);
-  }
-  const currentTurn = state.biddingOrder[state.currentBidderIdx];
-  if (currentTurn !== playerId) {
-    const currentPlayer = state.players.find(p => p.id === currentTurn);
-    return { error: `还没轮到你报价，当前轮到 ${currentPlayer?.nickname || '?'}` };
-  }
-
   // 校验 percentage
   if (percentage !== null) {
     const pct = Number(percentage);
@@ -244,95 +250,20 @@ function submitBid(roomId, playerId, percentage) {
       return { error: '佣金比例必须为 10/20/30/40/50 之一' };
     }
     percentage = pct;
-
-    // 必须低于当前最低有效报价
-    const validBids = state.bids.filter(b => b.percentage !== null);
-    if (validBids.length > 0) {
-      const currentMin = Math.min(...validBids.map(b => b.percentage));
-      if (percentage >= currentMin) {
-        return { error: `报价必须低于当前最低 ${currentMin}%` };
-      }
-    }
   }
 
   state.bids.push({ playerId, percentage });
-  state.currentBidderIdx++;
-  console.log(`[引擎] ${state.players[idx].nickname} 报价: ${percentage !== null ? percentage + '%' : '跳过'} (第${state.currentBidderIdx}/${state.biddingOrder.length}人)`);
+  console.log(`[引擎] ${state.players[idx].nickname} 暗标报价: ${percentage !== null ? percentage + '%' : '跳过'} (${state.bids.length}/${state.players.length}人)`);
 
   // 未报完 → 等待
   if (!allBidsIn(state)) {
-    // ★ 设置下一位玩家的倒计时
-    setTurnTimer(roomId, TURN_TIMEOUT, 'auction', () => {
-      const s = games.get(roomId);
-      if (!s || s.phase !== 'auction') return;
-      const nextPid = s.biddingOrder[s.currentBidderIdx];
-      if (nextPid && !s.bids.some(b => b.playerId === nextPid)) {
-        submitBid(roomId, nextPid, null);  // 自动 pass
-      }
-    });
     broadcast(roomId);
     return { ok: true, waiting: true };
   }
 
-  // --- 结算拍卖 ---
-  const validBids = state.bids.filter(b => b.percentage !== null);
-
-  if (validBids.length === 0) {
-    // 全员 Pass → 无拍卖师，随机翻牌
-    state.lastAuctioneerId = null;
-    state.auctioneerId = null;
-    state.commissionRate = 0;
-    state.auctioneerStreak = 0;
-    const idx = crypto.randomInt(0, state.deck.length);
-    state.revealedCard = state.deck[idx];
-    state.deck.splice(idx, 1);
-    console.log(`[引擎] 全员跳过，无拍卖师，随机翻牌: ${state.revealedCard.name}`);
-    state.phase = 'rentDice';
-    state.bids = [];
-    state.diceSelections = {};
-
-    // ★ 租骰阶段倒计时（无拍卖师路径）
-    setTurnTimer(roomId, TURN_TIMEOUT, 'rentDice', () => {
-      const s = games.get(roomId);
-      if (!s || s.phase !== 'rentDice') return;
-      for (const p of s.players) {
-        if (!s.diceSelections.hasOwnProperty(p.id)) {
-          s.diceSelections[p.id] = 'pass';
-        }
-      }
-      s.phase = 'rollDice';
-      _computeAllRolls(s);
-      broadcast(roomId);
-      setTimeout(() => resolveRoll(roomId), 5000);
-    });
-
-    broadcast(roomId);
-    return { ok: true, auctioneerId: null, noAuctioneer: true };
-  }
-
-  const winner = validBids.reduce((min, b) =>
-    b.percentage < min.percentage ? b : min
-  );
-  const winnerId = winner.playerId;
-  const commissionRate = winner.percentage;
-
-  // 连任追踪
-  if (state.auctioneerId === winnerId) {
-    state.auctioneerStreak++;
-  } else {
-    state.auctioneerStreak = 1;
-  }
-  state.lastAuctioneerId = winnerId;
-  state.auctioneerId = winnerId;
-  state.commissionRate = commissionRate;
-
-  const winnerNick = state.players.find(p => p.id === winnerId).nickname;
-  console.log(`[引擎] 拍卖师: ${winnerNick} 佣金${commissionRate}% (连任${state.auctioneerStreak}次)`);
-
-  state.phase = 'selectCard';
-  state.bids = [];
-  broadcast(roomId);
-  return { ok: true, auctioneerId: state.auctioneerId };
+  // --- 所有人报价完毕 → 结算 ---
+  _settleAuctionAfterAllBids(state, roomId);
+  return { ok: true };
 }
 
 // -------------------- 3. 拍卖师选卡 — selectCard --------------------
@@ -522,7 +453,7 @@ function _computeAllRolls(state) {
     }
     const sides = parseInt(choice.slice(1));
     const p = state.players.find(p => p.id === playerId);
-    const hasReroll = p && p.cards.some(c => c.id === 'jxsp') && p.cards.some(c => c.id === 'jxjeb');
+    const hasReroll = hasRerollAbility(p);
     if (hasReroll) {
       const v1 = rollDice(sides);
       const v2 = rollDice(sides);
@@ -558,7 +489,7 @@ function rollOneDice(roomId, playerId) {
   const p = state.players.find(p => p.id === playerId);
 
   // rerollDice 效果
-  const hasReroll = p.cards.some(c => c.id === 'jxsp') && p.cards.some(c => c.id === 'jxjeb');
+  const hasReroll = hasRerollAbility(p);
   if (hasReroll) {
     const v1 = rollDice(sides);
     const v2 = rollDice(sides);
@@ -614,7 +545,7 @@ function rollAllDice(roomId) {
     }
     const sides = parseInt(choice.slice(1));
     const p = state.players.find(p => p.id === playerId);
-    const hasReroll = p.cards.some(c => c.id === 'jxsp') && p.cards.some(c => c.id === 'jxjeb');
+    const hasReroll = hasRerollAbility(p);
     if (hasReroll) {
       const v1 = rollDice(sides);
       const v2 = rollDice(sides);
@@ -711,7 +642,12 @@ function _settleCommission(state) {
   }
 
   // 连任惩罚
-  const penalty = Math.max(0, state.auctioneerStreak - 1);
+  let penalty = Math.max(0, state.auctioneerStreak - 1);
+  // streakShield（漆奁盒）：连任惩罚减半（向下取整）
+  if (auctioneer.cards.some(c => c.id === 'qlh')) {
+    penalty = Math.floor(penalty / 2);
+    console.log(`[引擎] 漆奁盒生效！连任惩罚减半 → $${penalty}`);
+  }
 
   const net = commission - penalty;
   auctioneer.funds += net;
@@ -738,7 +674,7 @@ function _resolveRecursive(participants, diceSelections, depth, state) {
     const choice = diceSelections[pid];
     const sides = parseInt(choice.slice(1));
     const p = state.players.find(p => p.id === pid);
-    const hasReroll = p && p.cards.some(c => c.id === 'jxsp') && p.cards.some(c => c.id === 'jxjeb');
+    const hasReroll = hasRerollAbility(p);
     let value;
     if (hasReroll) {
       value = Math.max(rollDice(sides), rollDice(sides));
@@ -930,8 +866,8 @@ function _computeDuelRolls(state) {
       duel.diceResults[pid] = { value: 0, sides: 0 };
     } else if (sel) {
       const sides = parseInt(sel.replace('d', ''));
-      // 双掷效果（君幸食漆盘 + 君幸酒耳杯）
-      const hasReroll = player && player.cards.some(c => c.id === 'jxsp') && player.cards.some(c => c.id === 'jxjeb');
+      // 双掷效果（君幸食漆盘 + 君幸酒耳杯，或玳瑁樽独立生效）
+      const hasReroll = hasRerollAbility(player);
       if (hasReroll) {
         const v1 = rollDice(sides);
         const v2 = rollDice(sides);
@@ -971,10 +907,8 @@ function duelRollDice(socket, io, roomId) {
     const sides = parseInt(sel.replace('d', ''));
     const player = state.players.find(p => p.id === pid);
 
-    // 检查双掷效果（君幸食漆盘 + 君幸酒耳杯）
-    const hasFoodTray = player && player.cards.some(c => c.id === 'jxsp');
-    const hasWineCup = player && player.cards.some(c => c.id === 'jxjeb');
-    const hasReroll = hasFoodTray && hasWineCup;
+    // 检查双掷效果（君幸组合 或 玳瑁樽独立生效）
+    const hasReroll = hasRerollAbility(player);
 
     if (hasReroll) {
       const v1 = rollDice(sides);
@@ -1221,6 +1155,11 @@ function endRound(roomId) {
   // 全员 +$1
   for (const p of state.players) {
     p.funds += 1;
+    // passiveIncome（彩绘木俑）：每轮额外+$1
+    if (p.cards.some(c => c.id === 'cmwy')) {
+      p.funds += 1;
+      console.log(`[引擎] ${p.nickname} 彩绘木俑生效，额外+$1`);
+    }
   }
 
   state.round += 1;
@@ -1286,6 +1225,10 @@ function calculateCardScore(cards) {
     let s = card.score;
     if (hasDragonPhoenix && s === 1) s = 2;
     total += s;
+  }
+  // extraScore（T形帛画）：终局额外+2分
+  if (cards.some(c => c.id === 'txbh')) {
+    total += 2;
   }
   return total;
 }
@@ -1376,7 +1319,7 @@ function getPlayerView(fullState, playerId) {
       // 始终发送完整卡牌信息
       cards: p.cards.map(c => ({ id: c.id, name: c.name, score: c.score, effect: c.effect, used: !!c.used })),
       hasDragonPhoenix: p.cards.some(c => c.id === 'yulb') && p.cards.some(c => c.id === 'lfh'),
-      hasReroll: p.cards.some(c => c.id === 'jxsp') && p.cards.some(c => c.id === 'jxjeb'),
+      hasReroll: hasRerollAbility(p),
       hasDoubleComm: p.cards.some(c => c.id === 'sq'),
       hasUpgrade: p.cards.some(c => c.id === 'dsy' && !c.used),
       isMe: p.id === playerId,
@@ -1391,20 +1334,18 @@ function getPlayerView(fullState, playerId) {
     }
 
     case 'auction': {
-      const validBids = fullState.bids.filter(b => b.percentage !== null);
-      base.currentMin = validBids.length > 0
-        ? Math.min(...validBids.map(b => b.percentage))
-        : null;
+      // 暗标制：不公开当前最低价和报价顺序
       base.bids = fullState.players.map(p => {
         const bid = fullState.bids.find(b => b.playerId === p.id);
         return {
           playerId: p.id,
           submitted: !!bid,
-          percentage: bid && p.id === playerId ? bid.percentage : null,
+          // 只有自己的报价对自己可见
+          percentage: (bid && p.id === playerId) ? bid.percentage : null,
         };
       });
-      base.biddingOrder = fullState.biddingOrder;
-      base.currentBidder = fullState.biddingOrder[fullState.currentBidderIdx] || null;
+      base.bidsCount = fullState.bids.length;
+      base.bidsTotal = fullState.players.length;
       base.lastAuctioneerId = fullState.lastAuctioneerId;
       base.deckSize = fullState.deck.length;
       break;
@@ -1529,36 +1470,25 @@ function destroyGame(roomId) {
  * auction 阶段：玩家离开后的修复
  */
 function _fixAuctionAfterLeave(state, roomId, leftPlayerId) {
-  const leftIdx = state.biddingOrder.indexOf(leftPlayerId);
-  if (leftIdx === -1) return;
+  // 暗标制：移除离开玩家的报价
+  state.bids = state.bids.filter(b => b.playerId !== leftPlayerId);
 
-  state.biddingOrder = state.biddingOrder.filter(id => id !== leftPlayerId);
-
-  if (leftIdx < state.currentBidderIdx) {
-    state.currentBidderIdx = Math.max(0, state.currentBidderIdx - 1);
-  }
-
-  if (state.currentBidderIdx >= state.biddingOrder.length) {
-    state.currentBidderIdx = state.biddingOrder.length - 1;
-  }
-
-  if (state.biddingOrder.length === 0) {
-    initBiddingOrder(state);
-    return;
-  }
-
+  // 如果所有人报价完毕 → 结算
   if (allBidsIn(state)) {
     _settleAuctionAfterAllBids(state, roomId);
     return;
   }
 
+  // 否则重新设置统一倒计时
   setTurnTimer(roomId, TURN_TIMEOUT, 'auction', () => {
     const s = games.get(roomId);
     if (!s || s.phase !== 'auction') return;
-    const nextPid = s.biddingOrder[s.currentBidderIdx];
-    if (nextPid && !s.bids.some(b => b.playerId === nextPid)) {
-      submitBid(roomId, nextPid, null);
+    for (const p of s.players) {
+      if (!s.bids.some(b => b.playerId === p.id)) {
+        s.bids.push({ playerId: p.id, percentage: null });
+      }
     }
+    _settleAuctionAfterAllBids(s, roomId);
   });
 }
 
@@ -1597,11 +1527,20 @@ function _settleAuctionAfterAllBids(state, roomId) {
     return;
   }
 
-  const winner = validBids.reduce((min, b) =>
-    b.percentage < min.percentage ? b : min
-  );
+  const minPct = Math.min(...validBids.map(b => b.percentage));
+  const minBidders = validBids.filter(b => b.percentage === minPct);
+
+  // 多人报同价 → 随机选一个
+  const winner = minBidders.length === 1
+    ? minBidders[0]
+    : minBidders[crypto.randomInt(0, minBidders.length)];
   const winnerId = winner.playerId;
   const commissionRate = winner.percentage;
+
+  if (minBidders.length > 1) {
+    const tiedNames = minBidders.map(b => state.players.find(p => p.id === b.playerId)?.nickname).join(', ');
+    console.log(`[引擎] 暗标同价(${minPct}%)：${tiedNames} → 随机选中 ${state.players.find(p => p.id === winnerId)?.nickname}`);
+  }
 
   if (state.auctioneerId === winnerId) {
     state.auctioneerStreak++;
@@ -1803,7 +1742,7 @@ function restartGame(socket, io, roomId) {
   state.round = 0;
   state.maxRounds = MAX_ROUNDS;
   state.phase = 'waiting';
-  state.deck = shuffle([...CARDS]);
+  state.deck = shuffle([...CARDS]).slice(0, MAX_ROUNDS); // 从20张池随机抽10张
   state.revealedCard = null;
   state.auctioneerId = null;
   state.lastAuctioneerId = null;

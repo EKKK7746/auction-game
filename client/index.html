@@ -183,7 +183,7 @@
           <h3>📋 游戏流程</h3>
           <p>每轮开始时，玩家竞标拍卖师资格（报出最低的佣金比例）。当选拍卖师展示一张文物卡后，其他玩家秘密租用骰子（d4/d6/d12/d20），骰子点数最高者获得该文物。拍卖师不参与掷骰，但可按佣金比例收取其他玩家的骰子租用费作为收入。</p>
           <p>连任拍卖师会递增惩罚：连续第2次当选扣$1、第3次扣$2，以此类推，防止同一玩家长期垄断拍卖师位置。</p>
-          <p>持有特殊卡牌组合可触发强力效果：龙凤帛画联动（1分卡全部+1分）、君幸食漆盘+耳杯重掷、对书俑升级骰子、市券佣金翻倍等。游戏共10轮，终局时收藏总分最高者获胜，剩余资金仅用于平局决胜。</p>
+          <p>持有特殊卡牌组合可触发强力效果：龙凤帛画联动（1分卡全部+1分）、君幸食漆盘+耳杯重掷、对书俑升级骰子、市券佣金翻倍等。游戏共10轮，每局从20张文物卡池中随机抽取10张，终局时收藏总分最高者获胜，剩余资金仅用于平局决胜。</p>
         </div>
 
         <div class="intro-section">
@@ -323,6 +323,138 @@
                 </div>
                 <p class="intro-card-artifact">市券，汉代商业凭证。汉代"市"为官方设立的市场，交易者须持市券。持券者担任拍卖师时可获双倍佣金。</p>
                 <p class="intro-card-effect effect-special">【佣金翻倍】担任拍卖师时佣金收入翻倍</p>
+              </div>
+            </div>
+
+            <!-- ↓↓↓ 扩充卡牌（每局随机抽取，以下卡牌不一定每局出现） ↓↓↓ -->
+
+            <!-- T形帛画 -->
+            <div class="intro-card-row">
+              <div class="intro-card-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5F0E8,#E8DFD0);font-size:32px;border-radius:6px;">📜</div>
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>T形帛画</strong>
+                  <span class="intro-card-score">3分</span>
+                </div>
+                <p class="intro-card-artifact">T形帛画，马王堆一号汉墓出土。帛画呈T形，描绘天上、人间、地下三界，是汉代绘画艺术的巅峰之作。</p>
+                <p class="intro-card-effect effect-special">【终局加分】持有时终局计分额外+2分</p>
+              </div>
+            </div>
+
+            <!-- 铜鼎 -->
+            <div class="intro-card-row">
+              <div class="intro-card-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5F0E8,#E8DFD0);font-size:32px;border-radius:6px;">🏺</div>
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>铜鼎</strong>
+                  <span class="intro-card-score">3分</span>
+                </div>
+                <p class="intro-card-artifact">铜鼎，马王堆汉墓出土青铜礼器。鼎为古代国之重器，象征权力与地位。此鼎铸造精良，器形庄重。</p>
+                <p class="intro-card-effect">无特殊效果</p>
+              </div>
+            </div>
+
+            <!-- 玳瑁樽 -->
+            <div class="intro-card-row">
+              <div class="intro-card-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5F0E8,#E8DFD0);font-size:32px;border-radius:6px;">🐢</div>
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>玳瑁樽</strong>
+                  <span class="intro-card-score">2分</span>
+                </div>
+                <p class="intro-card-artifact">玳瑁樽，马王堆出土玳瑁质酒器。玳瑁为海龟甲壳，色泽温润。持有此樔者，掷骰时可窥探天机。</p>
+                <p class="intro-card-effect effect-positive">【重掷】独立生效：掷骰可重掷取高值</p>
+              </div>
+            </div>
+
+            <!-- 漆奁盒 -->
+            <div class="intro-card-row">
+              <div class="intro-card-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5F0E8,#E8DFD0);font-size:32px;border-radius:6px;">🛡️</div>
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>漆奁盒</strong>
+                  <span class="intro-card-score">2分</span>
+                </div>
+                <p class="intro-card-artifact">漆奁盒，马王堆出土双层漆奁。奁为古代女子梳妆盒，此奁设计精巧，内含多个小盒。</p>
+                <p class="intro-card-effect effect-special">【惩罚减免】担任拍卖师时连任惩罚减半</p>
+              </div>
+            </div>
+
+            <!-- 云纹漆钫 -->
+            <div class="intro-card-row">
+              <div class="intro-card-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5F0E8,#E8DFD0);font-size:32px;border-radius:6px;">🍶</div>
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>云纹漆钫</strong>
+                  <span class="intro-card-score">2分</span>
+                </div>
+                <p class="intro-card-artifact">云纹漆钫，马王堆出土漆器。钫为方形酒器，器身绘有飘逸云纹，体现了汉代漆器工艺的高超水平。</p>
+                <p class="intro-card-effect">无特殊效果</p>
+              </div>
+            </div>
+
+            <!-- 玉璧 -->
+            <div class="intro-card-row">
+              <div class="intro-card-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5F0E8,#E8DFD0);font-size:32px;border-radius:6px;">⚪</div>
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>玉璧</strong>
+                  <span class="intro-card-score">2分</span>
+                </div>
+                <p class="intro-card-artifact">玉璧，马王堆出土玉器。璧为古代礼天之器，"苍璧礼天"源自周礼。玉质温润，纹饰古朴。</p>
+                <p class="intro-card-effect">无特殊效果</p>
+              </div>
+            </div>
+
+            <!-- 彩绘木俑 -->
+            <div class="intro-card-row">
+              <div class="intro-card-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5F0E8,#E8DFD0);font-size:32px;border-radius:6px;">🧱</div>
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>彩绘木俑</strong>
+                  <span class="intro-card-score">1分</span>
+                </div>
+                <p class="intro-card-artifact">彩绘木俑，马王堆汉墓出土大量木俑。木俑为陪葬明器，象征仆从侍女。</p>
+                <p class="intro-card-effect effect-positive">【被动收入】每轮结束时额外获得$1</p>
+              </div>
+            </div>
+
+            <!-- 瑟 -->
+            <div class="intro-card-row">
+              <div class="intro-card-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5F0E8,#E8DFD0);font-size:32px;border-radius:6px;">🎵</div>
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>瑟</strong>
+                  <span class="intro-card-score">1分</span>
+                </div>
+                <p class="intro-card-artifact">瑟，马王堆汉墓出土乐器。瑟为古代拨弦乐器，二十五弦。墓中出土的瑟是现存最早的完整瑟之一。</p>
+                <p class="intro-card-effect">无特殊效果</p>
+              </div>
+            </div>
+
+            <!-- 博山炉 -->
+            <div class="intro-card-row">
+              <div class="intro-card-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5F0E8,#E8DFD0);font-size:32px;border-radius:6px;">⛰️</div>
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>博山炉</strong>
+                  <span class="intro-card-score">1分</span>
+                </div>
+                <p class="intro-card-artifact">博山炉，汉代熏香器具。炉盖铸成山形，香烟从山间缝隙飘出，如仙山云雾。是汉代神仙思想的物证。</p>
+                <p class="intro-card-effect">无特殊效果</p>
+              </div>
+            </div>
+
+            <!-- 缯书 -->
+            <div class="intro-card-row">
+              <div class="intro-card-img" style="display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#F5F0E8,#E8DFD0);font-size:32px;border-radius:6px;">📖</div>
+              <div class="intro-card-body">
+                <div class="intro-card-header">
+                  <strong>缯书</strong>
+                  <span class="intro-card-score">1分</span>
+                </div>
+                <p class="intro-card-artifact">缯书，马王堆汉墓出土帛书。书写于丝帛之上的文献，内容涉及天文、地理、医学，是研究西汉文化的珍贵资料。</p>
+                <p class="intro-card-effect">无特殊效果</p>
               </div>
             </div>
 

@@ -7,7 +7,7 @@ const BOT_NAMES = [
   '马王守将', '轪侯少主', '湘江渔翁', '长沙令尹', '太仓令史',
   '帛书官', '铜器匠',
 ];
-const BOT_STRATEGIES = ['greedy', 'frugal'];
+const BOT_STRATEGIES = ['easy', 'normal', 'hard'];
 
 // 全局计数器，用于生成唯一编号
 let _botCounter = 0;
@@ -126,11 +126,9 @@ class BotManager {
 
     switch (state.phase) {
       case 'auction': {
+        // 暗标制：所有 Bot 同时报价，无需等待顺序
         if (hasActed) return null;
-        // 只在自己回合时行动
-        const currentBidder = state.biddingOrder && state.biddingOrder[state.currentBidderIdx];
-        if (currentBidder !== playerId) return null;
-        return { label: '竞标', fn: (rid, pid, s) => {
+        return { label: '暗标竞标', fn: (rid, pid, s) => {
           const bid = bidStrategy(pid, s);
           return this._engine.submitBid(rid, pid, bid);
         }};
@@ -222,128 +220,234 @@ class BotManager {
   }
 }
 
-// -------------------- 竞标策略 --------------------
+// -------------------- 卡牌价值评估 --------------------
+
+/**
+ * 评估卡牌的真实价值（考虑联动潜力、特效）
+ */
+function evaluateCardValue(card, playerCards) {
+  let value = card.score || 0;
+
+  // 联动组合检查
+  if (card.effect === 'dragonPhoenix') {
+    const partner = card.id === 'yulb' ? 'lfh' : 'yulb';
+    if (playerCards.some(c => c.id === partner)) {
+      value += 3; // 联动成功：所有1分卡+1，价值大幅提升
+    } else {
+      value += 0.5; // 有联动潜力
+    }
+  }
+
+  if (card.effect === 'rerollDice') {
+    const partner = card.id === 'jxsp' ? 'jxjeb' : 'jxsp';
+    if (playerCards.some(c => c.id === partner)) {
+      value += 2; // 联动成功：重掷能力
+    } else {
+      value += 0.5;
+    }
+  }
+
+  // 特效价值
+  if (card.effect === 'duel') value += 1.5;
+  if (card.effect === 'extraScore') value += 2;
+  if (card.effect === 'soloReroll') value += 1.5;
+  if (card.effect === 'passiveIncome') value += 1.5;
+  if (card.effect === 'streakShield') value += 1;
+  if (card.effect === 'doubleCommission') value += 1;
+  if (card.effect === 'upgradeDice') value += 1;
+
+  return value;
+}
+
+/**
+ * 规范化难度（兼容旧 strategy 值）
+ */
+function getDifficulty(player) {
+  const s = player?.strategy || 'normal';
+  if (s === 'greedy') return 'normal';
+  if (s === 'frugal') return 'easy';
+  return s;
+}
+
+// -------------------- 暗标竞标策略 --------------------
 
 function bidStrategy(playerId, state) {
   const p = state.players.find(p => p.id === playerId);
   if (!p) return null;
 
-  const strategy = p.strategy || 'greedy';
+  const difficulty = getDifficulty(p);
   const streak = state.auctioneerStreak || 0;
 
-  // 连任惩罚高 → pass
+  // 通用规则
   if (streak >= 2) return null;
-
-  // 资金不足 → pass
   if (p.funds <= 3) return null;
 
-  // ★ 核心修复：检查当前已有报价
-  const validBids = state.bids.filter(b => b.percentage !== null);
-  const currentMin = validBids.length > 0
-    ? Math.min(...validBids.map(b => b.percentage))
-    : null;
-
-  // 已有人报 10%（最低）→ 无法更低 → pass
-  if (currentMin === 10) return null;
-
-  // 可选报价：严格低于 currentMin 的合法佣金值
-  const VALID_COMMISSIONS = [10, 20, 30, 40, 50];
-  const options = currentMin === null
-    ? VALID_COMMISSIONS
-    : VALID_COMMISSIONS.filter(v => v < currentMin);
-
-  if (options.length === 0) return null;
-
-  if (strategy === 'greedy') {
-    // greedy：想当拍卖师，报价尽量低以赢
-    // 但加随机性：70% 报最低可选项，30% 报次低
-    const sorted = [...options].sort((a, b) => a - b);
-    const pick = Math.random() < 0.7
-      ? sorted[0]                                    // 报最低
-      : sorted[Math.min(1, sorted.length - 1)];      // 次低（或最低如果只有一个选项）
-    return pick;
+  if (difficulty === 'easy') {
+    // easy：基本随机
+    const roll = Math.random();
+    if (roll < 0.30) return null;
+    if (roll < 0.50) return 10;
+    if (roll < 0.70) return 20;
+    if (roll < 0.85) return 30;
+    return 40;
   }
 
-  if (strategy === 'frugal') {
-    // frugal：更保守，连任 1 次就 pass
-    if (streak >= 1) return null;
+  if (difficulty === 'normal') {
+    // normal：混合策略，倾向低价竞争
+    const roll = Math.random();
+    if (roll < 0.35) return 10;
+    if (roll < 0.60) return 20;
+    if (roll < 0.80) return 30;
+    if (roll < 0.92) return 40;
+    return null;
+  }
 
-    // 60% pass（不想当拍卖师），40% 报价
-    if (Math.random() < 0.6) return null;
+  if (difficulty === 'hard') {
+    // hard：根据牌堆价值决定竞争意愿
+    const highValueCards = state.deck.filter(c =>
+      c.score >= 3 || c.effect === 'dragonPhoenix' || c.effect === 'extraScore' || c.effect === 'duel'
+    );
+    const wantAuctioneer = highValueCards.length > 0 && streak < 1;
 
-    // 报最低可选项（当拍卖师拿佣金也是好事）
-    return Math.min(...options);
+    if (!wantAuctioneer) {
+      if (Math.random() < 0.50) return null;
+      return 40; // 报高价，不想当选但碰碰运气
+    }
+
+    const roll = Math.random();
+    if (roll < 0.40) return 10;  // 志在必得
+    if (roll < 0.70) return 20;
+    if (roll < 0.88) return 30;
+    return null;
   }
 
   return null;
 }
 
-// -------------------- 选卡策略（简化版）--------------------
+// -------------------- 选卡策略 --------------------
 
 function selectCardStrategy(playerId, state) {
   const p = state.players.find(p => p.id === playerId);
   const deck = state.deck;
   if (!deck || deck.length === 0) return 0;
 
-  const strategy = p && p.strategy ? p.strategy : 'greedy';
+  const difficulty = getDifficulty(p);
+  const myCards = p ? p.cards : [];
 
-  if (strategy === 'greedy') {
-    // 按分值降序找第一张最高分卡
-    let bestIdx = 0;
-    let bestScore = deck[0].score || 0;
-    for (let i = 1; i < deck.length; i++) {
-      if ((deck[i].score || 0) > bestScore) {
-        bestScore = deck[i].score;
-        bestIdx = i;
+  if (difficulty === 'easy') {
+    // easy：50% 选最高分，50% 随机
+    if (Math.random() < 0.5) {
+      let bestIdx = 0, bestScore = deck[0].score || 0;
+      for (let i = 1; i < deck.length; i++) {
+        if ((deck[i].score || 0) > bestScore) { bestScore = deck[i].score; bestIdx = i; }
       }
+      return bestIdx;
     }
-    return bestIdx;
-  }
-
-  if (strategy === 'frugal') {
-    // 随机选
     return rand(0, deck.length - 1);
   }
 
-  return 0;
+  // normal / hard：评估每张卡的价值（考虑联动）
+  let bestIdx = 0;
+  let bestValue = -1;
+  for (let i = 0; i < deck.length; i++) {
+    let v = evaluateCardValue(deck[i], myCards);
+
+    // hard：截胡逻辑——对手需要这张卡时增加优先级
+    if (difficulty === 'hard') {
+      for (const op of state.players) {
+        if (op.id === playerId || op.cards.length === 0) continue;
+        const opValue = evaluateCardValue(deck[i], op.cards);
+        if (opValue > (deck[i].score || 0) + 1) {
+          v += 0.5; // 对手想凑联动，截胡加分
+        }
+      }
+    }
+
+    if (v > bestValue) {
+      bestValue = v;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
 }
 
-// -------------------- 租骰策略（简化版）--------------------
+// -------------------- 租骰策略 --------------------
+
+function _simpleDiceSelect(cardValue, funds) {
+  if (cardValue >= 3) {
+    if (funds >= 6) return 'd20';
+    if (funds >= 4) return 'd12';
+    if (funds >= 2) return 'd6';
+    if (funds >= 1) return 'd4';
+    return 'pass';
+  }
+  if (cardValue >= 2) {
+    if (funds >= 4) return 'd12';
+    if (funds >= 2) return 'd6';
+    if (funds >= 1) return 'd4';
+    return 'pass';
+  }
+  return Math.random() < 0.6 ? 'pass' : (funds >= 1 ? 'd4' : 'pass');
+}
+
+function _smartDiceSelect(effectiveValue, funds) {
+  if (effectiveValue >= 4) {
+    if (funds >= 6) return 'd20';
+    if (funds >= 4) return 'd12';
+    if (funds >= 2) return 'd6';
+    if (funds >= 1) return 'd4';
+    return 'pass';
+  }
+  if (effectiveValue >= 3) {
+    if (funds >= 6) return Math.random() < 0.6 ? 'd20' : 'd12';
+    if (funds >= 4) return 'd12';
+    if (funds >= 2) return 'd6';
+    if (funds >= 1) return 'd4';
+    return 'pass';
+  }
+  if (effectiveValue >= 2) {
+    if (funds >= 4) return Math.random() < 0.5 ? 'd12' : 'd6';
+    if (funds >= 2) return 'd6';
+    if (funds >= 1) return Math.random() < 0.5 ? 'd4' : 'pass';
+    return 'pass';
+  }
+  // 低价值卡
+  return Math.random() < 0.5 ? 'pass' : (funds >= 2 ? 'd6' : (funds >= 1 ? 'd4' : 'pass'));
+}
 
 function selectDiceStrategy(playerId, state) {
   const p = state.players.find(p => p.id === playerId);
   if (!p) return 'pass';
 
-  const strategy = p.strategy || 'greedy';
+  const difficulty = getDifficulty(p);
   const card = state.revealedCard;
-  const score = card ? (card.score || 1) : 1;
+  const cardValue = card ? evaluateCardValue(card, p.cards) : 1;
   const funds = p.funds;
+  const round = state.round || 1;
+  const maxRounds = state.maxRounds || 10;
+  const remaining = maxRounds - round + 1;
 
-  if (strategy === 'greedy') {
-    if (score >= 3) {
-      if (funds >= 6) return 'd20';
-      if (funds >= 4) return 'd12';
-      if (funds >= 2) return 'd6';
-      if (funds >= 1) return 'd4';
-      return 'pass';
-    }
-    if (score === 2) {
-      if (funds >= 4) return 'd12';
-      if (funds >= 2) return 'd6';
-      if (funds >= 1) return 'd4';
-      return 'pass';
-    }
-    // score = 1 → 70% pass，30% d4
-    return Math.random() < 0.7 ? 'pass' : (funds >= 1 ? 'd4' : 'pass');
+  if (funds <= 0) return 'pass';
+
+  if (difficulty === 'easy') {
+    return _simpleDiceSelect(cardValue, funds);
   }
 
-  if (strategy === 'frugal') {
-    if (funds <= 3) return 'pass';
-    if (funds >= 8) return Math.random() < 0.5 ? 'd6' : 'd12';
-    return 'd6';
+  // normal / hard
+  let multiplier = 1.0;
+  if (remaining <= 3) multiplier = 1.2; // 后期更激进
+
+  if (difficulty === 'hard') {
+    const myScore = p.cardScore || 0;
+    const maxOppScore = Math.max(...state.players
+      .filter(pp => pp.id !== playerId)
+      .map(pp => pp.cardScore || 0));
+    if (myScore < maxOppScore - 2) multiplier = 1.3; // 落后追赶
+    if (remaining <= 2) multiplier = 1.4; // 最后两轮全力
   }
 
-  return 'pass';
+  const effectiveValue = cardValue * multiplier;
+  return _smartDiceSelect(effectiveValue, funds);
 }
 
 // -------------------- 决斗：选目标策略 --------------------
@@ -351,16 +455,29 @@ function selectDiceStrategy(playerId, state) {
 function duelSelectTargetStrategy(playerId, state) {
   if (!state.duel) return null;
 
-  let bestTargetId = null;
-  let bestCardScore = 0;
+  const p = state.players.find(pp => pp.id === playerId);
+  const difficulty = getDifficulty(p);
 
-  for (const p of state.players) {
-    if (p.id === playerId || p.cards.length === 0) continue;
-    for (const c of p.cards) {
-      if (c.score > bestCardScore) {
-        bestCardScore = c.score;
-        bestTargetId = p.id;
+  let bestTargetId = null;
+  let bestScore = -1;
+
+  for (const op of state.players) {
+    if (op.id === playerId || op.cards.length === 0) continue;
+
+    let targetValue;
+    if (difficulty === 'easy') {
+      targetValue = Math.max(...op.cards.map(c => c.score));
+    } else {
+      targetValue = Math.max(...op.cards.map(c => evaluateCardValue(c, op.cards)));
+      if (difficulty === 'hard') {
+        // hard：优先选领先者（拉分差）
+        targetValue += (op.cardScore || 0) * 0.1;
       }
+    }
+
+    if (targetValue > bestScore) {
+      bestScore = targetValue;
+      bestTargetId = op.id;
     }
   }
 
@@ -375,15 +492,29 @@ function duelSelectCardStrategy(playerId, state) {
   const target = state.players.find(p => p.id === state.duel.targetId);
   if (!target || target.cards.length === 0) return null;
 
-  let bestCardId = target.cards[0].id;
-  let bestScore = target.cards[0].score;
+  const p = state.players.find(pp => pp.id === playerId);
+  const difficulty = getDifficulty(p);
+
+  if (difficulty === 'easy') {
+    // easy：选最高分卡
+    let best = target.cards[0];
+    for (const c of target.cards) {
+      if (c.score > best.score) best = c;
+    }
+    return best.id;
+  }
+
+  // normal / hard：选价值最高的卡
+  let bestCard = target.cards[0];
+  let bestValue = evaluateCardValue(target.cards[0], target.cards);
   for (const c of target.cards) {
-    if (c.score > bestScore) {
-      bestScore = c.score;
-      bestCardId = c.id;
+    const v = evaluateCardValue(c, target.cards);
+    if (v > bestValue) {
+      bestValue = v;
+      bestCard = c;
     }
   }
-  return bestCardId;
+  return bestCard.id;
 }
 
 // -------------------- 决斗：选骰策略 --------------------
@@ -392,13 +523,46 @@ function duelDiceStrategy(playerId, state) {
   const p = state.players.find(p => p.id === playerId);
   if (!p) return 'pass';
 
-  const score = state.duel ? (state.duel.targetCardScore || 2) : 2;
+  const difficulty = getDifficulty(p);
+  const targetCardScore = state.duel ? (state.duel.targetCardScore || 2) : 2;
   const funds = p.funds;
 
-  if (funds >= 6 && score >= 3) return 'd20';
-  if (funds >= 4) return 'd12';
+  // 评估目标卡的实际价值（决斗中目标卡价值可能很高）
+  const target = state.duel && state.duel.targetId
+    ? state.players.find(pp => pp.id === state.duel.targetId)
+    : null;
+  const targetCard = target && state.duel.targetCardId
+    ? target.cards.find(c => c.id === state.duel.targetCardId)
+    : null;
+  const cardValue = targetCard ? evaluateCardValue(targetCard, target.cards) : targetCardScore;
+
+  if (difficulty === 'easy') {
+    if (funds >= 6 && cardValue >= 3) return 'd20';
+    if (funds >= 4) return 'd12';
+    if (funds >= 2) return 'd6';
+    if (funds >= 1) return 'd4';
+    return 'pass';
+  }
+
+  // normal / hard：根据卡牌价值智能选骰
+  if (cardValue >= 4) {
+    if (funds >= 6) return 'd20';
+    if (funds >= 4) return 'd12';
+    if (funds >= 2) return 'd6';
+    if (funds >= 1) return 'd4';
+    return 'pass';
+  }
+  if (cardValue >= 2.5) {
+    if (funds >= 6) return Math.random() < 0.5 ? 'd20' : 'd12';
+    if (funds >= 4) return 'd12';
+    if (funds >= 2) return 'd6';
+    if (funds >= 1) return 'd4';
+    return 'pass';
+  }
+  // 低价值卡 → 控制投入
+  if (funds >= 4) return Math.random() < 0.4 ? 'd12' : 'd6';
   if (funds >= 2) return 'd6';
-  if (funds >= 1) return 'd4';
+  if (funds >= 1) return Math.random() < 0.3 ? 'd4' : 'pass';
   return 'pass';
 }
 
@@ -423,7 +587,7 @@ function createBotPlayer(existingNicknames) {
     id: 'bot_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
     nickname,
     isBot: true,
-    strategy, // 'greedy' 或 'frugal'
+    strategy, // 'easy' / 'normal' / 'hard'
   };
 }
 
