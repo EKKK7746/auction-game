@@ -368,8 +368,8 @@ function upgradeDice(roomId, playerId) {
   if (!currentDice || currentDice === 'pass') return { error: '你还未选骰子或已放弃' };
 
   const dsyCard = p.cards.find(c => c.id === 'dhft');
-  if (!dsyCard) return { error: '你没有对书俑' };
-  if (dsyCard.used) return { error: '对书俑已使用过' };
+  if (!dsyCard) return { error: '你没有敦煌飞天' };
+  if (dsyCard.used) return { error: '敦煌飞天已使用过' };
 
   const upgraded = DICE_UPGRADE[currentDice];
   if (!upgraded) return { error: `${currentDice} 不可升级` };
@@ -378,7 +378,7 @@ function upgradeDice(roomId, playerId) {
   state.diceSelections[playerId] = upgraded;
   state.playersDone.add(playerId);
 
-  console.log(`[引擎] ${p.nickname} 使用对书俑升级骰子：${currentDice} → ${upgraded}`);
+  console.log(`[引擎] ${p.nickname} 使用敦煌飞天升级骰子：${currentDice} → ${upgraded}`);
   broadcast(roomId);
   return { ok: true, from: currentDice, to: upgraded };
 }
@@ -647,7 +647,7 @@ function _settleCommission(state) {
   // streakShield（敦煌壁画）：连任惩罚减半（向下取整）
   if (auctioneer.cards.some(c => c.id === 'dhmh')) {
     penalty = Math.floor(penalty / 2);
-    console.log(`[引擎] 漆奁盒生效！连任惩罚减半 → $${penalty}`);
+    console.log(`[引擎] 敦煌壁画生效！连任惩罚减半 → $${penalty}`);
   }
 
   const net = commission - penalty;
@@ -810,7 +810,7 @@ function duelRentDice(socket, io, roomId, diceType, useUpgrade = false) {
       // 标记已使用
       const scholarCard = player.cards.find(c => c.id === 'dhft');
       if (scholarCard) scholarCard.used = true;
-      console.log(`[引擎] 🪞 决斗 ${player.nickname} 使用对书俑升级骰子：${diceType} → ${finalDiceType}`);
+      console.log(`[引擎] 🪞 决斗 ${player.nickname} 使用敦煌飞天升级骰子：${diceType} → ${finalDiceType}`);
     }
   }
 
@@ -1074,7 +1074,7 @@ function duelRentDiceById(roomId, playerId, diceType, useUpgrade) {
       finalDiceType = DICE_UPGRADE[diceType] || diceType;
       const scholarCard = player.cards.find(c => c.id === 'dhft');
       if (scholarCard) scholarCard.used = true;
-      console.log(`[引擎] 🪞 Bot决斗 ${player.nickname} 对书俑升级：${diceType} → ${finalDiceType}`);
+      console.log(`[引擎] 🪞 Bot决斗 ${player.nickname} 敦煌飞天升级：${diceType} → ${finalDiceType}`);
     }
   }
 
@@ -1159,7 +1159,7 @@ function endRound(roomId) {
     // passiveIncome（三彩驼）：每轮额外+$1
     if (p.cards.some(c => c.id === 'sxtc')) {
       p.funds += 1;
-      console.log(`[引擎] ${p.nickname} 彩绘木俑生效，额外+$1`);
+      console.log(`[引擎] ${p.nickname} 三彩驼生效，额外+$1`);
     }
   }
 

@@ -3,24 +3,41 @@
 // ============================================================
 
 const CARD_VISUALS = {
-  'ssdc': { emoji: '👘', color: '#E8D5B7', label: '丝', image: 'assets/cards/ssdc.png' },
-  'mfl':  { emoji: '🏺', color: '#B8860B', label: '铜', image: 'assets/cards/mfl.png' },
-  'slj':  { emoji: '🪞', color: '#C0C0C0', label: '镜', image: 'assets/cards/slj.png' },
-  'ssyz': { emoji: '🍶', color: '#98FB98', label: '玉', image: 'assets/cards/ssyz.png' },
-  'yulb': { emoji: '🐉', color: '#FFD700', label: '龙', image: 'assets/cards/yulb.png' },
-  'lfh':  { emoji: '🕊️', color: '#FF6347', label: '凤', image: 'assets/cards/lfh.png' },
-  'jxsp': { emoji: '🍽️', color: '#8B4513', label: '漆', image: 'assets/cards/jxsp.png' },
-  'jxjeb':{ emoji: '🍷', color: '#A0522D', label: '漆', image: 'assets/cards/jxjeb.png' },
-  'dsy':  { emoji: '🎭', color: '#DEB887', label: '俑', image: 'assets/cards/dsy.png' },
-  'sq':   { emoji: '📜', color: '#F5DEB3', label: '券', image: 'assets/cards/sq.png' },
+  // --- 3分·国之重器 ---
+  'sxqts': { emoji: '🌳', color: '#8B6914', label: '树', image: 'assets/cards/sxqts.png' },
+  'qsbmy': { emoji: '🗿', color: '#8B7355', label: '俑', image: 'assets/cards/qsbmy.png' },
+  'qmht':  { emoji: '📜', color: '#2E5C8A', label: '画', image: 'assets/cards/qmht.png' },
+  'syfz':  { emoji: '🐏', color: '#B8860B', label: '尊', image: 'assets/cards/syfz.png' },
+  // --- 2分·珍品雅器 ---
+  'slj':   { emoji: '🪞', color: '#C0C0C0', label: '镜', image: 'assets/cards/slj.png' },
+  'jlyy':  { emoji: '💎', color: '#98FB98', label: '玉', image: 'assets/cards/jlyy.png' },
+  'ltsx':  { emoji: '🖌️', color: '#2E5C8A', label: '书', image: 'assets/cards/ltsx.png' },
+  'zhybz': { emoji: '🔔', color: '#B8860B', label: '钟', image: 'assets/cards/zhybz.png' },
+  'yqz':   { emoji: '🍵', color: '#A0D8E8', label: '盏', image: 'assets/cards/yqz.png' },
+  'yqh':   { emoji: '🏺', color: '#4682B4', label: '瓷', image: 'assets/cards/yqh.png' },
+  'dhmh':  { emoji: '🛡️', color: '#D4A017', label: '壁', image: 'assets/cards/dhmh.png' },
+  'rytqy': { emoji: '🫖', color: '#A0D8E8', label: '窑', image: 'assets/cards/rytqy.png' },
+  // --- 1分·文明遗珍 ---
+  'kxqt':  { emoji: '❄️', color: '#4682B4', label: '帖', image: 'assets/cards/kxqt.png' },
+  'jgpx':  { emoji: '🐢', color: '#8B4513', label: '甲', image: 'assets/cards/jgpx.png' },
+  'dhft':  { emoji: '🧚', color: '#D4A017', label: '飞', image: 'assets/cards/dhft.png' },
+  'sq':    { emoji: '📜', color: '#F5DEB3', label: '券', image: 'assets/cards/sq.png' },
+  'sxtc':  { emoji: '🐪', color: '#D2691E', label: '驼', image: 'assets/cards/sxtc.png' },
+  'cjgb':  { emoji: '🍷', color: '#DC143C', label: '杯', image: 'assets/cards/cjgb.png' },
+  'jofjg': { emoji: '🏆', color: '#FFD700', label: '杯', image: 'assets/cards/jofjg.png' },
+  'dhcxb': { emoji: '✒️', color: '#8B4513', label: '笔', image: 'assets/cards/dhcxb.png' },
 };
 
 const EFFECT_LABELS = {
-  dragonPhoenix: '🐉🕊️ 龙凤联动',
-  rerollDice: '🎲 重掷一次',
-  upgradeDice: '⬆️ 骰子升级',
+  dragonPhoenix:    '🐉🐉 龙凤联动',
+  rerollDice:       '🎲 重掷取高',
+  soloReroll:       '🎲 独立重掷',
+  upgradeDice:      '⬆️ 骰子升级',
   doubleCommission: '💰 佣金翻倍',
-  duel: '🪞 镜中决斗',
+  duel:             '🪞 镜中决斗',
+  extraScore:       '📜 终局加分',
+  passiveIncome:    '🐪 每轮收入',
+  streakShield:     '🛡️ 惩罚减半',
 };
 
 const PHASE_LABELS = {
@@ -34,11 +51,14 @@ const PHASE_LABELS = {
 };
 
 const CARD_RARITY = {
-  'ssdc': 'legendary', 'mfl': 'legendary',  // 3分卡 → 传说
-  'ssyz': 'rare', 'slj': 'rare',            // 2分卡
-  'yulb': 'rare', 'jxjeb': 'rare',          // 联动关键卡
-  'lfh': 'common', 'jxsp': 'common',        // 1分联动卡
-  'dsy': 'common', 'sq': 'common',          // 1分功能卡
+  // 3分卡 → 传说
+  'sxqts': 'legendary', 'qsbmy': 'legendary', 'qmht': 'legendary', 'syfz': 'legendary',
+  // 2分卡 → 珍品
+  'slj': 'rare', 'jlyy': 'rare', 'ltsx': 'rare', 'zhybz': 'rare',
+  'yqz': 'rare', 'yqh': 'rare', 'dhmh': 'rare', 'rytqy': 'rare',
+  // 1分卡 → 普通
+  'kxqt': 'common', 'jgpx': 'common', 'dhft': 'common', 'sq': 'common',
+  'sxtc': 'common', 'cjgb': 'common', 'jofjg': 'common', 'dhcxb': 'common',
 };
 
 function getCardRarity(cardId) {

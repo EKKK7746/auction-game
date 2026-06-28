@@ -316,7 +316,7 @@ function _renderRentDice(view, container) {
   const upgradeCheckbox = hasUpgrade ? `
     <label class="upgrade-checkbox">
       <input type="checkbox" id="useUpgradeCheck" onchange="onUpgradeCheckChange()" />
-      <span class="upgrade-check-label">⬆️ 使用对书俑升级骰子（本轮限用一次）</span>
+      <span class="upgrade-check-label">⬆️ 使用敦煌飞天升级骰子（本轮限用一次）</span>
     </label>
   ` : '';
 
@@ -760,7 +760,7 @@ function _renderDuelRentDice(view, container) {
   const upgradeCheckbox = hasUpgrade ? `
     <label class="upgrade-checkbox">
       <input type="checkbox" id="useUpgradeCheck" onchange="onUpgradeCheckChange()" />
-      <span class="upgrade-check-label">⬆️ 使用对书俑升级骰子（本轮限用一次）</span>
+      <span class="upgrade-check-label">⬆️ 使用敦煌飞天升级骰子（本轮限用一次）</span>
     </label>
   ` : '';
 
@@ -1398,7 +1398,7 @@ function _renderPlayerList(view) {
     if (p.hasUpgrade) effectIcons.push('⬆️');
     if (p.cards && p.cards.some(c => c.id === 'slj' && !c.used)) effectIcons.push('🪞');
     if (p.cards && p.cards.some(c => c.id === 'qmht')) effectIcons.push('📜');
-    if (p.cards && p.cards.some(c => c.id === 'sxtc')) effectIcons.push('🧱');
+    if (p.cards && p.cards.some(c => c.id === 'sxtc')) effectIcons.push('🐪');
     if (p.cards && p.cards.some(c => c.id === 'dhmh')) effectIcons.push('🛡️');
     const effects = effectIcons.join(' ');
 
@@ -1433,8 +1433,8 @@ function _renderPlayerList(view) {
 
     // 技能详情
     let skillDetail = [];
-    if (p.hasDragonPhoenix) skillDetail.push('🐉🐉 双龙联动');
-    if (p.hasReroll) skillDetail.push('🎲🎲 双掷');
+    if (p.hasDragonPhoenix) skillDetail.push('🐉🐉 龙凤联动');
+    if (p.hasReroll) skillDetail.push('🎲🎲 重掷取高');
     if (p.hasDoubleComm) skillDetail.push('💰 佣金翻倍');
     if (p.hasUpgrade) skillDetail.push('⬆️ 骰子升级（可用）');
     else if (p.cards && p.cards.some(c => c.id === 'dhft' && c.used)) skillDetail.push('⬆️ 骰子升级（已使用）');
@@ -1443,7 +1443,7 @@ function _renderPlayerList(view) {
       skillDetail.push(sljCard?.used ? '🪞 镜中决斗（已使用）' : '🪞 镜中决斗');
     }
     if (p.cards && p.cards.some(c => c.id === 'qmht')) skillDetail.push('📜 终局加分');
-    if (p.cards && p.cards.some(c => c.id === 'sxtc')) skillDetail.push('🧱 每轮收入');
+    if (p.cards && p.cards.some(c => c.id === 'sxtc')) skillDetail.push('🐪 每轮收入');
     if (p.cards && p.cards.some(c => c.id === 'dhmh')) skillDetail.push('🛡️ 惩罚减半');
     const skillStr = skillDetail.length ? `<div class="pl-skills">${skillDetail.join(' | ')}</div>` : '';
 
