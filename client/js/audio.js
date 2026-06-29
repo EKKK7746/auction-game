@@ -4,14 +4,28 @@
 // ============================================================
 
 let _ctx = null;
+let _masterGain = null;  // ★ 主音量控制节点
 
 function getCtx() {
   if (!_ctx) {
     try { _ctx = new (window.AudioContext || window.webkitAudioContext)(); }
     catch (e) { return null; }
+    // ★ 创建主增益节点，控制全局音量
+    _masterGain = _ctx.createGain();
+    _masterGain.gain.setValueAtTime(1.0, _ctx.currentTime);
+    _masterGain.connect(_ctx.destination);
   }
   if (_ctx.state === 'suspended') _ctx.resume();
   return _ctx;
+}
+
+/**
+ * ★ 设置主音量（由 SoundManager.setVolume 调用）
+ */
+function setMasterVolume(v) {
+  if (_masterGain && _ctx) {
+    _masterGain.gain.setValueAtTime(Math.max(0, Math.min(1, v)), _ctx.currentTime);
+  }
 }
 
 /**
@@ -65,7 +79,7 @@ function _tone(ctx, freq, duration, type, gainVal, rampTo) {
   gain.gain.setValueAtTime(gainVal || 0.15, ctx.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
   osc.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(_masterGain || ctx.destination);  // ★ 走主音量节点
   osc.start(ctx.currentTime);
   osc.stop(ctx.currentTime + duration);
 }
@@ -95,7 +109,7 @@ function _diceRoll(ctx) {
   filter.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + duration);
   noise.connect(filter);
   filter.connect(gain);
-  gain.connect(ctx.destination);
+  gain.connect(_masterGain || ctx.destination);  // ★ 走主音量节点
   noise.start();
   noise.stop(ctx.currentTime + duration);
 }

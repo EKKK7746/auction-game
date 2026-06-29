@@ -96,6 +96,20 @@ function renderGame(view) {
   _renderMyStatus(view);
   _renderPlayerList(view);
 
+  // ★ 同步托管按钮状态（服务端可能因游戏操作 unmanage 了玩家）
+  const me = view.players.find(p => p.id === socket.id);
+  if (me) {
+    const actuallyManaged = !!me.managed;
+    if (_autoPlayEnabled !== actuallyManaged) {
+      _autoPlayEnabled = actuallyManaged;
+      const btn = document.getElementById('btnAutoPlay');
+      if (btn) {
+        btn.textContent = actuallyManaged ? '已开启' : '已关闭';
+        btn.className = actuallyManaged ? 'btn btn-sm btn-warning' : 'btn btn-sm btn-outline';
+      }
+    }
+  }
+
   // 观战者：显示观战标识和退出按钮
   if (view.isSpectator) {
     _renderSpectatorBar();
@@ -2191,13 +2205,17 @@ function onVolumeChange(val) {
   if (typeof SoundManager !== 'undefined') {
     if (vol === 0) {
       SoundManager.enabled = false;
+      SoundManager.setVolume(0);  // ★ 静音时也设置 master gain = 0
     } else {
       SoundManager.enabled = true;
       SoundManager.setVolume(vol);
     }
+  } else if (typeof setMasterVolume === 'function') {
+    // 回退：直接设置 audio.js master gain
+    setMasterVolume(vol);
   }
   const label = document.getElementById('volumeLabel');
-  if (label) label.textContent = vol === 0 ? '🔇' : val + '%';
+  if (label) label.textContent = vol === 0 ? '🔇' : Math.round(vol * 100) + '%';
 }
 
 let _autoPlayEnabled = false;

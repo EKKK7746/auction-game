@@ -40,9 +40,13 @@ const SoundManager = {
     return this.enabled;
   },
 
-  /** 设置音量 0.0~1.0（Web Audio API 音量在 audio.js 内部控制，此处保存值备用） */
+  /** 设置音量 0.0~1.0 */
   setVolume(v) {
     this.volume = Math.max(0, Math.min(1, v));
+    // ★ 实际应用音量到 audio.js 的 Web Audio masterGain
+    if (typeof setMasterVolume === 'function') {
+      setMasterVolume(this.volume);
+    }
   }
 };
 
