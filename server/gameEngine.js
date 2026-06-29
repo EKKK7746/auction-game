@@ -1936,6 +1936,28 @@ function disconnectPlayer(roomId, playerId) {
 }
 
 /**
+ * 托管玩家主动操作时退出托管模式
+ * @returns {object|null} 被取消托管的玩家，或 null
+ */
+function unmanagePlayer(roomId, playerId) {
+  const state = games.get(roomId);
+  if (!state) return null;
+
+  const player = state.players.find(p => p.id === playerId);
+  if (!player || !player.managed) return null;
+
+  // 恢复真人身份
+  player.managed = false;
+  player._originalNickname = undefined;
+  player.managedAt = undefined;
+  player.strategy = undefined; // 清除托管时设置的策略
+
+  console.log(`[引擎] 玩家 ${player.nickname}(${playerId}) 手动操作，退出托管模式`);
+  broadcast(roomId);
+  return player;
+}
+
+/**
  * 玩家重新加入，恢复托管身份
  * @returns {{ success: boolean, player?: object, error?: string }}
  */
@@ -2132,6 +2154,7 @@ module.exports = {
   removePlayer,
   disconnectPlayer,
   reclaimPlayer,
+  unmanagePlayer,
   restartGame,
   playerRejoin,
 };

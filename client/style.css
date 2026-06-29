@@ -2287,41 +2287,6 @@ body {
 .card-popup-lore { font-size: 11px; color: #999999; line-height: 1.4; }
 .card-popup-desc { font-size: 13px; color: #666666; }
 
-/* ==================== 音效开关按钮 ==================== */
-.sound-toggle {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 2px solid #8B2252;
-  background: rgba(196, 58, 49, 0.15);
-  font-size: 20px;
-  cursor: pointer;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-
-.sound-toggle:hover {
-  background: rgba(196, 58, 49, 0.3);
-  transform: scale(1.1);
-}
-
-.sound-toggle:active {
-  transform: scale(0.95);
-}
-
-.sound-toggle.muted {
-  border-color: #8B6950;
-  background: rgba(139, 105, 80, 0.15);
-}
-
 /* ========== 卡牌图片统一样式 ========== */
 .card-image {
   display: inline-block;

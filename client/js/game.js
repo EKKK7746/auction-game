@@ -2189,10 +2189,15 @@ function toggleSettings() {
 function onVolumeChange(val) {
   const vol = parseInt(val) / 100;
   if (typeof SoundManager !== 'undefined') {
-    SoundManager.setVolume(vol);
+    if (vol === 0) {
+      SoundManager.enabled = false;
+    } else {
+      SoundManager.enabled = true;
+      SoundManager.setVolume(vol);
+    }
   }
   const label = document.getElementById('volumeLabel');
-  if (label) label.textContent = val + '%';
+  if (label) label.textContent = vol === 0 ? '🔇' : val + '%';
 }
 
 let _autoPlayEnabled = false;

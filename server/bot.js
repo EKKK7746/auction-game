@@ -101,6 +101,12 @@ class BotManager {
     console.log(`[Bot] 房间 ${roomId} 所有定时器已清除`);
   }
 
+  /** 公开方法：取消单个玩家的 Bot 定时器（用于托管退出） */
+  cancelPlayerTimer(roomId, playerId) {
+    this._cancelTimer(roomId, playerId);
+    this._clearTimers(roomId, playerId);
+  }
+
   _cancelTimer(roomId, playerId) {
     if (this._timers[roomId] && this._timers[roomId][playerId]) {
       clearTimeout(this._timers[roomId][playerId]);

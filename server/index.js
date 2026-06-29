@@ -117,6 +117,9 @@ io.on('connection', (socket) => {
 
           console.log(`[房间] 托管玩家 ${nickname} 重连恢复，旧ID: ${oldId} → 新ID: ${socket.id}`);
 
+          // ★ 取消 Bot 定时器（玩家已恢复控制）
+          botManager.cancelPlayerTimer(roomId, oldId);
+
           // 发送完整游戏状态
           const view = gameEngine.getPlayerView(game, socket.id);
           socket.emit('game_state_update', view);
@@ -258,6 +261,10 @@ io.on('connection', (socket) => {
   // --- 报价（10/20/30/40/50 或 null） ---
   socket.on('game:bid', (roomId, percentage, callback) => {
     if (typeof callback !== 'function') callback = () => {};
+    // ★ 托管玩家手动操作 → 退出托管
+    if (gameEngine.unmanagePlayer(roomId, socket.id)) {
+      botManager.cancelPlayerTimer(roomId, socket.id);
+    }
     const result = gameEngine.submitBid(roomId, socket.id, percentage);
     if (result.error) {
       callback({ success: false, error: result.error });
@@ -269,6 +276,9 @@ io.on('connection', (socket) => {
   // --- 拍卖师选卡 ---
   socket.on('game:select_card', (roomId, cardIndex, callback) => {
     if (typeof callback !== 'function') callback = () => {};
+    if (gameEngine.unmanagePlayer(roomId, socket.id)) {
+      botManager.cancelPlayerTimer(roomId, socket.id);
+    }
     const result = gameEngine.selectCard(roomId, socket.id, cardIndex);
     if (result.error) {
       callback({ success: false, error: result.error });
@@ -280,6 +290,9 @@ io.on('connection', (socket) => {
   // --- 选骰子（d4/d6/d12/d20/pass） ---
   socket.on('game:select_dice', (roomId, diceType, callback) => {
     if (typeof callback !== 'function') callback = () => {};
+    if (gameEngine.unmanagePlayer(roomId, socket.id)) {
+      botManager.cancelPlayerTimer(roomId, socket.id);
+    }
     const result = gameEngine.selectDice(roomId, socket.id, diceType);
     if (result.error) {
       callback({ success: false, error: result.error });
@@ -291,6 +304,9 @@ io.on('connection', (socket) => {
   // --- 选骰子 + 升级组合接口（对书俑 checkbox 用） ---
   socket.on('game:select_dice_with_upgrade', (roomId, diceType, useUpgrade, callback) => {
     if (typeof callback !== 'function') callback = () => {};
+    if (gameEngine.unmanagePlayer(roomId, socket.id)) {
+      botManager.cancelPlayerTimer(roomId, socket.id);
+    }
     const result = gameEngine.selectDiceWithUpgrade(roomId, socket.id, diceType, useUpgrade);
     if (result.error) {
       callback({ success: false, error: result.error });
@@ -302,6 +318,9 @@ io.on('connection', (socket) => {
   // --- 掷骰（每人独立掷） ---
   socket.on('game:roll_dice', (roomId, callback) => {
     if (typeof callback !== 'function') callback = () => {};
+    if (gameEngine.unmanagePlayer(roomId, socket.id)) {
+      botManager.cancelPlayerTimer(roomId, socket.id);
+    }
     const result = gameEngine.rollOneDice(roomId, socket.id);
     if (result.error) {
       callback({ success: false, error: result.error });
@@ -335,6 +354,9 @@ io.on('connection', (socket) => {
   // --- 推进回合 ---
   socket.on('game:end_round', (roomId, callback) => {
     if (typeof callback !== 'function') callback = () => {};
+    if (gameEngine.unmanagePlayer(roomId, socket.id)) {
+      botManager.cancelPlayerTimer(roomId, socket.id);
+    }
     const result = gameEngine.endRound(roomId);
     if (result.error) {
       callback({ success: false, error: result.error });
@@ -345,16 +367,25 @@ io.on('connection', (socket) => {
 
   // --- 镜中决斗：选择对手 ---
   socket.on('game:duel_select_target', (roomId, targetId) => {
+    if (gameEngine.unmanagePlayer(roomId, socket.id)) {
+      botManager.cancelPlayerTimer(roomId, socket.id);
+    }
     gameEngine.duelSelectTarget(socket, io, roomId, targetId);
   });
 
   // --- 镜中决斗：选择争夺卡牌 ---
   socket.on('game:duel_select_card', (roomId, cardId) => {
+    if (gameEngine.unmanagePlayer(roomId, socket.id)) {
+      botManager.cancelPlayerTimer(roomId, socket.id);
+    }
     gameEngine.duelSelectCard(socket, io, roomId, cardId);
   });
 
   // --- 镜中决斗：租用骰子 ---
   socket.on('game:duel_rent_dice', (roomId, diceType, useUpgrade) => {
+    if (gameEngine.unmanagePlayer(roomId, socket.id)) {
+      botManager.cancelPlayerTimer(roomId, socket.id);
+    }
     gameEngine.duelRentDice(socket, io, roomId, diceType, useUpgrade);
   });
 

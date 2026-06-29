@@ -49,16 +49,6 @@ const SoundManager = {
 // ========== 初始化 ==========
 SoundManager.init();
 
-// ========== 音效开关按钮 ==========
-function toggleSound() {
-  const enabled = SoundManager.toggle();
-  const btn = document.getElementById('soundToggle');
-  if (btn) {
-    btn.textContent = enabled ? '🔊' : '🔇';
-    btn.classList.toggle('muted', !enabled);
-  }
-}
-
 // ========== 全局 playSound 兼容层 ==========
 // 将旧 playSound 事件名映射到 audio.js 音效名
 const _soundNameMap = {
