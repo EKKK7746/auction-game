@@ -851,25 +851,7 @@ function _renderDiceWaiting(view, container) {
   `;
 }
 
-// ==================== 掷骰阶段（签筒抽签） ====================
-
-function _genSlips(diceType, resultNum, isReroll, v2) {
-  const MAX_VALS = { d4:4, d6:6, d12:12, d20:20 };
-  const maxVal = MAX_VALS[diceType] || 6;
-  const N = 5 + Math.floor(Math.random() * 11); // 5-15 根随机
-  const resultIndex = Math.floor(Math.random() * N);
-  const nums = [];
-  const tilts = [];
-  for (let i = 0; i < N; i++) {
-    if (i === resultIndex) {
-      nums.push(resultNum);
-    } else {
-      nums.push(1 + Math.floor(Math.random() * maxVal));
-    }
-    tilts.push((Math.random() * 10 - 5).toFixed(1) + 'deg');
-  }
-  return { nums, tilts, N };
-}
+// ==================== 掷骰阶段（Canvas 粒子骰）====================
 
 function _renderRollDice(view, container) {
   container.className = 'game-action-area';
@@ -905,33 +887,15 @@ function _renderRollDice(view, container) {
 
   let html = '';
 
-  // ===== 自己签筒区 =====
+  // ===== 自己骰子区（Canvas 粒子骰）=====
   if (myResult !== null && myResult !== undefined) {
     const displayNum = isReroll ? rawResult.v1 : myResult;
-    const { nums, tilts, N } = _genSlips(myDiceType, displayNum);
-    let slips = '';
-    for (let i = 0; i < N; i++) {
-      const num = nums[i];
-      const tilt = tilts[i];
-      const isTarget = num === displayNum;
-      const targetAttr = isTarget ? ' data-is-target="true"' : '';
-      slips += `<div class="qt-slip"${targetAttr} data-slip-num="${num}" style="--tilt:${tilt}">${num}</div>`;
-    }
-
-    const rerollClass = isReroll ? ' reroll' : '';
-    const slip2Html = isReroll ? `
-      <div class="qt-popped-2" id="qt-popped-2"><div class="qt-popped-slip">${rawResult.v2}</div></div>` : '';
-
-    html += `<div class="qt-area${rerollClass}">
-      <div class="qt-popped" id="qt-popped"><div class="qt-popped-slip">${displayNum}</div></div>
-      ${slip2Html}
-      <div class="qt-tube" id="qt-tube">
-        <div class="qt-tube-back"></div>
-        <div class="qt-slips-container" id="qt-slips">${slips}</div>
-        <div class="qt-tube-front"></div>
-        <div class="qt-tube-rim"></div>
-      </div>
-      <div class="qt-label">${myDiceType}${isReroll ? ' 🎲×2' : ''}</div>
+    const v2 = isReroll ? rawResult.v2 : null;
+    html += `<div class="dice-particle-area" id="diceParticleArea"
+      data-dice="${myDiceType}" data-result="${displayNum}"
+      data-reroll="${isReroll ? '1' : '0'}"
+      data-v2="${v2 != null ? v2 : ''}">
+      <div class="dice-label">${myDiceType}${isReroll ? ' 🎲×2' : ''}</div>
     </div>`;
   }
 
@@ -967,14 +931,20 @@ function _renderRollDice(view, container) {
 
   container.innerHTML = html;
 
-  // 签筒动画（仅在有结果的玩家上播放）
+  // Canvas 粒子骰动画（仅在有结果的玩家上播放）
   if (myResult !== null && myResult !== undefined) {
-    setTimeout(() => _qtAnimate(myResult, isReroll), 100);
+    const startDelay = (myResult !== null && myResult !== undefined) ? 150 : 0;
+    setTimeout(() => {
+      const area = document.getElementById('diceParticleArea');
+      if (!area) return;
+      const displayNum = isReroll ? rawResult.v1 : myResult;
+      const v2 = isReroll ? rawResult.v2 : null;
+      startDiceAnimation(area, myDiceType, displayNum, isReroll, v2);
+    }, startDelay);
   }
 
-  // Fix#4: 计分板可见性解耦自 _qtAnimate
-  // 拍卖师没有掷骰结果但也要能看到计分板
-  const scoreboardDelay = (myResult !== null && myResult !== undefined) ? 1100 : 500;
+  // 计分板延迟显示
+  const scoreboardDelay = (myResult !== null && myResult !== undefined) ? 2400 : 500;
   setTimeout(() => {
     const sb = document.querySelector('.dice-scoreboard');
     if (sb) sb.classList.replace('sb-hidden', 'sb-visible');
@@ -985,44 +955,6 @@ function _renderRollDice(view, container) {
   }
 }
 
-function _qtAnimate(targetNum, isReroll) {
-  const tube = document.getElementById('qt-tube');
-  const popped = document.getElementById('qt-popped');
-  const popped2 = document.getElementById('qt-popped-2');
-  if (!tube || !popped) return;
-
-  // 签筒晃动声
-  if (typeof playSound === 'function') playSound('qianShake');
-
-  // 阶段1：摇签（晃动签筒 1.5s）
-  tube.classList.add('shaking');
-  tube.addEventListener('animationend', function onShakeEnd() {
-    tube.removeEventListener('animationend', onShakeEnd);
-
-    // 阶段2：目标签子在筒内消失（模拟被抽出）
-    const targetSlip = document.querySelector('.qt-slip[data-is-target="true"]');
-    if (targetSlip) targetSlip.style.opacity = '0';
-
-    // 阶段3：弹出灵签（从筒中心向上弹入）
-    setTimeout(() => {
-      // 签子弹出声
-      if (typeof playSound === 'function') playSound('qianPop');
-      popped.classList.add('revealed');
-      if (isReroll && popped2) {
-        popped2.classList.add('revealed');
-        // 较大值略放大
-        const v1 = parseInt(popped.querySelector('.qt-popped-slip')?.textContent) || 0;
-        const v2 = parseInt(popped2.querySelector('.qt-popped-slip')?.textContent) || 0;
-        if (v1 >= v2) {
-          popped.style.transform = 'translateX(-50%) translateY(-30px) scale(1.1)';
-        } else {
-          popped2.style.transform = 'translateX(-50%) translateY(-30px) scale(1.1)';
-        }
-      }
-      // 计分板显示已解耦到 _renderRollDice 中（Fix#4），此处不再重复切换
-    }, 180);
-  });
-}
 
 // ==================== 镜中决斗阶段（重做版）====================
 
@@ -1245,22 +1177,10 @@ function _renderDuelRollDice(view, container) {
     return;
   }
 
-  // === 复制正常拍卖的签筒渲染 + 计分板 ===
+  // === Canvas 粒子骰（与正常拍卖一致）===
   const isReroll = myResult.reroll;
   const displayNum = isReroll ? myResult.v1 : myResult.value;
-  const { nums, tilts, N } = _genSlips(myDiceType, displayNum);
-  let slips = '';
-  for (let i = 0; i < N; i++) {
-    const num = nums[i];
-    const tilt = tilts[i];
-    const isTarget = num === displayNum;
-    const targetAttr = isTarget ? ' data-is-target="true"' : '';
-    slips += `<div class="qt-slip"${targetAttr} data-slip-num="${num}" style="--tilt:${tilt}">${num}</div>`;
-  }
-
-  const rerollClass = isReroll ? ' reroll' : '';
-  const slip2Html = isReroll ? `
-    <div class="qt-popped-2" id="qt-popped-2"><div class="qt-popped-slip">${myResult.v2}</div></div>` : '';
+  const v2 = isReroll ? myResult.v2 : null;
 
   // 对手信息
   const opponentId = duel.initiatorId === socket.id ? duel.targetId : duel.initiatorId;
@@ -1290,16 +1210,11 @@ function _renderDuelRollDice(view, container) {
   `;
 
   let html = cardDisplayHtml + `
-    <div class="qt-area${rerollClass}">
-      <div class="qt-popped" id="qt-popped"><div class="qt-popped-slip">${displayNum}</div></div>
-      ${slip2Html}
-      <div class="qt-tube" id="qt-tube">
-        <div class="qt-tube-back"></div>
-        <div class="qt-slips-container" id="qt-slips">${slips}</div>
-        <div class="qt-tube-front"></div>
-        <div class="qt-tube-rim"></div>
-      </div>
-      <div class="qt-label">${myDiceType}${isReroll ? ' 🎲×2' : ''}</div>
+    <div class="dice-particle-area" id="diceParticleArea"
+      data-dice="${myDiceType}" data-result="${displayNum}"
+      data-reroll="${isReroll ? '1' : '0'}"
+      data-v2="${v2 != null ? v2 : ''}">
+      <div class="dice-label">${myDiceType}${isReroll ? ' 🎲×2' : ''}</div>
     </div>
   `;
 
@@ -1324,8 +1239,12 @@ function _renderDuelRollDice(view, container) {
 
   container.innerHTML = html;
 
-  // 自动播放签筒动画（与正常拍卖一致）
-  setTimeout(() => _qtAnimate(myResult.value, isReroll), 100);
+  // Canvas 粒子骰动画
+  setTimeout(() => {
+    const area = document.getElementById('diceParticleArea');
+    if (!area) return;
+    startDiceAnimation(area, myDiceType, displayNum, isReroll, myResult.v2);
+  }, 150);
 }
 
 function _renderDuelResolved(view, container, duel) {
