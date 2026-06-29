@@ -198,6 +198,18 @@ io.on('connection', (socket) => {
     }
   });
 
+  // --- ★ 托管 / 取消托管（玩家保持连接） ---
+  socket.on('game:autoPlay', (roomId) => {
+    gameEngine.setPlayerManaged(roomId, socket.id);
+    botManager.processBots(roomId);
+  });
+
+  socket.on('game:unautoPlay', (roomId) => {
+    if (gameEngine.unmanagePlayer(roomId, socket.id)) {
+      botManager.cancelPlayerTimer(roomId, socket.id);
+    }
+  });
+
   // --- 踢出玩家 ---
   socket.on('room:kick', (roomId, targetId, callback) => {
     if (typeof callback !== 'function') callback = () => {};

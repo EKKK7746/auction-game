@@ -2204,13 +2204,32 @@ let _autoPlayEnabled = false;
 
 function toggleAutoPlay() {
   _autoPlayEnabled = !_autoPlayEnabled;
-  const btn = document.getElementById('btnAutoPlay');
-  if (btn) {
-    btn.textContent = _autoPlayEnabled ? '已开启' : '已关闭';
-    btn.className = _autoPlayEnabled ? 'btn btn-sm btn-warning' : 'btn btn-sm btn-outline';
+  const roomId = GameState.roomId;
+  if (!roomId) {
+    if (typeof showToast === 'function') showToast('⚠️ 未在游戏中', 'warn');
+    return;
   }
-  if (_autoPlayEnabled && typeof showToast === 'function') {
-    showToast('🤖 托管模式已开启，Bot 将接管操作', 'info');
+  const btn = document.getElementById('btnAutoPlay');
+  if (_autoPlayEnabled) {
+    // ★ 通知服务端标记 managed + 调度 Bot
+    socket.emit('game:autoPlay', roomId);
+    if (btn) {
+      btn.textContent = '已开启';
+      btn.className = 'btn btn-sm btn-warning';
+    }
+    if (typeof showToast === 'function') {
+      showToast('🤖 托管模式已开启，Bot 将接管操作', 'info');
+    }
+  } else {
+    // ★ 通知服务端取消托管
+    socket.emit('game:unautoPlay', roomId);
+    if (btn) {
+      btn.textContent = '已关闭';
+      btn.className = 'btn btn-sm btn-outline';
+    }
+    if (typeof showToast === 'function') {
+      showToast('👤 托管模式已关闭，恢复手动操作', 'info');
+    }
   }
 }
 

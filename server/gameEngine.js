@@ -1964,6 +1964,45 @@ function unmanagePlayer(roomId, playerId) {
 }
 
 /**
+ * ★ 玩家点击"托管"按钮 → 标记为 managed，Bot 接管（玩家保持连接）
+ * 与 disconnectPlayer 的区别：不清除 bids/diceSelections（玩家可能已提交），
+ * 只清除等待状态让 Bot 接管后续决策
+ */
+function setPlayerManaged(roomId, playerId) {
+  const state = games.get(roomId);
+  if (!state) return null;
+
+  const player = state.players.find(p => p.id === playerId);
+  if (!player || player.isBot || player.managed) return null;
+
+  // 标记为托管状态
+  player.managed = true;
+  player._originalNickname = player.nickname;
+  player.managedAt = Date.now();
+
+  // 根据剩余活跃真人数量设置托管 Bot 难度
+  const humanCount = state.players.filter(p => !p.isBot && !p.managed).length;
+  if (humanCount <= 1) {
+    player.strategy = 'hard';
+  } else if (humanCount === 2) {
+    player.strategy = Math.random() < 0.3 ? 'hard' : 'normal';
+  } else if (humanCount === 3) {
+    player.strategy = 'normal';
+  } else {
+    player.strategy = Math.random() < 0.3 ? 'normal' : 'easy';
+  }
+
+  // 清除该玩家的等待状态，让 Bot 接管
+  state.playersDone.delete(playerId);
+  delete state.diceSelections[playerId];
+  state.bids = state.bids.filter(b => b.playerId !== playerId);
+
+  console.log(`[引擎] 玩家 ${player.nickname}(${playerId}) 主动托管 → ${player.strategy} (${humanCount}活跃真人)`);
+  broadcast(roomId);
+  return player;
+}
+
+/**
  * 玩家重新加入，恢复托管身份
  * @returns {{ success: boolean, player?: object, error?: string }}
  */
@@ -2159,6 +2198,7 @@ module.exports = {
   destroyGame,
   removePlayer,
   disconnectPlayer,
+  setPlayerManaged,
   reclaimPlayer,
   unmanagePlayer,
   restartGame,
