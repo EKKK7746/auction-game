@@ -38,6 +38,10 @@
 
   const PHASE = { SWIRL: 0, COLLAPSE: 1, GLOW: 2, DISSOLVE: 3, DONE: 4 };
 
+  // 动态画布尺寸（移动端自适应）
+  let _canvasW = 360;
+  let _canvasH = 300;
+
 
   /* ========== 几何工具 ========== */
 
@@ -161,44 +165,63 @@
 
     canvas = document.createElement('canvas');
     canvas.className = 'dice-canvas';
-    canvas.width = 360 * (window.devicePixelRatio || 1);
-    canvas.height = 300 * (window.devicePixelRatio || 1);
-    canvas.style.width = '360px';
-    canvas.style.height = '300px';
+
+    // 移动端自适应缩小
+    const isMobile = window.innerWidth < 768;
+    const W = isMobile ? 260 : 360;
+    const H = isMobile ? 220 : 300;
+
+    canvas.width = W * (window.devicePixelRatio || 1);
+    canvas.height = H * (window.devicePixelRatio || 1);
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
     container.appendChild(canvas);
 
     ctx = canvas.getContext('2d');
     ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+
+    // 存储逻辑尺寸供动画使用
+    _canvasW = W;
+    _canvasH = H;
   }
 
   /**
    * 计算所有粒子的目标位置
    */
   function computeTargets(diceType, resultNum, isReroll, v2) {
-    const CX = 180, CY = 155; // canvas 逻辑中心
+    const W = _canvasW || 360;
+    const H = _canvasH || 300;
+    const CX = W / 2, CY = H / 2;
     const SIDES = { d4: 3, d6: 4, d12: 5, d20: 6 };
     const sides = SIDES[diceType] || 4;
 
+    // 骰子轮廓半径也按画布缩放
+    const diceR = DICE_OUTLINE_R * (W / 360);
+
     // 生成骰子轮廓目标点
-    const verts = polygonVertices(CX, CY, DICE_OUTLINE_R, sides);
+    const verts = polygonVertices(CX, CY, diceR, sides);
     const outlineTargets = samplePolygonEdges(verts, Math.floor(PARTICLE_COUNT * 0.55));
 
+    // 数字采样区缩放
+    const numW = NUMBER_W * (W / 360);
+    const numH = NUMBER_H * (H / 300);
+
     // 生成数字形状目标点
-    const numTargets = sampleNumberShape(resultNum, CX, CY, NUMBER_W, NUMBER_H);
+    const numTargets = sampleNumberShape(resultNum, CX, CY, numW, numH);
 
     // 双签模式：第二颗骰子偏移
     let outlineTargets2 = [], numTargets2 = [];
     if (isReroll && v2 != null) {
-      const CX2 = 90, CY2 = 155;
-      const CX3 = 270, CY3 = 155;
+      const CX2 = W * 0.25, CY2 = H / 2;
+      const CX3 = W * 0.75, CY3 = H / 2;
       // 两骰并排，各占一半空间，缩小
-      const R2 = 55;
+      const R2 = 55 * (W / 360);
       const verts2 = polygonVertices(CX2, CY2, R2, sides);
       const verts3 = polygonVertices(CX3, CY3, R2, sides);
       outlineTargets2 = samplePolygonEdges(verts2, Math.floor(PARTICLE_COUNT * 0.25));
       outlineTargets3 = samplePolygonEdges(verts3, Math.floor(PARTICLE_COUNT * 0.25));
-      numTargets2 = sampleNumberShape(resultNum, CX2, CY2, 50, 50);
-      numTargets3 = sampleNumberShape(v2, CX3, CY3, 50, 50);
+      numTargets2 = sampleNumberShape(resultNum, CX2, CY2, 50 * (W / 360), 50 * (H / 300));
+      numTargets3 = sampleNumberShape(v2, CX3, CY3, 50 * (W / 360), 50 * (H / 300));
 
       // 合并
       return [
@@ -221,7 +244,9 @@
     createCanvas(container);
 
     const targets = computeTargets(diceType, resultNum, isReroll, v2);
-    const CX = 180, CY = 155;
+    const W = _canvasW || 360;
+    const H = _canvasH || 300;
+    const CX = W / 2, CY = H / 2;
 
     // 创建粒子
     particles = [];
@@ -287,7 +312,7 @@
     }
 
     // 清除画布（透明背景）
-    ctx.clearRect(0, 0, 360, 300);
+    ctx.clearRect(0, 0, _canvasW || 360, _canvasH || 300);
 
     // 更新 + 渲染粒子
     for (const p of particles) {

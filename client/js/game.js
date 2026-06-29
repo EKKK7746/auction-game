@@ -2100,9 +2100,10 @@ function leaveRoomFromWait() {
   backToLobby();
 }
 
-// ==================== 卡池总览 ====================
+// ==================== 本局牌堆总览 ====================
 
-let _cardPoolData = null;  // 缓存卡池数据
+let _cardPoolData = null;  // 缓存牌堆数据
+let _totalDeckSize = 0;
 
 function showCardPool() {
   const modal = document.getElementById('cardPoolModal');
@@ -2110,22 +2111,44 @@ function showCardPool() {
   modal.style.display = 'flex';
 
   const grid = document.getElementById('cardPoolGrid');
+  const subEl = document.getElementById('cardPoolSub');
   if (!grid || !_cardPoolData) {
-    grid.innerHTML = '<p style="color:#8C8C8C;text-align:center;">卡池数据加载中...</p>';
+    grid.innerHTML = '<p style="color:#8C8C8C;text-align:center;">牌堆数据加载中...</p>';
     return;
+  }
+
+  // 动态副标题
+  const dealtCount = _cardPoolData.filter(c => c.dealt).length;
+  if (subEl) {
+    subEl.textContent = `共 ${_totalDeckSize || _cardPoolData.length} 张文物 · 已打出 ${dealtCount} 张`;
   }
 
   grid.innerHTML = _cardPoolData.map(c => {
     const acquiredClass = c.acquired ? ' acquired' : '';
     const scoreClass = 'score-' + (c.score || 1);
-    const vis = getCardVisual(c.id);
+    const dealtClass = c.dealt ? '' + ' dealt';
     const emojiHtml = getCardFramedImageHtml(c.id, 'frame-sm');
+
+    // 状态标签
+    let statusText = '';
+    let statusClass = '';
+    if (c.acquired) {
+      statusText = `${c.acquiredBy} 获得`;
+      statusClass = 'status-acquired';
+    } else if (c.dealt) {
+      statusText = '已打出';
+      statusClass = 'status-dealt';
+    } else {
+      statusText = '未翻开';
+      statusClass = 'status-hidden';
+    }
+
     return `
-      <div class="cardpool-item ${acquiredClass} ${scoreClass}">
-        <div class="cardpool-emoji">${emojiHtml}</div>
-        <div class="cardpool-name">${c.name}</div>
-        <div class="cardpool-score">★ ${c.score} 分</div>
-        ${c.acquired ? `<div class="cardpool-owner">${c.acquiredBy} 已获得</div>` : '<div class="cardpool-owner" style="color:#888;">未获得</div>'}
+      <div class="deck-item ${acquiredClass} ${scoreClass} ${c.dealt ? 'dealt' : ''}">
+        <div class="deck-emoji">${emojiHtml}</div>
+        <div class="deck-name">${c.name}</div>
+        <div class="deck-score">★ ${c.score} 分</div>
+        <div class="deck-status ${statusClass}">${statusText}</div>
       </div>`;
   }).join('');
 }
@@ -2252,8 +2275,9 @@ function rejoinGame() {
 // 在 renderGame 中缓存 cardPool 数据、绑定回合标签点击
 const _origRenderGame = renderGame;
 renderGame = function(view) {
-  // 缓存卡池数据
+  // 缓存牌堆数据
   if (view.cardPool) _cardPoolData = view.cardPool;
+  if (view.totalDeckSize) _totalDeckSize = view.totalDeckSize;
 
   // 绑定回合标签点击
   const roundLabel = document.getElementById('gameRoundLabel');

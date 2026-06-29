@@ -1361,15 +1361,21 @@ function getPlayerView(fullState, playerId) {
     turnDeadline: fullState.turnDeadline || null,
     commissionRate: fullState.commissionRate,
     auctioneerStreak: fullState.auctioneerStreak,
-    // 全卡池总览（点击回合标签查看）
-    cardPool: CARDS.map(c => {
+    // 全卡池总览（点击回合标签查看）→ 本局牌堆
+    cardPool: fullState.deck.map((c, i) => {
       const owner = fullState.players.find(p => p.cards.some(pc => pc.id === c.id));
       return {
-        id: c.id, name: c.name, score: c.score, effect: c.effect,
+        id: c.id,
+        name: c.name,
+        score: c.score,
+        effect: c.effect,
+        index: i,
+        dealt: i < fullState.round,       // 已打出（已翻过）
         acquired: !!owner,
         acquiredBy: owner ? owner.nickname : null,
       };
     }),
+    totalDeckSize: fullState.deck.length,  // 本局牌堆总数
     // 玩家信息 — 卡牌被获得后即公开
     players: fullState.players.map(p => ({
       id: p.id,
@@ -1548,15 +1554,18 @@ function getSpectatorView(fullState) {
     commissionRate: fullState.commissionRate,
     auctioneerStreak: fullState.auctioneerStreak,
     isSpectator: true,
-    // 全卡池总览
-    cardPool: CARDS.map(c => {
+    // 本局牌堆
+    cardPool: fullState.deck.map((c, i) => {
       const owner = fullState.players.find(p => p.cards.some(pc => pc.id === c.id));
       return {
         id: c.id, name: c.name, score: c.score, effect: c.effect,
+        index: i,
+        dealt: i < fullState.round,
         acquired: !!owner,
         acquiredBy: owner ? owner.nickname : null,
       };
     }),
+    totalDeckSize: fullState.deck.length,
     players: fullState.players.map(p => ({
       id: p.id,
       nickname: p.nickname,
