@@ -71,9 +71,15 @@ const _soundNameMap = {
   gameOver:   'gameOver',
 };
 
+// ========== 音效去重：同一音效 300ms 内不重复播放 ==========
+const _soundLastPlayed = {};
+
 // 用 SoundManager 覆写 playSound
 window.playSound = function(name) {
   if (!SoundManager.enabled) return;
+  const now = Date.now();
+  if (_soundLastPlayed[name] && now - _soundLastPlayed[name] < 300) return;
+  _soundLastPlayed[name] = now;
   const mapped = _soundNameMap[name] || name;
   SoundManager.play(mapped);
 };

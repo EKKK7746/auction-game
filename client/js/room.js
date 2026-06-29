@@ -90,6 +90,11 @@ socket.on('room:player_left', (data) => {
 
 socket.on('room:left', (data) => {
   console.log('[Room] 已离开房间:', data.roomId);
+  // 托管模式：只退到大厅，不退回登录（保留重连能力）
+  if (data && data.managed) {
+    showView(Views.LOBBY);
+    return;
+  }
   backToLogin();
 });
 

@@ -174,8 +174,40 @@
           <div class="other-toggle" id="otherToggle">玩家列表 ▼</div>
           <div class="other-list" id="otherList"></div>
         </div>
+
+        <!-- 设置面板（滚到页面底部可见） -->
+        <div class="game-settings-area" id="gameSettingsArea">
+          <div class="settings-header" id="settingsToggle">
+            <span>⚙️ 游戏设置</span>
+            <span class="settings-arrow">▼</span>
+          </div>
+          <div class="settings-body" id="settingsBody" style="display:none;">
+            <div class="settings-row">
+              <label>🔊 音量</label>
+              <input type="range" id="volumeSlider" min="0" max="100" value="100" class="volume-slider" oninput="onVolumeChange(this.value)">
+              <span id="volumeLabel">100%</span>
+            </div>
+            <div class="settings-row">
+              <label>🤖 托管模式</label>
+              <button id="btnAutoPlay" class="btn btn-sm btn-outline" onclick="toggleAutoPlay()">关闭</button>
+            </div>
+            <div class="settings-row">
+              <button id="btnExitGame" class="btn btn-danger" onclick="exitGame()">🚪 退出游戏（Bot 托管）</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
+
+    <!-- ========== 卡池总览模态框 ========== -->
+    <div id="cardPoolModal" class="modal-overlay" style="display:none;">
+      <div class="modal-box cardpool-modal">
+        <button class="modal-close" onclick="closeCardPool()">✕</button>
+        <h2 class="cardpool-title">📜 文物卡池总览</h2>
+        <p class="cardpool-sub">共 20 张文物，每局随机抽取 10 张</p>
+        <div class="cardpool-grid" id="cardPoolGrid"></div>
+      </div>
+    </div>
 
     <!-- ========== 游戏介绍模态框 ========== -->
     <div id="introModal" class="modal-overlay" style="display:none;">

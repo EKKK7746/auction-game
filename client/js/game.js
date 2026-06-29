@@ -1890,6 +1890,7 @@ function _renderPlayerList(view) {
     const isRichest = p.funds === maxFunds && maxFunds > 0;
 
     const botTag = p.isBot ? ' <span class="bot-tag">AI</span>' : '';
+    const managedTag = p.managed ? ' <span class="managed-badge">托管</span>' : '';
     const auctioneerIcon = p.id === view.auctioneerId ? '👑 ' : '';
 
     // 卡牌详情（带图标可点击浮窗）— 卡牌被获得后即公开
@@ -1933,7 +1934,7 @@ function _renderPlayerList(view) {
       <div class="player-row${p.isMe ? ' is-me' : ''}" data-player-id="${p.id}" data-expanded="${isOpen ? '1' : '0'}" onclick="togglePlayerDetail(this)">
         <span class="pl-nick">
           ${isTopScore ? '<span class="pl-badge pl-badge-crown">👑</span>' : ''}
-          ${auctioneerIcon}${botTag}${p.nickname}
+          ${auctioneerIcon}${botTag}${managedTag}${p.nickname}
           ${p.isMe ? '<span class="me-tag">你</span>' : ''}
           ${isRichest ? '<span class="pl-badge pl-badge-rich">💎</span>' : ''}
         </span>
@@ -2133,5 +2134,159 @@ function startGameFromWait() {
 function leaveRoomFromWait() {
   backToLobby();
 }
+
+// ==================== 卡池总览 ====================
+
+let _cardPoolData = null;  // 缓存卡池数据
+
+function showCardPool() {
+  const modal = document.getElementById('cardPoolModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+
+  const grid = document.getElementById('cardPoolGrid');
+  if (!grid || !_cardPoolData) {
+    grid.innerHTML = '<p style="color:#8C8C8C;text-align:center;">卡池数据加载中...</p>';
+    return;
+  }
+
+  grid.innerHTML = _cardPoolData.map(c => {
+    const acquiredClass = c.acquired ? ' acquired' : '';
+    const scoreClass = 'score-' + (c.score || 1);
+    const vis = getCardVisual(c.id);
+    const emojiHtml = getCardFramedImageHtml(c.id, 'frame-sm');
+    return `
+      <div class="cardpool-item ${acquiredClass} ${scoreClass}">
+        <div class="cardpool-emoji">${emojiHtml}</div>
+        <div class="cardpool-name">${c.name}</div>
+        <div class="cardpool-score">★ ${c.score} 分</div>
+        ${c.acquired ? `<div class="cardpool-owner">${c.acquiredBy} 已获得</div>` : '<div class="cardpool-owner" style="color:#888;">未获得</div>'}
+      </div>`;
+  }).join('');
+}
+
+function closeCardPool() {
+  const modal = document.getElementById('cardPoolModal');
+  if (modal) modal.style.display = 'none';
+}
+
+// ==================== 设置面板 ====================
+
+function toggleSettings() {
+  const header = document.getElementById('settingsToggle');
+  const body = document.getElementById('settingsBody');
+  if (!body || !header) return;
+  const isOpen = body.style.display !== 'none';
+  if (isOpen) {
+    body.style.display = 'none';
+    header.classList.remove('open');
+  } else {
+    body.style.display = 'flex';
+    header.classList.add('open');
+  }
+}
+
+function onVolumeChange(val) {
+  const vol = parseInt(val) / 100;
+  if (typeof SoundManager !== 'undefined') {
+    SoundManager.setVolume(vol);
+  }
+  const label = document.getElementById('volumeLabel');
+  if (label) label.textContent = val + '%';
+}
+
+let _autoPlayEnabled = false;
+
+function toggleAutoPlay() {
+  _autoPlayEnabled = !_autoPlayEnabled;
+  const btn = document.getElementById('btnAutoPlay');
+  if (btn) {
+    btn.textContent = _autoPlayEnabled ? '已开启' : '已关闭';
+    btn.className = _autoPlayEnabled ? 'btn btn-sm btn-warning' : 'btn btn-sm btn-outline';
+  }
+  if (_autoPlayEnabled && typeof showToast === 'function') {
+    showToast('🤖 托管模式已开启，Bot 将接管操作', 'info');
+  }
+}
+
+function exitGame() {
+  if (!confirm('确定退出游戏吗？退出后 Bot 将以自动难度托管你的身份继续游戏。你可以随时重新加入。')) return;
+  socket.emit('room:leave', GameState.roomId);
+}
+
+// 监听 room:left（含托管标记）
+socket.on('room:left', (data) => {
+  if (data && data.managed) {
+    if (typeof showToast === 'function') showToast('🤖 已退出，Bot 托管中。可随时重新加入。', 'info');
+    showView(Views.LOBBY);
+    // 保持 roomId 用于重连
+    const roomIdEl = document.getElementById('roomIdDisplay');
+    if (roomIdEl) roomIdEl.textContent = GameState.roomId;
+
+    // 添加重新加入按钮
+    const lobbyDiv = document.querySelector('#view-lobby .lobby-main');
+    if (lobbyDiv && !document.getElementById('btnRejoinGame')) {
+      const rejoinBtn = document.createElement('button');
+      rejoinBtn.id = 'btnRejoinGame';
+      rejoinBtn.className = 'btn-rejoin';
+      rejoinBtn.textContent = '🔄 重新加入游戏';
+      rejoinBtn.onclick = rejoinGame;
+      rejoinBtn.style.cssText = 'width:100%;margin-top:12px;padding:12px;';
+      lobbyDiv.appendChild(rejoinBtn);
+    }
+  }
+});
+
+function rejoinGame() {
+  if (!GameState.roomId || !GameState.nickname) {
+    if (typeof showToast === 'function') showToast('无法重新加入', 'error');
+    return;
+  }
+  // 移除重连按钮
+  const btn = document.getElementById('btnRejoinGame');
+  if (btn) btn.remove();
+
+  socket.emit('room:join', GameState.roomId, GameState.nickname, (res) => {
+    if (res && res.success) {
+      if (typeof showToast === 'function') showToast('✅ 已恢复身份，欢迎回来！', 'info');
+      // 服务器会通过 game_state_update 推送游戏画面
+    } else {
+      if (typeof showToast === 'function') showToast(res?.error || '重新加入失败', 'error');
+    }
+  });
+}
+
+// 在 renderGame 中缓存 cardPool 数据、绑定回合标签点击
+const _origRenderGame = renderGame;
+renderGame = function(view) {
+  // 缓存卡池数据
+  if (view.cardPool) _cardPoolData = view.cardPool;
+
+  // 绑定回合标签点击
+  const roundLabel = document.getElementById('gameRoundLabel');
+  if (roundLabel && !roundLabel._boundClick) {
+    roundLabel._boundClick = true;
+    roundLabel.title = '点击查看卡池总览';
+    roundLabel.addEventListener('click', showCardPool);
+  }
+
+  // 绑定设置面板切换
+  const settingsToggle = document.getElementById('settingsToggle');
+  if (settingsToggle && !settingsToggle._boundClick) {
+    settingsToggle._boundClick = true;
+    settingsToggle.addEventListener('click', toggleSettings);
+  }
+
+  // 点击模态框背景关闭
+  const cpModal = document.getElementById('cardPoolModal');
+  if (cpModal && !cpModal._boundClick) {
+    cpModal._boundClick = true;
+    cpModal.addEventListener('click', (e) => {
+      if (e.target === cpModal) closeCardPool();
+    });
+  }
+
+  return _origRenderGame(view);
+};
 
 console.log('[Game] 游戏模块已加载');

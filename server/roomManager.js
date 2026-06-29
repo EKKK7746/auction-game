@@ -286,6 +286,39 @@ function getPublicRooms() {
 
 // -------------------- 导出 --------------------
 
+/**
+ * 将玩家重新加入房间（用于断线后保留房间成员身份以便重连）
+ */
+function reAddPlayer(roomId, player) {
+  const room = rooms.get(roomId);
+  if (!room) return false;
+  // 避免重复添加
+  if (room.players.some(p => p.id === player.id)) return true;
+  room.players.push(player);
+  console.log(`[房间] 托管玩家 ${player.nickname}(${player.id}) 保留在房间 ${roomId}`);
+  return true;
+}
+
+/**
+ * 更新玩家 ID（托管玩家重连时 socket ID 变化）
+ */
+function updatePlayerId(roomId, oldId, newId, nickname) {
+  const room = rooms.get(roomId);
+  if (!room) return false;
+  const player = room.players.find(p => p.id === oldId);
+  if (!player) {
+    // 如果旧 ID 不在（可能已被清理），直接添加
+    room.players.push({ id: newId, nickname, isHost: false, isBot: false });
+    if (room.hostSocketId === oldId) room.hostSocketId = newId;
+    return true;
+  }
+  player.id = newId;
+  if (player.nickname !== nickname) player.nickname = nickname;
+  if (room.hostSocketId === oldId) room.hostSocketId = newId;
+  console.log(`[房间] 更新玩家ID: ${oldId} → ${newId} (${nickname})`);
+  return true;
+}
+
 module.exports = {
   createRoom,
   joinRoom,
@@ -299,4 +332,6 @@ module.exports = {
   joinAsSpectator,
   leaveSpectator,
   getSpectators,
+  reAddPlayer,
+  updatePlayerId,
 };

@@ -36,7 +36,8 @@ class BotManager {
     const state = this._engine.getGame(roomId);
     if (!state || state.phase === 'finished') return;
 
-    const bots = state.players.filter(p => p.isBot);
+    // 包含 bot 和被托管的真人玩家
+    const bots = state.players.filter(p => p.isBot || p.managed);
     if (bots.length === 0) return;
 
     for (const bot of bots) {

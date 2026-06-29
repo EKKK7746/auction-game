@@ -1341,6 +1341,15 @@ function getPlayerView(fullState, playerId) {
     turnDeadline: fullState.turnDeadline || null,
     commissionRate: fullState.commissionRate,
     auctioneerStreak: fullState.auctioneerStreak,
+    // 全卡池总览（点击回合标签查看）
+    cardPool: CARDS.map(c => {
+      const owner = fullState.players.find(p => p.cards.some(pc => pc.id === c.id));
+      return {
+        id: c.id, name: c.name, score: c.score, effect: c.effect,
+        acquired: !!owner,
+        acquiredBy: owner ? owner.nickname : null,
+      };
+    }),
     // 玩家信息 — 卡牌被获得后即公开
     players: fullState.players.map(p => ({
       id: p.id,
@@ -1349,6 +1358,7 @@ function getPlayerView(fullState, playerId) {
       cardCount: p.cards.length,
       cardScore: calculateCardScore(p.cards),
       isBot: !!p.isBot,
+      managed: !!p.managed,  // 托管标识
       // 始终发送完整卡牌信息
       cards: p.cards.map(c => ({ id: c.id, name: c.name, score: c.score, effect: c.effect, used: !!c.used })),
       hasDragonPhoenix: p.cards.some(c => c.id === 'ltsx') && p.cards.some(c => c.id === 'kxqt'),
@@ -1518,6 +1528,15 @@ function getSpectatorView(fullState) {
     commissionRate: fullState.commissionRate,
     auctioneerStreak: fullState.auctioneerStreak,
     isSpectator: true,
+    // 全卡池总览
+    cardPool: CARDS.map(c => {
+      const owner = fullState.players.find(p => p.cards.some(pc => pc.id === c.id));
+      return {
+        id: c.id, name: c.name, score: c.score, effect: c.effect,
+        acquired: !!owner,
+        acquiredBy: owner ? owner.nickname : null,
+      };
+    }),
     players: fullState.players.map(p => ({
       id: p.id,
       nickname: p.nickname,
@@ -1525,6 +1544,7 @@ function getSpectatorView(fullState) {
       cardCount: p.cards.length,
       cardScore: calculateCardScore(p.cards),
       isBot: !!p.isBot,
+      managed: !!p.managed,  // 托管标识
       cards: p.cards.map(c => ({ id: c.id, name: c.name, score: c.score, effect: c.effect, used: !!c.used })),
       hasDragonPhoenix: p.cards.some(c => c.id === 'ltsx') && p.cards.some(c => c.id === 'kxqt'),
       hasReroll: hasRerollAbility(p),
@@ -1857,8 +1877,97 @@ function _fixDuelAfterLeave(state, roomId, leftPlayerId) {
   broadcast(roomId);
 }
 
-// -------------------- 玩家断连/离开 --------------------
+// -------------------- 玩家断连 / 主动离开（Bot 托管接管）--------------------
 
+/**
+ * 玩家断连/离开 → Bot 托管接管（不删除玩家，标记为 managed）
+ */
+function disconnectPlayer(roomId, playerId) {
+  const state = games.get(roomId);
+  if (!state) return null;
+
+  const player = state.players.find(p => p.id === playerId);
+  if (!player) return null;
+  if (player.isBot) {
+    // Bot 断连直接移除
+    return removePlayer(roomId, playerId);
+  }
+
+  // 标记为托管状态
+  player.managed = true;
+  player._originalNickname = player.nickname;
+  player.managedAt = Date.now();
+
+  // 根据剩余活跃真人数量设置托管 Bot 难度（自动档逻辑）
+  const activeHumans = state.players.filter(p => !p.isBot && !p.managed);
+  const humanCount = activeHumans.length;
+  if (humanCount <= 1) {
+    player.strategy = 'hard';
+  } else if (humanCount === 2) {
+    player.strategy = Math.random() < 0.3 ? 'hard' : 'normal';
+  } else if (humanCount === 3) {
+    player.strategy = 'normal';
+  } else {
+    player.strategy = Math.random() < 0.3 ? 'normal' : 'easy';
+  }
+
+  console.log(`[引擎] 玩家 ${player.nickname}(${playerId}) 断连，Bot 托管接管 → ${player.strategy} (${humanCount}活跃真人)`);
+
+  // 检查真人数量（不计 managed 玩家）
+  if (humanCount === 0) {
+    state.phase = 'finished';
+    console.log(`[引擎] 房间 ${roomId} 无活跃真人玩家，游戏终止`);
+    const fr = calculateFinalScores(roomId);
+    state.finalResults = fr;
+    broadcast(roomId);
+    return fr;
+  }
+
+  // 如果托管玩家正在等待操作，清除其等待状态让 Bot 接管
+  state.playersDone.delete(playerId);
+  delete state.diceSelections[playerId];
+  state.bids = state.bids.filter(b => b.playerId !== playerId);
+
+  // 如果托管的是拍卖师，保持不变（Bot 会接管操作）
+  // 如果托管的是当前操作者，Bot 自动接管
+
+  broadcast(roomId);
+  return null;
+}
+
+/**
+ * 玩家重新加入，恢复托管身份
+ * @returns {{ success: boolean, player?: object, error?: string }}
+ */
+function reclaimPlayer(socket, roomId, nickname) {
+  const state = games.get(roomId);
+  if (!state) return { success: false, error: '游戏不存在' };
+
+  // 找到被托管的玩家（按昵称匹配）
+  const managedIdx = state.players.findIndex(p => p.managed && p._originalNickname === nickname);
+  if (managedIdx === -1) return { success: false, error: '未找到托管中的玩家' };
+
+  const managed = state.players[managedIdx];
+
+  // 恢复
+  managed.managed = false;
+  managed._originalNickname = undefined;
+  managed.managedAt = undefined;
+
+  console.log(`[引擎] 玩家 ${nickname} 恢复托管身份，旧ID: ${managed.id} → 新ID: ${socket.id}`);
+
+  // 注意：不改变 player.id（保持与游戏数据一致），但需要更新 Socket 映射
+  // 实际上，游戏逻辑用 playerId 查找玩家，而 playerId = socket.id（初次加入时）
+  // 重连后 socket.id 变了，所以需要用旧 ID 继续操作
+  // 解决方案：保持 managed.id 不变，客户端通过另一个字段标识自己
+
+  broadcast(roomId);
+  return { success: true, player: managed };
+}
+
+/**
+ * 移除玩家（原有逻辑，仅用于 Bot 移除或房间销毁）
+ */
 function removePlayer(roomId, playerId) {
   const state = games.get(roomId);
   if (!state) return;
@@ -2021,6 +2130,8 @@ module.exports = {
   setOnBroadcast,
   destroyGame,
   removePlayer,
+  disconnectPlayer,
+  reclaimPlayer,
   restartGame,
   playerRejoin,
 };

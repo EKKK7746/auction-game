@@ -82,7 +82,49 @@ io.on('connection', (socket) => {
       // 检查游戏是否正在进行
       const game = gameEngine.getGame(roomId);
       if (game && game.phase !== 'finished' && game.phase !== 'waiting') {
-        // 游戏进行中 — 不能加入为玩家，但可以观战
+        // 游戏进行中 — 检查是否是托管玩家重连
+        const managedPlayer = game.players.find(p => p.managed && p._originalNickname === nickname);
+        if (managedPlayer) {
+          // ★ 托管玩家重连：更新 socket ID，恢复身份
+          const oldId = managedPlayer.id;
+          managedPlayer.id = socket.id;
+          managedPlayer.managed = false;
+          managedPlayer._originalNickname = undefined;
+          managedPlayer.managedAt = undefined;
+          managedPlayer.strategy = undefined; // 清除托管策略
+
+          // 更新所有游戏数据中的 playerId 引用
+          game.bids = game.bids.map(b => b.playerId === oldId ? { ...b, playerId: socket.id } : b);
+          if (game.diceSelections[oldId]) { game.diceSelections[socket.id] = game.diceSelections[oldId]; delete game.diceSelections[oldId]; }
+          if (game.diceResults[oldId]) { game.diceResults[socket.id] = game.diceResults[oldId]; delete game.diceResults[oldId]; }
+          if (game._roundExpense && game._roundExpense[oldId]) { game._roundExpense[socket.id] = game._roundExpense[oldId]; delete game._roundExpense[oldId]; }
+          if (game.playersDone.has(oldId)) { game.playersDone.delete(oldId); game.playersDone.add(socket.id); }
+          if (game.auctioneerId === oldId) game.auctioneerId = socket.id;
+          if (game.lastAuctioneerId === oldId) game.lastAuctioneerId = socket.id;
+          if (game.duel) {
+            if (game.duel.initiatorId === oldId) game.duel.initiatorId = socket.id;
+            if (game.duel.targetId === oldId) game.duel.targetId = socket.id;
+            if (game.duel.winnerId === oldId) game.duel.winnerId = socket.id;
+            if (game.duel.loserId === oldId) game.duel.loserId = socket.id;
+            if (game.duel.diceSelections[oldId]) { game.duel.diceSelections[socket.id] = game.duel.diceSelections[oldId]; delete game.duel.diceSelections[oldId]; }
+            if (game.duel.diceResults[oldId]) { game.duel.diceResults[socket.id] = game.duel.diceResults[oldId]; delete game.duel.diceResults[oldId]; }
+          }
+
+          // 加入 Socket.IO 房间
+          socket.join(roomId);
+          // 更新 roomManager 中的玩家
+          roomManager.updatePlayerId(roomId, oldId, socket.id, nickname);
+
+          console.log(`[房间] 托管玩家 ${nickname} 重连恢复，旧ID: ${oldId} → 新ID: ${socket.id}`);
+
+          // 发送完整游戏状态
+          const view = gameEngine.getPlayerView(game, socket.id);
+          socket.emit('game_state_update', view);
+          callback({ success: true, roomId, reclaimed: true });
+          return;
+        }
+
+        // 非托管玩家 → 只能观战
         const players = roomManager.getPlayers(roomId);
         callback({ success: false, error: '游戏已开始，无法加入', gameInProgress: true, players, roomId });
         return;
@@ -133,8 +175,11 @@ io.on('connection', (socket) => {
   // --- 离开房间 ---
   socket.on('room:leave', (roomId) => {
     const game = gameEngine.getGame(roomId);
-    if (game && game.phase !== 'finished') {
-      gameEngine.removePlayer(roomId, socket.id);
+    if (game && game.phase !== 'finished' && game.phase !== 'waiting') {
+      // 游戏进行中 → Bot 托管接管，不从房间移除
+      gameEngine.disconnectPlayer(roomId, socket.id);
+      socket.emit('room:left', { roomId, managed: true });
+      return;
     }
 
     const result = roomManager.leaveRoom(socket, roomId);
@@ -335,8 +380,13 @@ io.on('connection', (socket) => {
       socket.to(r.roomId).emit('room:player_left', { player: r.player, players: r.players });
 
       const game = gameEngine.getGame(r.roomId);
-      if (game && game.phase !== 'finished') {
-        gameEngine.removePlayer(r.roomId, socket.id);
+      if (game && game.phase !== 'finished' && game.phase !== 'waiting') {
+        // 游戏进行中 → Bot 托管接管
+        gameEngine.disconnectPlayer(r.roomId, socket.id);
+        // 将玩家加回 roomManager（保留房间成员身份，方便重连）
+        if (!r.destroyed) {
+          roomManager.reAddPlayer(r.roomId, r.player);
+        }
       }
 
       // 如果房间销毁或只剩 bot，清理定时器
