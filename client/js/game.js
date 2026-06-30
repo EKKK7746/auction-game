@@ -1946,19 +1946,16 @@ function togglePlayerDetail(row) {
 document.addEventListener('DOMContentLoaded', () => {
   const toggle = document.getElementById('otherToggle');
   const list = document.getElementById('otherList');
+  const container = document.getElementById('gameOtherPlayers');
   if (toggle && list) {
     toggle.addEventListener('click', () => {
       const open = list.classList.toggle('open');
       toggle.classList.toggle('collapsed', !open);
       // 同步容器类，便于 CSS 控制展开高度
-      container.classList.toggle('open', open);
+      if (container) container.classList.toggle('open', open);
     });
-    // 默认展开（桌面端）；移动端默认折叠，节省一屏空间
-    if (window.innerWidth >= 768) {
-      list.classList.add('open');
-    } else {
-      toggle.classList.add('collapsed');
-    }
+    // 默认展开（所有端），玩家列表向下自然占高
+    list.classList.add('open');
   }
 });
 

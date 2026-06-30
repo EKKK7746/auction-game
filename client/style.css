@@ -4666,57 +4666,59 @@ body {
    ============================================================ */
 
 @media (max-width: 767px) {
-  /* ★ 移动端一屏布局：各模块紧凑排列，页面本身不滚动，
-     仅在操作区内部按需滚动 */
+  /* ★ 移动端一屏布局：
+     1) 修复跨视图泄漏：#view-game 必须带 .active 才显示
+     2) 各模块紧凑，默认无需上下滚动
+     3) 玩家列表默认展开、向下自然占高
+     4) 操作区（选取拍卖品等）可内部滚动
+     5) 设置按钮在最底部自然流，不固定 */
 
-  #view-game {
-    overflow: hidden !important;
+  #view-game.view.active {
     display: flex;
     flex-direction: column;
-    height: 100vh;
-    height: 100dvh; /* 适配移动端地址栏 */
+    min-height: 100vh;
+    min-height: 100dvh; /* 适配移动端地址栏 */
   }
 
   .game-container {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    gap: 5px !important;
-    padding: 4px 8px !important;
-    overflow: hidden;
-    align-items: stretch;
-    min-height: 0;
+    gap: 3px !important;
+    padding: 3px 8px !important;
+  }
+
+  /* 状态栏 */
+  .game-status-bar {
+    padding: 6px 10px;
+    font-size: 12px;
+    min-height: 34px;
+    border-radius: 8px;
   }
 
   /* 卡牌区：水平紧凑卡片 */
   .game-card-area {
     min-height: auto !important;
-    max-height: 100px !important;
-    padding: 4px 0;
-    flex-shrink: 0;
+    max-height: 82px !important;
+    padding: 3px 0;
   }
-
   .artifact-card {
     display: flex;
     flex-direction: row;
     align-items: stretch;
     width: 100%;
     max-width: 100%;
-    max-height: 92px;
+    max-height: 76px;
     overflow: hidden;
+    border-radius: 10px;
   }
   .card-visual {
-    width: 90px;
-    height: 90px !important;
+    width: 70px;
+    height: 70px !important;
     flex-shrink: 0;
-    border-radius: 12px 0 0 12px;
+    border-radius: 10px 0 0 10px;
   }
-  .card-emoji {
-    font-size: 28px;
-  }
+  .card-emoji { font-size: 22px; }
   .card-emoji img {
-    max-height: 50px !important;
-    max-width: 50px !important;
+    max-height: 40px !important;
+    max-width: 40px !important;
   }
   .card-body {
     flex: 1;
@@ -4724,22 +4726,22 @@ body {
     flex-direction: column;
     justify-content: center;
     text-align: left;
-    padding: 8px 12px;
+    padding: 6px 10px;
     min-width: 0;
   }
   .card-name {
-    font-size: 15px;
-    margin-bottom: 2px;
+    font-size: 13px;
+    margin-bottom: 1px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
   .card-score {
-    font-size: 12px;
-    margin-bottom: 2px;
+    font-size: 10px;
+    margin-bottom: 1px;
   }
   .card-effect {
-    font-size: 11px;
+    font-size: 10px;
     line-height: 1.2;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -4748,151 +4750,140 @@ body {
     min-height: auto;
   }
   .card-badge {
-    top: 4px;
-    right: 4px;
-    font-size: 10px;
-    padding: 1px 5px;
+    top: 3px;
+    right: 3px;
+    font-size: 9px;
+    padding: 1px 4px;
   }
 
-  /* 骰子粒子区：Canvas 缩小 */
+  /* 骰子粒子区：更小 */
   .dice-particle-area {
-    min-height: 180px !important;
-    margin: 4px 0;
+    min-height: 110px !important;
+    max-height: 120px !important;
+    margin: 2px 0;
   }
   .dice-canvas {
-    width: 220px !important;
-    height: 180px !important;
+    width: 160px !important;
+    height: 120px !important;
   }
 
-  /* 操作区：弹性高度，内容超出内部滚动，但不撑开页面 */
+  /* 操作区：紧凑，可内部滚动（选取拍卖品等长内容） */
   .game-action-area {
-    flex: 1 1 auto;
-    min-height: 80px !important;
-    max-height: none !important;
-    padding: 8px 10px;
+    min-height: 50px !important;
+    max-height: 18vh !important;
+    padding: 6px 8px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    display: flex;
-    flex-direction: column;
   }
   .game-action-area .action-title {
-    font-size: 13px;
-    margin-bottom: 6px;
-    flex-shrink: 0;
-  }
-  .game-action-area > * {
-    flex-shrink: 0;
+    font-size: 12px;
+    margin-bottom: 4px;
   }
 
-  /* 实时点数统计：紧凑网格 */
+  /* 实时点数统计：紧凑 */
   .dice-scoreboard {
-    margin: 6px 0;
+    margin: 3px 0;
     border-radius: 8px;
   }
   .dice-scoreboard .sb-title {
-    font-size: 11px;
-    padding: 4px 6px;
+    font-size: 10px;
+    padding: 3px 6px;
     letter-spacing: 1px;
   }
   .dice-scoreboard .sb-row {
-    padding: 5px 8px;
-    font-size: 12px;
+    padding: 4px 8px;
+    font-size: 11px;
     gap: 4px;
   }
   .dice-scoreboard .sb-rank {
-    width: 22px;
-    font-size: 14px;
-  }
-  .dice-scoreboard .sb-name {
+    width: 18px;
     font-size: 12px;
   }
+  .dice-scoreboard .sb-name {
+    font-size: 11px;
+  }
   .dice-scoreboard .sb-dice {
-    width: 24px;
-    font-size: 10px;
+    width: 20px;
+    font-size: 9px;
   }
   .dice-scoreboard .sb-result {
-    width: 28px;
-    font-size: 16px;
+    width: 24px;
+    font-size: 14px;
   }
 
-  /* 获得卡牌列表缩小 */
-  .select-card-list { grid-template-columns: 1fr !important; gap: 5px; }
+  /* 获得卡牌列表 */
+  .select-card-list { grid-template-columns: 1fr !important; gap: 4px; }
   .select-card-item {
-    padding: 5px 10px;
-    min-height: 32px;
+    padding: 4px 8px;
+    min-height: 28px;
   }
-  .select-card-item .sc-emoji { font-size: 18px; }
-  .select-card-item .sc-name { font-size: 12px; }
-  .select-card-item .sc-meta { font-size: 10px; }
+  .select-card-item .sc-emoji { font-size: 16px; }
+  .select-card-item .sc-name { font-size: 11px; }
+  .select-card-item .sc-meta { font-size: 9px; }
 
   /* 游戏操作按钮 */
-  .bid-grid { gap: 6px; }
-  .bid-btn { min-height: 36px; font-size: 13px; padding: 6px 8px; }
-  .dice-grid { gap: 6px; }
-  .dice-btn { min-height: 40px; font-size: 12px; padding: 6px 8px; }
-  .dice-btn .dice-name { font-size: 15px; }
-  .dice-btn .dice-cost, .dice-btn .dice-ev { font-size: 10px; }
-  .dice-btn.pass-btn-full { min-height: 36px; font-size: 14px; }
-  .select-card-item { min-height: 32px; }
+  .bid-grid { gap: 4px; }
+  .bid-btn { min-height: 30px; font-size: 12px; padding: 4px 6px; }
+  .dice-grid { gap: 4px; }
+  .dice-btn { min-height: 32px; font-size: 11px; padding: 4px 6px; }
+  .dice-btn .dice-name { font-size: 13px; }
+  .dice-btn .dice-cost, .dice-btn .dice-ev { font-size: 9px; }
+  .dice-btn.pass-btn-full { min-height: 32px; font-size: 13px; }
 
   /* 我的状态栏：紧凑条 */
   .game-my-status {
-    padding: 5px 10px;
-    font-size: 12px;
-    min-height: 30px;
-    gap: 8px;
-    flex-shrink: 0;
+    padding: 4px 10px;
+    font-size: 11px;
+    min-height: 26px;
+    gap: 6px;
     border-radius: 8px;
   }
-  .my-status-item .effect-tag { font-size: 9px; padding: 1px 4px; }
+  .my-status-item .effect-tag { font-size: 8px; padding: 1px 3px; }
 
-  /* 玩家列表：默认折叠，只显示标题行 */
+  /* 玩家列表：默认展开，向下自然占高 */
   .game-other-players {
-    max-height: 40px !important;
-    flex-shrink: 0;
-    border-radius: 8px;
+    max-height: 160px !important;
     overflow: hidden;
-    transition: max-height 0.25s ease;
+    border-radius: 8px;
   }
-  .game-other-players.open {
-    max-height: 150px !important;
-  }
-  .other-toggle {
-    padding: 8px 10px;
-    font-size: 13px;
-    min-height: 30px;
-  }
-  .other-list {
-    max-height: 100px !important;
+  .game-other-players .other-list {
+    display: block;
+    max-height: 130px !important;
+    overflow-y: auto;
     padding: 0 10px 6px;
   }
-  .player-row {
-    padding: 5px 8px;
+  .other-toggle {
+    padding: 5px 10px;
     font-size: 12px;
+    min-height: 26px;
   }
-  .pl-nick { font-size: 12px; }
-  .pl-stats { font-size: 11px; }
-  .pl-expand-icon { font-size: 9px; }
-  .player-detail.open { max-height: 120px; margin-top: 4px; }
+  .other-toggle::after { font-size: 10px; }
+  .player-row {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+  .pl-nick { font-size: 11px; }
+  .pl-stats { font-size: 10px; }
+  .pl-expand-icon { font-size: 8px; }
+  .player-detail.open { max-height: 100px; margin-top: 3px; }
 
-  /* 设置面板底部固定 */
+  /* 设置面板：在最底部自然流，不固定 */
   .game-settings-area {
     margin-top: 2px;
     padding-top: 2px;
     border-top: 1px solid rgba(201, 169, 110, 0.2);
-    flex-shrink: 0;
   }
   .settings-header {
-    padding: 6px 10px;
-    font-size: 12px;
+    padding: 5px 10px;
+    font-size: 11px;
   }
   .settings-body {
-    padding: 6px 10px;
+    padding: 5px 10px;
   }
 
   /* 流程卡缩小 */
   .start-flow-cards { gap: 4px; }
-  .flow-card { padding: 8px 4px; }
-  .flow-icon { font-size: 20px; }
-  .flow-label { font-size: 10px; }
+  .flow-card { padding: 6px 4px; }
+  .flow-icon { font-size: 18px; }
+  .flow-label { font-size: 9px; }
 }
