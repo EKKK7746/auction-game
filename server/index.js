@@ -296,23 +296,31 @@ io.on('connection', (socket) => {
       const modeConfig = require('./gameEngine').getModeConfig(modeId);
       gameEngine.initGame(roomId, room, modeConfig);
 
-      console.log(`[服务器] 房间 ${roomId} 游戏开始！（模式: ${modeId}）`);
+      console.log(`[服务器] 房间 ${roomId} 游戏开始！（模式: ${modeId}），玩家: ${room.map(p => p.nickname).join(', ')}`);
 
-      // ★ 直接向房间所有成员推送初始状态（不依赖 broadcast 的房间查询）
+      // ★ 直接向发起者推送初始状态（不依赖 broadcast 的房间查询）
       const state = gameEngine.getGame(roomId);
       if (state) {
-        io.to(roomId).emit('game_state_update', require('./gameEngine').getPlayerView(state, socket.id));
-        // 延迟 200ms 后对其他玩家也推送（确保房主先收到）
+        try {
+          const pv = require('./gameEngine').getPlayerView(state, socket.id);
+          socket.emit('game_state_update', pv);
+          console.log(`[服务器] ✓ 已直接推送 game_state_update 给房主 ${socket.id}`);
+        } catch (e) {
+          console.error(`[服务器] ✗ 房主推送失败:`, e.message);
+        }
+        // 延迟 300ms 后对其他玩家逐一推送
         setTimeout(() => {
           for (const p of state.players) {
-            if (p.id !== socket.id) {
-              try {
-                const pv = require('./gameEngine').getPlayerView(state, p.id);
-                io.to(p.id).emit('game_state_update', pv);
-              } catch (e) { /* ignore */ }
-            }
+            if (p.id === socket.id) continue;
+            try {
+              const pv2 = require('./gameEngine').getPlayerView(state, p.id);
+              _io.to(p.id).emit('game_state_update', pv2);
+            } catch (e) { /* ignore */ }
           }
-        }, 200);
+          console.log(`[服务器] ✓ 已补推 game_state_update 给其余 ${state.players.length - 1} 名玩家`);
+        }, 300);
+      } else {
+        console.error(`[服务器] ✗ initGame 完成但 getGame 返回 null！roomId=${roomId}`);
       }
 
       callback({ success: true });

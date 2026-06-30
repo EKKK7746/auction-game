@@ -18,6 +18,8 @@ let _cardRevealTimer = null;      // 卡牌揭晓动画计时器
 // ==================== 入口：接收 game:state_update ====================
 
 socket.on('game_state_update', (view) => {
+  console.log(`[Game] ✓ 收到 game_state_update! phase=${view.phase}, round=${view.round}, view=${GameState.currentView}`);
+
   // 缓存最新玩家列表（供 doRestartGame 使用）
   GameState._lastPlayers = view.players || [];
 

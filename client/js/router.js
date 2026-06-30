@@ -16,6 +16,8 @@ const Views = {
  * @param {'login'|'lobby'|'game'} viewName
  */
 function showView(viewName) {
+  console.log(`[Router] showView(${viewName}) → 当前: ${GameState.currentView}`);
+
   // 隐藏所有视图
   document.querySelectorAll('.view').forEach(v => {
     v.classList.remove('active');
@@ -26,9 +28,9 @@ function showView(viewName) {
   if (target) {
     target.classList.add('active');
     GameState.currentView = viewName;
-    console.log('[Router] 切换到视图:', viewName);
+    console.log(`[Router] ✓ 切换到视图: ${viewName} (#view-${viewName})`);
   } else {
-    console.error('[Router] 视图不存在:', viewName);
+    console.error(`[Router] ✗ 视图不存在: ${viewName}, 可用视图:`, [...document.querySelectorAll('.view')].map(e => e.id));
   }
 }
 

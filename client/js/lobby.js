@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log('[Lobby] 发送 game:start');
       if (typeof playSound === 'function') playSound('gameStart');
       socket.emit('game:start', GameState.roomId, (res) => {
+        console.log('[Lobby] game:start 回调:', JSON.stringify(res));
         if (!res || !res.success) {
           showToast(res?.error || '开始游戏失败', 'error');
           btnStart.disabled = false;            // 失败后恢复按钮

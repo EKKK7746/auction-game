@@ -117,16 +117,25 @@ function broadcast(roomId) {
   const state = games.get(roomId);
   if (!state || !_io) {
     console.warn(`[Broadcast] 跳过: state=${!!state}, _io=${!!_io}`);
-    // ★ 即使 emit 失败，也要触发 bot 调度（防止全 Bot 模式卡死）
     if (_onBroadcast) _onBroadcast(roomId);
     return;
   }
   const room = _io.sockets.adapter.rooms.get(roomId);
   if (!room) {
-    console.warn(`[Broadcast] 房间 ${roomId} 无活跃 socket（全 Bot / 托管模式），跳过 emit`);
-    // ★ 关键修复：没有 socket 也要触发 bot 调度！
-    // 否则 Bot 动作 → broadcast → return → _onBroadcast 不调用
-    // → processBots 不运行 → 下一个 phase 没有 Bot 被调度 → 游戏卡死
+    // ★ 房间查询失败时的 fallback：遍历玩家逐个 push
+    // CloudBase / 某些部署环境下 adapter.rooms 可能不及时同步
+    console.warn(`[Broadcast] 房间 ${roomId} adapter.rooms 查询失败，fallback 逐个推送 (${state.players.length} 玩家)`);
+    let fallbackOk = 0;
+    for (const p of state.players) {
+      try {
+        const view = getPlayerView(state, p.id);
+        _io.to(p.id).emit('game_state_update', view);
+        fallbackOk++;
+      } catch (e) {
+        console.error(`[Broadcast-fallback] 推送失败 p=${p.nickname}:`, e.message);
+      }
+    }
+    console.log(`[Broadcast] fallback 完成: ${fallbackOk}/${state.players.length}`);
     if (_onBroadcast) _onBroadcast(roomId);
     return;
   }
