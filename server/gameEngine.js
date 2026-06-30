@@ -201,6 +201,8 @@ function initGame(roomId, players, modeOpts) {
     _startingFunds: startingFunds,  // ★ 保存用于重开
     phase: 'auction',
     deck,
+    originalDeck: [...deck],  // ★ 记录本局初始牌堆，用于牌堆总览
+    dealtCardIds: new Set(),  // ★ 记录已翻开的卡牌 id
     revealedCard: null,
     auctioneerId: null,
     lastAuctioneerId: null,       // 上轮拍卖师（决定竞标起点）
@@ -309,6 +311,7 @@ function selectCard(roomId, playerId, cardIndex) {
   const card = state.deck[cardIndex];
   state.revealedCard = card;
   state.deck.splice(cardIndex, 1);
+  state.dealtCardIds.add(card.id);  // ★ 记录已翻开
 
   const auctioneer = state.players.find(p => p.id === playerId);
   console.log(`[引擎] 拍卖师 ${auctioneer.nickname} 选中: ${card.name}`);
@@ -1371,20 +1374,21 @@ function getPlayerView(fullState, playerId) {
     commissionRate: fullState.commissionRate,
     auctioneerStreak: fullState.auctioneerStreak,
     // 全卡池总览（点击回合标签查看）→ 本局牌堆
-    cardPool: fullState.deck.map((c, i) => {
+    cardPool: (fullState.originalDeck || fullState.deck).map((c, i) => {
       const owner = fullState.players.find(p => p.cards.some(pc => pc.id === c.id));
+      const dealt = fullState.dealtCardIds ? fullState.dealtCardIds.has(c.id) : (i < fullState.round);
       return {
         id: c.id,
         name: c.name,
         score: c.score,
         effect: c.effect,
         index: i,
-        dealt: i < fullState.round,       // 已打出（已翻过）
+        dealt: dealt,       // 已翻开
         acquired: !!owner,
         acquiredBy: owner ? owner.nickname : null,
       };
     }),
-    totalDeckSize: fullState.deck.length,  // 本局牌堆总数
+    totalDeckSize: (fullState.originalDeck || fullState.deck).length,  // 本局牌堆总数
     // 玩家信息 — 卡牌被获得后即公开
     players: fullState.players.map(p => ({
       id: p.id,
@@ -1564,17 +1568,18 @@ function getSpectatorView(fullState) {
     auctioneerStreak: fullState.auctioneerStreak,
     isSpectator: true,
     // 本局牌堆
-    cardPool: fullState.deck.map((c, i) => {
+    cardPool: (fullState.originalDeck || fullState.deck).map((c, i) => {
       const owner = fullState.players.find(p => p.cards.some(pc => pc.id === c.id));
+      const dealt = fullState.dealtCardIds ? fullState.dealtCardIds.has(c.id) : (i < fullState.round);
       return {
         id: c.id, name: c.name, score: c.score, effect: c.effect,
         index: i,
-        dealt: i < fullState.round,
+        dealt: dealt,
         acquired: !!owner,
         acquiredBy: owner ? owner.nickname : null,
       };
     }),
-    totalDeckSize: fullState.deck.length,
+    totalDeckSize: (fullState.originalDeck || fullState.deck).length,
     players: fullState.players.map(p => ({
       id: p.id,
       nickname: p.nickname,
@@ -1752,6 +1757,7 @@ function _settleAuctionAfterAllBids(state, roomId) {
     const idx = crypto.randomInt(0, state.deck.length);
     state.revealedCard = state.deck[idx];
     state.deck.splice(idx, 1);
+    state.dealtCardIds.add(state.revealedCard.id);  // ★ 记录已翻开
     console.log(`[引擎] 全员跳过，无拍卖师，随机翻牌: ${state.revealedCard.name}`);
     state.phase = 'rentDice';
     state.bids = [];
@@ -1845,6 +1851,7 @@ function _fixSelectCardAfterLeave(state, roomId, leftPlayerId) {
   const idx = crypto.randomInt(0, state.deck.length);
   state.revealedCard = state.deck[idx];
   state.deck.splice(idx, 1);
+  state.dealtCardIds.add(state.revealedCard.id);  // ★ 记录已翻开
   console.log(`[引擎] 拍卖师离开，随机翻牌: ${state.revealedCard.name}`);
 
   state.phase = 'rentDice';
@@ -2168,6 +2175,8 @@ function restartGame(socket, io, roomId) {
   state.maxRounds = state.maxRounds;  // 保持原模式
   state.phase = 'waiting';
   state.deck = shuffle([...CARDS]).slice(0, state.maxRounds);
+  state.originalDeck = [...state.deck];  // ★ 重洗牌堆后重置初始牌堆记录
+  state.dealtCardIds = new Set();        // ★ 清空已翻开记录
   state.revealedCard = null;
   state.auctioneerId = null;
   state.lastAuctioneerId = null;

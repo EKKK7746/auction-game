@@ -513,7 +513,25 @@ body {
   box-shadow: 0 4px 14px rgba(0,0,0,0.08);
 }
 
+/* 顶部相位区卡牌框：去除内框线，填充更紧凑，避免文字/边框错位感 */
+.phase-card-framed .artifact-frame.frame-lg {
+  padding: 6px;
+}
+.phase-card-framed .artifact-frame::before {
+  display: none;
+}
+.phase-card-framed .artifact-frame.frame-lg img {
+  width: 92px;
+  height: 92px;
+}
+
 .phase-visual-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1423,7 +1441,7 @@ body {
 }
 
 .other-list {
-  display: none;
+  display: block;
   padding: 0 16px 12px;
   max-height: 220px;        /* ★ 玩家列表内部滚屏 */
   overflow-y: auto;
@@ -5126,13 +5144,13 @@ body {
 
   /* 骰子粒子区 */
   .dice-particle-area {
-    min-height: 100px !important;
-    max-height: 110px !important;
-    margin: 2px 0;
+    min-height: 190px !important;
+    max-height: 200px !important;
+    margin: 6px 0;
   }
   .dice-canvas {
-    width: 140px !important;
-    height: 100px !important;
+    width: 260px !important;
+    height: 180px !important;
   }
 
   /* 实时点数统计 */

@@ -104,9 +104,10 @@
     offscreen.height = h;
     const ctx = offscreen.getContext('2d');
 
-    // 渲染文字
+    // 渲染文字（按目标区域缩放，避免小画布上文字被裁剪）
     ctx.fillStyle = '#FFFFFF';
-    ctx.font = 'bold 64px "Georgia", "Times New Roman", serif';
+    const fontSize = Math.min(64, Math.floor(Math.min(w, h) * 0.9));
+    ctx.font = `bold ${fontSize}px "Georgia", "Times New Roman", serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(String(number), w / 2, h / 2);
@@ -168,8 +169,8 @@
 
     // 移动端自适应缩小（与 style.css 保持一致）
     const isMobile = window.innerWidth < 768;
-    const W = isMobile ? 140 : 360;
-    const H = isMobile ? 100 : 300;
+    const W = isMobile ? 260 : 360;
+    const H = isMobile ? 180 : 300;
 
     canvas.width = W * (window.devicePixelRatio || 1);
     canvas.height = H * (window.devicePixelRatio || 1);
@@ -210,7 +211,8 @@
     const numTargets = sampleNumberShape(resultNum, CX, CY, numW, numH);
 
     // 双签模式：第二颗骰子偏移
-    let outlineTargets2 = [], numTargets2 = [];
+    let outlineTargets2 = [], outlineTargets3 = [];
+    let numTargets2 = [], numTargets3 = [];
     if (isReroll && v2 != null) {
       const CX2 = W * 0.25, CY2 = H / 2;
       const CX3 = W * 0.75, CY3 = H / 2;
