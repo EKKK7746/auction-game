@@ -1950,9 +1950,15 @@ document.addEventListener('DOMContentLoaded', () => {
     toggle.addEventListener('click', () => {
       const open = list.classList.toggle('open');
       toggle.classList.toggle('collapsed', !open);
+      // 同步容器类，便于 CSS 控制展开高度
+      container.classList.toggle('open', open);
     });
-    // 默认展开
-    list.classList.add('open');
+    // 默认展开（桌面端）；移动端默认折叠，节省一屏空间
+    if (window.innerWidth >= 768) {
+      list.classList.add('open');
+    } else {
+      toggle.classList.add('collapsed');
+    }
   }
 });
 
