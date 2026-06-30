@@ -40,13 +40,20 @@ document.addEventListener('DOMContentLoaded', () => {
           showToast(res?.error || '开始游戏失败', 'error');
           btnStart.disabled = false;            // 失败后恢复按钮
           btnStart.textContent = '开始游戏';
+          return;
         }
-        // 成功后会收到 game_state_update，game.js 自动切换到游戏视图
+        // ★ 超时保险：3 秒后若未收到 game_state_update，主动请求
+        setTimeout(() => {
+          if (GameState.currentView !== Views.GAME && btnStart.disabled) {
+            console.warn('[Lobby] 未收到 game_state_update，主动请求状态');
+            socket.emit('game:requestState', GameState.roomId);
+          }
+        }, 3000);
       });
 
       // 超时保险：5 秒后无响应则恢复按钮
       setTimeout(() => {
-        if (btnStart.disabled) {
+        if (btnStart.disabled && GameState.currentView !== Views.GAME) {
           btnStart.disabled = false;
           btnStart.textContent = '开始游戏';
         }

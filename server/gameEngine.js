@@ -2191,6 +2191,7 @@ module.exports = {
   getModeConfig: (id) => MODE_CONFIGS[id] || MODE_CONFIGS.classic,
   MODE_CONFIGS,
   initGame,
+  getPlayerView,          // ★ 导出供 game:start 直接推送
   submitBid,
   selectCard,
   selectDice,

@@ -297,10 +297,42 @@ io.on('connection', (socket) => {
       gameEngine.initGame(roomId, room, modeConfig);
 
       console.log(`[服务器] 房间 ${roomId} 游戏开始！（模式: ${modeId}）`);
+
+      // ★ 直接向房间所有成员推送初始状态（不依赖 broadcast 的房间查询）
+      const state = gameEngine.getGame(roomId);
+      if (state) {
+        io.to(roomId).emit('game_state_update', require('./gameEngine').getPlayerView(state, socket.id));
+        // 延迟 200ms 后对其他玩家也推送（确保房主先收到）
+        setTimeout(() => {
+          for (const p of state.players) {
+            if (p.id !== socket.id) {
+              try {
+                const pv = require('./gameEngine').getPlayerView(state, p.id);
+                io.to(p.id).emit('game_state_update', pv);
+              } catch (e) { /* ignore */ }
+            }
+          }
+        }, 200);
+      }
+
       callback({ success: true });
     } catch (err) {
       console.error('[错误] 开始游戏失败:', err.message);
       callback({ success: false, error: err.message });
+    }
+  });
+
+  // --- 请求当前游戏状态（客户端 fallback） ---
+  socket.on('game:requestState', (roomId) => {
+    const state = gameEngine.getGame(roomId);
+    if (state) {
+      try {
+        const view = require('./gameEngine').getPlayerView(state, socket.id);
+        socket.emit('game_state_update', view);
+        console.log(`[服务器] 主动推送状态给 ${socket.id}, phase=${view.phase}`);
+      } catch (err) {
+        console.error(`[错误] requestState 失败:`, err.message);
+      }
     }
   });
 
