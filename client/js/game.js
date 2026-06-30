@@ -276,51 +276,44 @@ function _renderPhaseBar(view) {
   const spectatorTag = view.isSpectator ? ' · 👁️观战' : '';
   document.getElementById('gamePhaseLabel').textContent = phaseLabel + spectatorTag;
 
-  // 相位图标
+  // 相位图标/卡牌展示
   const iconEl = document.getElementById('phaseIcon');
   const cardMiniEl = document.getElementById('phaseCardMini');
   const cardNameEl = document.getElementById('phaseCardName');
-  const cardImgEl = document.getElementById('phaseCardImg');
   const cardScoreEl = document.getElementById('phaseCardScore');
+  const cardFramedEl = document.getElementById('phaseCardFramed');
 
   const card = view.revealedCard;
   const phaseIcon = PHASE_ICONS[view.phase] || '🏛️';
 
   if (card && !card.hidden) {
-    // 有卡牌且可见 → 显示卡牌小图
+    // 有卡牌且可见 → 使用与结算区一致的 artifact-frame 框
     iconEl.style.display = 'none';
     cardMiniEl.style.display = 'flex';
-    cardImgEl.src = `assets/cards/${card.id || card.name}.png`;
-    cardImgEl.onerror = function() { this.style.display = 'none'; };
-    cardScoreEl.textContent = `★${card.score}`;
+    cardFramedEl.innerHTML = typeof getCardFramedImageHtml === 'function'
+      ? getCardFramedImageHtml(card.id || card.name, 'frame-lg')
+      : `<img src="assets/cards/${card.id || card.name}.png" alt="${card.name}" style="width:82px;height:82px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'" />`;
     cardNameEl.textContent = card.name || '';
+    cardScoreEl.textContent = `★ ${card.score} 分`;
   } else if (card && card.hidden) {
     // 卡牌未揭示
     iconEl.style.display = 'flex';
     cardMiniEl.style.display = 'none';
     iconEl.textContent = '❓';
     cardNameEl.textContent = '待揭示';
+    cardScoreEl.textContent = '';
   } else {
     // 无卡牌 → 显示相位图标
     iconEl.style.display = 'flex';
     cardMiniEl.style.display = 'none';
     iconEl.textContent = phaseIcon;
     cardNameEl.textContent = '';
+    cardScoreEl.textContent = '';
   }
 
-  // 卡牌揭晓动画
-  if (card) {
-    const cardChanged = !_lastView || !_lastView.revealedCard || _lastView.revealedCard.id !== card.id;
-    if (cardChanged && !card.hidden) {
-      const wrap = document.getElementById('phaseIconWrap');
-      if (wrap) {
-        wrap.classList.remove('phase-reveal');
-        void wrap.offsetWidth;
-        wrap.classList.add('phase-reveal');
-        if (typeof playSound === 'function') playSound('cardFlip');
-      }
-    }
-  }
+  // 确保图标容器可见（可能被皇冠动画隐藏）
+  const wrap = document.getElementById('phaseIconWrap');
+  if (wrap) wrap.style.display = 'flex';
 }
 
 // ==================== 操作区（按阶段） ====================
@@ -538,8 +531,11 @@ function _renderAuctionResult(view, container) {
 
 function _showCrownBurst(winnerName, commissionRate) {
   const burst = document.getElementById('phaseCrownBurst');
-  const visual = document.getElementById('gamePhaseVisual');
-  if (!burst || !visual) return;
+  const wrap = document.getElementById('phaseIconWrap');
+  if (!burst || !wrap) return;
+
+  // 隐藏上方原贴图，只显示皇冠
+  wrap.style.display = 'none';
 
   // 重置动画
   burst.classList.remove('burst-active');
@@ -547,10 +543,11 @@ function _showCrownBurst(winnerName, commissionRate) {
   void burst.offsetWidth;
   burst.classList.add('burst-active');
 
-  // 2.8s 后隐藏（与公示页同步）
+  // 2.8s 后隐藏皇冠并恢复图标容器（下一状态会重绘内容）
   setTimeout(() => {
     burst.classList.remove('burst-active');
     burst.style.display = 'none';
+    wrap.style.display = 'flex';
   }, 2800);
 }
 
