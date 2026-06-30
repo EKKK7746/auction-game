@@ -489,6 +489,11 @@ function _renderAuctionResult(view, container) {
 
   if (typeof playSound === 'function') playSound('confirm');
 
+  // 顶部视觉区皇冠动画
+  if (!result.allPass) {
+    _showCrownBurst(result.winnerName, result.commissionRate);
+  }
+
   // 全员放弃
   if (result.allPass) {
     container.innerHTML = `
@@ -514,8 +519,7 @@ function _renderAuctionResult(view, container) {
     : '';
 
   container.innerHTML = `
-    <div class="auction-result-overlay">
-      <div class="ar-crown">👑</div>
+    <div class="auction-result-overlay ar-bids-only">
       <div class="ar-title">拍卖师诞生</div>
       <div class="ar-winner-name">${result.winnerName}</div>
       <div class="ar-commission">佣金 ${result.commissionRate}%</div>
@@ -530,6 +534,24 @@ function _renderAuctionResult(view, container) {
       </div>
     </div>
   `;
+}
+
+function _showCrownBurst(winnerName, commissionRate) {
+  const burst = document.getElementById('phaseCrownBurst');
+  const visual = document.getElementById('gamePhaseVisual');
+  if (!burst || !visual) return;
+
+  // 重置动画
+  burst.classList.remove('burst-active');
+  burst.style.display = 'block';
+  void burst.offsetWidth;
+  burst.classList.add('burst-active');
+
+  // 2.8s 后隐藏（与公示页同步）
+  setTimeout(() => {
+    burst.classList.remove('burst-active');
+    burst.style.display = 'none';
+  }, 2800);
 }
 
 // ==================== 拍卖阶段 ====================
