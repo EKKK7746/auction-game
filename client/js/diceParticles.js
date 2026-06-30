@@ -168,8 +168,8 @@
 
     // 移动端自适应缩小（与 style.css 保持一致）
     const isMobile = window.innerWidth < 768;
-    const W = isMobile ? 160 : 360;
-    const H = isMobile ? 120 : 300;
+    const W = isMobile ? 140 : 360;
+    const H = isMobile ? 100 : 300;
 
     canvas.width = W * (window.devicePixelRatio || 1);
     canvas.height = H * (window.devicePixelRatio || 1);

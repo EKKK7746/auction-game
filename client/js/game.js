@@ -92,8 +92,7 @@ function renderGame(view) {
     _showRoundTransition(view);
   }
 
-  _renderStatusBar(view);
-  _renderCardDisplay(view);
+  _renderPhaseBar(view);
   _renderActionArea(view);
   _renderMyStatus(view);
   _renderPlayerList(view);
@@ -257,80 +256,70 @@ function leaveSpectate() {
   goToMode();
 }
 
-// ==================== 状态栏 ====================
+// ==================== 顶部相位栏（状态+卡牌图标+计时条） ====================
 
-function _renderStatusBar(view) {
+const PHASE_ICONS = {
+  auction: '🏛️',
+  selectCard: '👑',
+  rentDice: '🎲',
+  rollDice: '🎲',
+  settle: '📊',
+  duel: '🪞',
+  finished: '🏆',
+};
+
+function _renderPhaseBar(view) {
+  // 回合/阶段文字
   document.getElementById('gameRoundLabel').textContent =
     `第 ${view.round}/${view.maxRounds} 轮`;
   const phaseLabel = PHASE_LABELS[view.phase] || view.phase;
   const spectatorTag = view.isSpectator ? ' · 👁️观战' : '';
   document.getElementById('gamePhaseLabel').textContent = phaseLabel + spectatorTag;
-}
 
-// ==================== 卡牌展示 ====================
+  // 相位图标
+  const iconEl = document.getElementById('phaseIcon');
+  const cardMiniEl = document.getElementById('phaseCardMini');
+  const cardNameEl = document.getElementById('phaseCardName');
+  const cardImgEl = document.getElementById('phaseCardImg');
+  const cardScoreEl = document.getElementById('phaseCardScore');
 
-function _renderCardDisplay(view) {
-  const area = document.getElementById('gameCardArea');
   const card = view.revealedCard;
+  const phaseIcon = PHASE_ICONS[view.phase] || '🏛️';
 
-  if (!card) {
-    // ★ 用 visibility 保留空间，防止布局跳动
-    area.style.visibility = 'hidden';
-    area.style.opacity = '0';
-    area.style.pointerEvents = 'none';
-    return;
-  }
-  area.style.visibility = 'visible';
-  area.style.opacity = '1';
-  area.style.pointerEvents = 'auto';
-
-  const isHidden = card.hidden;
-  const name = isHidden ? '？？？' : card.name;
-  const vis = getCardVisual(isHidden ? '???' : (card.id || card.name));
-  const rarity = isHidden ? 'common' : getCardRarity(card.id || card.name);
-
-  // P1-2: 卡牌揭晓动画 — 检测卡牌变化
-  const cardChanged = !_lastView || !_lastView.revealedCard || _lastView.revealedCard.id !== card.id;
-
-  document.getElementById('cardEmoji').innerHTML = isHidden ? '<span class="card-emoji-fallback">❓</span>' : getCardFramedImageHtml(card.id || card.name, 'frame-xl');
-  document.getElementById('cardName').textContent = name;
-  document.getElementById('cardScore').textContent = isHidden ? '???' : `★ ${card.score} 分`;
-  document.getElementById('cardEffect').textContent = isHidden ? '' : getEffectLabel(card.effect);
-
-  const badge = document.getElementById('cardBadge');
-  if (!isHidden && card.score >= 3) {
-    badge.className = 'card-badge ' + (card.score > 3 ? 'legendary' : 'rare');
-    badge.textContent = card.score > 3 ? '传' : '珍';
-    badge.style.display = 'block';
+  if (card && !card.hidden) {
+    // 有卡牌且可见 → 显示卡牌小图
+    iconEl.style.display = 'none';
+    cardMiniEl.style.display = 'flex';
+    cardImgEl.src = `assets/cards/${card.id || card.name}.png`;
+    cardImgEl.onerror = function() { this.style.display = 'none'; };
+    cardScoreEl.textContent = `★${card.score}`;
+    cardNameEl.textContent = card.name || '';
+  } else if (card && card.hidden) {
+    // 卡牌未揭示
+    iconEl.style.display = 'flex';
+    cardMiniEl.style.display = 'none';
+    iconEl.textContent = '❓';
+    cardNameEl.textContent = '待揭示';
   } else {
-    badge.style.display = 'none';
+    // 无卡牌 → 显示相位图标
+    iconEl.style.display = 'flex';
+    cardMiniEl.style.display = 'none';
+    iconEl.textContent = phaseIcon;
+    cardNameEl.textContent = '';
   }
 
-  const cardDisplay = document.getElementById('gameCardDisplay');
-  cardDisplay.className = 'artifact-card rarity-' + rarity;
-  cardDisplay.style.borderLeftColor = isHidden ? '#B8A99A' : vis.color;
-
-  if (cardChanged) {
-    // P1-2: 按稀有度分级动画
-    area.classList.remove('reveal-legendary', 'reveal-rare', 'reveal-common');
-    if (typeof playSound === 'function') playSound('cardFlip');
-
-    if (!isHidden) {
-      if (card.score >= 3) {
-        area.classList.add('reveal-legendary');
-        if (typeof playSound === 'function') setTimeout(() => playSound('victory'), 300);
-      } else if (card.score === 2) {
-        area.classList.add('reveal-rare');
-      } else {
-        area.classList.add('reveal-common');
+  // 卡牌揭晓动画
+  if (card) {
+    const cardChanged = !_lastView || !_lastView.revealedCard || _lastView.revealedCard.id !== card.id;
+    if (cardChanged && !card.hidden) {
+      const wrap = document.getElementById('phaseIconWrap');
+      if (wrap) {
+        wrap.classList.remove('phase-reveal');
+        void wrap.offsetWidth;
+        wrap.classList.add('phase-reveal');
+        if (typeof playSound === 'function') playSound('cardFlip');
       }
-    } else {
-      area.classList.add('flipped');
     }
-
-    setTimeout(() => {
-      area.classList.remove('flipped', 'reveal-legendary', 'reveal-rare', 'reveal-common');
-    }, 800);
   }
 }
 
@@ -591,7 +580,6 @@ function _renderAuction(view, container) {
       <button class="bid-btn" onclick="doBid(50)"><span>50%</span></button>
       <button class="bid-btn pass-btn" onclick="doBid(null)">放弃</button>
     </div>
-    <div class="turn-timer-bar" id="turnTimerBar"><div class="turn-timer-fill"></div></div>
   `;
 
   if (view.turnDeadline) {
@@ -739,7 +727,6 @@ function _renderRentDice(view, container) {
         onclick="doSelectDiceWithUpgrade('pass')">本轮放弃</button>
     </div>
     ${upgradeCheckbox}
-    <div class="turn-timer-bar" id="turnTimerBar"><div class="turn-timer-fill"></div></div>
   `;
 
   if (view.turnDeadline) {
@@ -1807,9 +1794,8 @@ function showCardPopup(cardId, cardName, isHidden, optScore, optEffect) {
 }
 
 function _renderPlayerList(view) {
-  const allPlayers = view.players; // 包含自己
+  const allPlayers = view.players;
   const list = document.getElementById('otherList');
-  const toggle = document.getElementById('otherToggle');
   const container = document.getElementById('gameOtherPlayers');
 
   if (allPlayers.length === 0) {
@@ -1817,17 +1803,6 @@ function _renderPlayerList(view) {
     return;
   }
   container.style.display = '';
-  if (toggle) toggle.textContent = '玩家列表 ▼';
-
-  // ★ 读取当前展开状态（重建 DOM 前）
-  const expandedMap = {};
-  if (list && list.children.length > 0) {
-    const rows = list.querySelectorAll('.player-row');
-    rows.forEach(row => {
-      const pid = row.dataset.playerId;
-      if (pid) expandedMap[pid] = row.dataset.expanded === '1';
-    });
-  }
 
   // 计算最高卡牌分和最高资金
   let maxScore = -1, maxFunds = -1;
@@ -1837,83 +1812,142 @@ function _renderPlayerList(view) {
   }
 
   list.innerHTML = allPlayers.map(p => {
-    // 效果图标
-    const effectIcons = [];
-    if (p.hasDragonPhoenix) effectIcons.push('🐉🐉');
-    if (p.hasReroll) effectIcons.push('🎲🎲');
-    if (p.hasDoubleComm) effectIcons.push('💰');
-    if (p.hasUpgrade) effectIcons.push('⬆️');
-    if (p.cards && p.cards.some(c => c.id === 'slj' && !c.used)) effectIcons.push('🪞');
-    if (p.cards && p.cards.some(c => c.id === 'qmht')) effectIcons.push('📜');
-    if (p.cards && p.cards.some(c => c.id === 'sxtc')) effectIcons.push('🐪');
-    if (p.cards && p.cards.some(c => c.id === 'dhmh')) effectIcons.push('🛡️');
-    const effects = effectIcons.join(' ');
-
-    // 卡牌分（来自服务端，含龙凤联动加成）
     const cardScore = p.cardScore || 0;
-
-    // 标记
     const isTopScore = cardScore > 0 && cardScore === maxScore && maxScore > 0;
     const isRichest = p.funds === maxFunds && maxFunds > 0;
-
     const botTag = p.isBot ? ' <span class="bot-tag">AI</span>' : '';
     const managedTag = p.managed ? ' <span class="managed-badge">托管</span>' : '';
     const auctioneerIcon = p.id === view.auctioneerId ? '👑 ' : '';
 
-    // 卡牌详情（带图标可点击浮窗）— 卡牌被获得后即公开
-    let cardDetail = '';
-    if (p.cards && p.cards.length) {
-      const icons = p.cards.map(c => {
-        const scoreClass = 'score-' + (c.score || 1);
-        const cardName = CARD_NAMES[c.id] || c.id;
-        return `<img class="card-image card-img-xs card-icon ${scoreClass}" src="assets/cards/${c.id}.png" alt="${cardName}" title="${cardName} ★${c.score}"
-          data-card-id="${c.id}" data-card-name="${cardName}"
-          data-card-score="${c.score || 0}" data-card-effect="${c.effect || 'none'}"
-          onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=\\'card-icon ${scoreClass}\\' data-card-id=\\'${c.id}\\' data-card-name=\\'${cardName}\\' data-card-score=\\'${c.score||0}\\' data-card-effect=\\'${c.effect||'none'}\\' role=\\'button\\' tabindex=\\'0\\'>★</span>')" />`;
-      }).join('');
-      const tags = p.cards.map(c => {
-        const stars = '★'.repeat(c.score || 0);
-        const color = c.score === 3 ? '#C43A31' : c.score === 2 ? '#8B6914' : '#2E5C8A';
-        return `<span class="pl-card-tag" style="color:${color}">${CARD_NAMES[c.id] || c.id}${stars}</span>`;
-      }).join(' ');
-      cardDetail = `<div class="pl-card-icons">${icons}</div><div class="pl-card-names">${tags}</div>`;
-    }
-
-    // 技能详情
-    let skillDetail = [];
-    if (p.hasDragonPhoenix) skillDetail.push('【联动·龙凤】');
-    if (p.hasReroll) skillDetail.push('【联动·重掷】');
-    if (p.hasDoubleComm) skillDetail.push('【被动·特权】');
-    if (p.hasUpgrade) skillDetail.push('【主动·飞升】可用');
-    else if (p.cards && p.cards.some(c => c.id === 'dhft' && c.used)) skillDetail.push('【主动·飞升】已用');
-    if (p.cards && p.cards.some(c => c.id === 'slj')) {
-      const sljCard = p.cards.find(c => c.id === 'slj');
-      skillDetail.push(sljCard?.used ? '【主动·决斗】已用' : '【主动·决斗】');
-    }
-    if (p.cards && p.cards.some(c => c.id === 'yqh')) skillDetail.push('【主动·重掷】');
-    if (p.cards && p.cards.some(c => c.id === 'qmht')) skillDetail.push('【被动·传世】');
-    if (p.cards && p.cards.some(c => c.id === 'sxtc')) skillDetail.push('【被动·通商】');
-    if (p.cards && p.cards.some(c => c.id === 'dhmh')) skillDetail.push('【被动·护佑】');
-    const skillStr = skillDetail.length ? `<div class="pl-skills">${skillDetail.join(' | ')}</div>` : '';
-
-    const isOpen = expandedMap[p.id] === true;
     return `
-      <div class="player-row${p.isMe ? ' is-me' : ''}" data-player-id="${p.id}" data-expanded="${isOpen ? '1' : '0'}" onclick="togglePlayerDetail(this)">
+      <div class="player-row${p.isMe ? ' is-me' : ''}" data-player-id="${p.id}" onclick="showPlayerDetailPopup(this, '${p.id}')">
         <span class="pl-nick">
           ${isTopScore ? '<span class="pl-badge pl-badge-crown">👑</span>' : ''}
           ${auctioneerIcon}${botTag}${managedTag}${p.nickname}
           ${p.isMe ? '<span class="me-tag">你</span>' : ''}
           ${isRichest ? '<span class="pl-badge pl-badge-rich">💎</span>' : ''}
         </span>
-        <span class="pl-stats">💰$${p.funds} ⭐${cardScore}分 🃏${p.cardCount}张 ${effects}</span>
-        <span class="pl-expand-icon">${isOpen ? '▲' : '▼'}</span>
-        <div class="player-detail${isOpen ? ' open' : ''}">
-          ${cardDetail ? `<div class="pl-cards">卡牌：${cardDetail}</div>` : ''}
-          ${skillStr}
-        </div>
+        <span class="pl-stats">💰$${p.funds} ⭐${cardScore}</span>
+        <span class="pl-expand-icon">▶</span>
       </div>
     `;
   }).join('');
+}
+
+// 玩家详情浮窗
+function showPlayerDetailPopup(rowEl, playerId) {
+  // 关闭已有弹窗
+  _closePlayerPopup();
+
+  // 从最近渲染数据中查找玩家
+  const view = _lastView;
+  if (!view) return;
+  const p = view.players.find(pp => pp.id === playerId);
+  if (!p) return;
+
+  // 效果图标
+  const effectIcons = [];
+  if (p.hasDragonPhoenix) effectIcons.push('🐉🐉');
+  if (p.hasReroll) effectIcons.push('🎲🎲');
+  if (p.hasDoubleComm) effectIcons.push('💰');
+  if (p.hasUpgrade) effectIcons.push('⬆️');
+  if (p.cards && p.cards.some(c => c.id === 'slj' && !c.used)) effectIcons.push('🪞');
+  if (p.cards && p.cards.some(c => c.id === 'qmht')) effectIcons.push('📜');
+  if (p.cards && p.cards.some(c => c.id === 'sxtc')) effectIcons.push('🐪');
+  if (p.cards && p.cards.some(c => c.id === 'dhmh')) effectIcons.push('🛡️');
+  const effects = effectIcons.join(' ');
+
+  // 卡牌详情
+  let cardDetail = '';
+  if (p.cards && p.cards.length) {
+    const icons = p.cards.map(c => {
+      const scoreClass = 'score-' + (c.score || 1);
+      const cardName = CARD_NAMES[c.id] || c.id;
+      return `<img class="card-image card-img-xs card-icon ${scoreClass}" src="assets/cards/${c.id}.png" alt="${cardName}" title="${cardName} ★${c.score}"
+        data-card-id="${c.id}" data-card-name="${cardName}"
+        data-card-score="${c.score || 0}" data-card-effect="${c.effect || 'none'}"
+        onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=\\'card-icon ${scoreClass}\\' data-card-id=\\'${c.id}\\' data-card-name=\\'${cardName}\\' data-card-score=\\'${c.score||0}\\' data-card-effect=\\'${c.effect||'none'}\\' role=\\'button\\' tabindex=\\'0\\'>★</span>')" />`;
+    }).join('');
+    const tags = p.cards.map(c => {
+      const stars = '★'.repeat(c.score || 0);
+      const color = c.score === 3 ? '#C43A31' : c.score === 2 ? '#8B6914' : '#2E5C8A';
+      return `<span class="pp-card-tag" style="color:${color}">${CARD_NAMES[c.id] || c.id}${stars}</span>`;
+    }).join(' ');
+    cardDetail = `<div class="pp-cards">${icons}</div><div class="pp-card-names">${tags}</div>`;
+  }
+
+  // 技能详情
+  let skillDetail = [];
+  if (p.hasDragonPhoenix) skillDetail.push('【联动·龙凤】');
+  if (p.hasReroll) skillDetail.push('【联动·重掷】');
+  if (p.hasDoubleComm) skillDetail.push('【被动·特权】');
+  if (p.hasUpgrade) skillDetail.push('【主动·飞升】可用');
+  else if (p.cards && p.cards.some(c => c.id === 'dhft' && c.used)) skillDetail.push('【主动·飞升】已用');
+  if (p.cards && p.cards.some(c => c.id === 'slj')) {
+    const sljCard = p.cards.find(c => c.id === 'slj');
+    skillDetail.push(sljCard?.used ? '【主动·决斗】已用' : '【主动·决斗】');
+  }
+  if (p.cards && p.cards.some(c => c.id === 'yqh')) skillDetail.push('【主动·重掷】');
+  if (p.cards && p.cards.some(c => c.id === 'qmht')) skillDetail.push('【被动·传世】');
+  if (p.cards && p.cards.some(c => c.id === 'sxtc')) skillDetail.push('【被动·通商】');
+  if (p.cards && p.cards.some(c => c.id === 'dhmh')) skillDetail.push('【被动·护佑】');
+  const skillStr = skillDetail.length ? `<div class="pp-skills">${skillDetail.join(' | ')}</div>` : '';
+
+  const popup = document.createElement('div');
+  popup.id = 'playerPopup';
+  popup.className = 'player-popup';
+  popup.innerHTML = `
+    <span class="pp-close" onclick="_closePlayerPopup()">✕</span>
+    <div class="pp-header">${p.nickname} ${p.isMe ? '<span class="me-tag">你</span>' : ''}</div>
+    <div class="pp-stats">💰 $${p.funds} · ⭐ ${p.cardScore||0}分 · 🃏 ${p.cardCount||0}张 ${effects}</div>
+    ${cardDetail ? `<div class="pp-cards-section">${cardDetail}</div>` : ''}
+    ${skillStr}
+  `;
+  document.body.appendChild(popup);
+
+  // 定位到行附近
+  const rect = rowEl.getBoundingClientRect();
+  const popupRect = popup.getBoundingClientRect();
+  let left = rect.right + 6;
+  let top = rect.top;
+  // 如果右侧放不下，放左侧
+  if (left + popupRect.width > window.innerWidth - 10) {
+    left = rect.left - popupRect.width - 6;
+  }
+  // 如果左侧也放不下，放下方
+  if (left < 10) {
+    left = rect.left;
+    top = rect.bottom + 6;
+  }
+  // 垂直边界
+  if (top + popupRect.height > window.innerHeight - 10) {
+    top = window.innerHeight - popupRect.height - 10;
+  }
+  if (top < 10) top = 10;
+  popup.style.left = left + 'px';
+  popup.style.top = top + 'px';
+
+  // 点击外部关闭
+  setTimeout(() => {
+    document.addEventListener('click', _onPopupOutsideClick, { once: true });
+  }, 10);
+}
+
+function _onPopupOutsideClick(e) {
+  const popup = document.getElementById('playerPopup');
+  if (popup && !popup.contains(e.target) && !e.target.closest('.player-row')) {
+    _closePlayerPopup();
+  } else if (popup) {
+    // 仍然存在，重新监听
+    setTimeout(() => {
+      document.addEventListener('click', _onPopupOutsideClick, { once: true });
+    }, 10);
+  }
+}
+
+function _closePlayerPopup() {
+  const popup = document.getElementById('playerPopup');
+  if (popup) popup.remove();
 }
 
 // 卡牌图标点击 — 事件委托（替代内联 onclick，移动端兼容）
@@ -1931,33 +1965,19 @@ function _onCardIconClick(e) {
 document.addEventListener('click', _onCardIconClick, true); // 捕获阶段
 document.addEventListener('touchend', _onCardIconClick, { passive: false });
 
-// 展开/折叠玩家详情
+// 展开/折叠玩家详情 — 现在通过浮窗实现
 function togglePlayerDetail(row) {
-  const detail = row.querySelector('.player-detail');
-  const icon = row.querySelector('.pl-expand-icon');
-  if (!detail) return;
-  const isOpen = detail.classList.toggle('open');
-  row.dataset.expanded = isOpen ? '1' : '0';
-  if (icon) icon.textContent = isOpen ? '▲' : '▼';
+  showPlayerDetailPopup(row, row.dataset.playerId);
 }
 
-// ==================== 展开/折叠玩家列表 ====================
+// ==================== 设置模态框 ====================
 
-document.addEventListener('DOMContentLoaded', () => {
-  const toggle = document.getElementById('otherToggle');
-  const list = document.getElementById('otherList');
-  const container = document.getElementById('gameOtherPlayers');
-  if (toggle && list) {
-    toggle.addEventListener('click', () => {
-      const open = list.classList.toggle('open');
-      toggle.classList.toggle('collapsed', !open);
-      // 同步容器类，便于 CSS 控制展开高度
-      if (container) container.classList.toggle('open', open);
-    });
-    // 默认展开（所有端），玩家列表向下自然占高
-    list.classList.add('open');
+function toggleSettingsModal() {
+  const overlay = document.getElementById('settingsModalOverlay');
+  if (overlay) {
+    overlay.style.display = overlay.style.display === 'none' ? 'flex' : 'none';
   }
-});
+}
 
 // ==================== 倒计时辅助 ====================
 
@@ -1970,10 +1990,10 @@ function _clearSettleTimer() {
 
 function _startTurnCountdown(deadline) {
   _stopTurnCountdown();
-  const bar = document.getElementById('turnTimerBar');
+  const bar = document.getElementById('globalTimerBar');
   if (!bar) return;
   bar.style.display = 'block';
-  const fill = bar.querySelector('.turn-timer-fill');
+  const fill = document.getElementById('globalTimerFill');
   if (!fill) return;
 
   const totalMs = 30000;
@@ -1997,7 +2017,7 @@ function _stopTurnCountdown() {
     clearTimeout(_turnCountdownId);
     _turnCountdownId = null;
   }
-  const bar = document.getElementById('turnTimerBar');
+  const bar = document.getElementById('globalTimerBar');
   if (bar) bar.style.display = 'none';
 }
 
@@ -2164,20 +2184,6 @@ function closeCardPool() {
 
 // ==================== 设置面板 ====================
 
-function toggleSettings() {
-  const header = document.getElementById('settingsToggle');
-  const body = document.getElementById('settingsBody');
-  if (!body || !header) return;
-  const isOpen = body.style.display !== 'none';
-  if (isOpen) {
-    body.style.display = 'none';
-    header.classList.remove('open');
-  } else {
-    body.style.display = 'flex';
-    header.classList.add('open');
-  }
-}
-
 function onVolumeChange(val) {
   const vol = parseInt(val) / 100;
   if (typeof SoundManager !== 'undefined') {
@@ -2289,13 +2295,6 @@ renderGame = function(view) {
     roundLabel._boundClick = true;
     roundLabel.title = '点击查看卡池总览';
     roundLabel.addEventListener('click', showCardPool);
-  }
-
-  // 绑定设置面板切换
-  const settingsToggle = document.getElementById('settingsToggle');
-  if (settingsToggle && !settingsToggle._boundClick) {
-    settingsToggle._boundClick = true;
-    settingsToggle.addEventListener('click', toggleSettings);
   }
 
   // 点击模态框背景关闭

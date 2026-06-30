@@ -230,62 +230,63 @@
     <section id="view-game" class="view">
       <div class="game-container">
 
-        <!-- 状态栏 -->
-        <div class="game-status-bar" id="gameStatusBar">
-          <span class="game-round" id="gameRoundLabel">第 1/10 轮</span>
-          <span class="game-phase" id="gamePhaseLabel">拍卖阶段</span>
-        </div>
-
-        <!-- 当前展示卡牌 -->
-        <div class="game-card-area" id="gameCardArea">
-          <div class="artifact-card" id="gameCardDisplay">
-            <div class="card-visual">
-              <div class="card-emoji" id="cardEmoji">🏺</div>
-              <div class="card-badge" id="cardBadge" style="display:none;"></div>
-            </div>
-            <div class="card-body">
-              <div class="card-name" id="cardName">---</div>
-              <div class="card-score" id="cardScore">---</div>
-              <div class="card-effect" id="cardEffect"></div>
+        <!-- 顶部相位栏：图标 + 回合/阶段 + 计时条 -->
+        <div class="game-phase-bar" id="gamePhaseBar">
+          <div class="phase-icon-wrap" id="phaseIconWrap">
+            <div class="phase-icon" id="phaseIcon">🏺</div>
+            <div class="phase-card-mini" id="phaseCardMini" style="display:none;">
+              <img class="phase-card-img" id="phaseCardImg" src="" alt="" />
+              <span class="phase-card-score" id="phaseCardScore"></span>
             </div>
           </div>
-        </div>
-
-        <!-- 操作区（动态） -->
-        <div class="game-action-area" id="gameActionArea"></div>
-
-        <!-- 我的状态 -->
-        <div class="game-my-status" id="gameMyStatus">
-          <div class="my-status-item">💰 <span id="myFunds">0</span></div>
-          <div class="my-status-item">🃏 <span id="myCardCount">0</span></div>
-          <div class="my-status-item" id="myEffects"></div>
-        </div>
-
-        <!-- 其他玩家 -->
-        <div class="game-other-players" id="gameOtherPlayers">
-          <div class="other-toggle" id="otherToggle">玩家列表 ▼</div>
-          <div class="other-list" id="otherList"></div>
-        </div>
-
-        <!-- 设置面板（滚到页面底部可见） -->
-        <div class="game-settings-area" id="gameSettingsArea">
-          <div class="settings-header" id="settingsToggle">
-            <span>⚙️ 游戏设置</span>
-            <span class="settings-arrow">▼</span>
+          <div class="phase-info">
+            <span class="game-round" id="gameRoundLabel">第 1/10 轮</span>
+            <span class="game-phase" id="gamePhaseLabel">拍卖阶段</span>
+            <span class="phase-card-name" id="phaseCardName"></span>
           </div>
-          <div class="settings-body" id="settingsBody" style="display:none;">
-            <div class="settings-row">
-              <label>🔊 音量</label>
-              <input type="range" id="volumeSlider" min="0" max="100" value="100" class="volume-slider" oninput="onVolumeChange(this.value)">
-              <span id="volumeLabel">100%</span>
+          <div class="phase-timer-bar" id="globalTimerBar"><div class="phase-timer-fill" id="globalTimerFill"></div></div>
+        </div>
+
+        <!-- 主体：左右双列 -->
+        <div class="game-main">
+          <!-- 左栏：我的状态 + 玩家列表 -->
+          <div class="game-left-panel">
+            <div class="game-my-status" id="gameMyStatus">
+              <div class="my-status-item">💰 <span id="myFunds">0</span></div>
+              <div class="my-status-item">🃏 <span id="myCardCount">0</span></div>
+              <div class="my-status-item" id="myEffects"></div>
             </div>
-            <div class="settings-row">
-              <label>🤖 托管模式</label>
-              <button id="btnAutoPlay" class="btn btn-sm btn-outline" onclick="toggleAutoPlay()">关闭</button>
+            <div class="game-other-players" id="gameOtherPlayers">
+              <div class="other-list" id="otherList"></div>
             </div>
-            <div class="settings-row">
-              <button id="btnExitGame" class="btn btn-danger" onclick="exitGame()">🚪 退出游戏（Bot 托管）</button>
-            </div>
+          </div>
+
+          <!-- 右栏：操作区 -->
+          <div class="game-right-panel">
+            <div class="game-action-area" id="gameActionArea"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 浮动设置按钮 -->
+      <button class="settings-fab" id="settingsFab" onclick="toggleSettingsModal()">⚙️</button>
+
+      <!-- 设置模态框 -->
+      <div class="settings-modal-overlay" id="settingsModalOverlay" style="display:none;" onclick="if(event.target===this)toggleSettingsModal()">
+        <div class="settings-modal">
+          <button class="modal-close" onclick="toggleSettingsModal()">✕</button>
+          <h3 class="settings-modal-title">⚙️ 游戏设置</h3>
+          <div class="settings-row">
+            <label>🔊 音量</label>
+            <input type="range" id="volumeSlider" min="0" max="100" value="100" class="volume-slider" oninput="onVolumeChange(this.value)">
+            <span id="volumeLabel">100%</span>
+          </div>
+          <div class="settings-row">
+            <label>🤖 托管模式</label>
+            <button id="btnAutoPlay" class="btn btn-sm btn-outline" onclick="toggleAutoPlay()">关闭</button>
+          </div>
+          <div class="settings-row">
+            <button id="btnExitGame" class="btn btn-danger" onclick="exitGame()">🚪 退出游戏（Bot 托管）</button>
           </div>
         </div>
       </div>
