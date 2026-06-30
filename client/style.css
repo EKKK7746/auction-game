@@ -563,6 +563,99 @@ body {
   animation: crown-burst-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
+/* --- 顶部相位视觉区：决斗动画 --- */
+
+.phase-visual-normal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.phase-visual-duel {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  animation: phaseDuelIn 0.5s ease forwards;
+}
+
+.phase-visual-duel.active {
+  display: flex;
+}
+
+.phase-duel-players {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.phase-duel-player {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  animation: phaseDuelPlayerIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.phase-duel-player .pdp-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFF8E7, #F5F0E8);
+  border: 2px solid #C9A96E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  animation: phaseDuelPulse 1s ease-in-out infinite;
+}
+
+.phase-duel-player .pdp-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4A3728;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phase-duel-player .pdp-role {
+  font-size: 10px;
+  color: #8B7B6B;
+}
+
+.phase-duel-vs {
+  font-size: 22px;
+  font-weight: 900;
+  color: #C43A31;
+  animation: phaseDuelVsIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
+}
+
+@keyframes phaseDuelIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes phaseDuelPlayerIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.8); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes phaseDuelPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+@keyframes phaseDuelVsIn {
+  from { opacity: 0; transform: scale(1.5) rotate(-10deg); }
+  to { opacity: 1; transform: scale(1) rotate(0); }
+}
+
 .phase-timer-bar {
   position: absolute;
   bottom: 0;
@@ -605,6 +698,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  align-self: stretch;
+  min-height: 0;
 }
 
 .game-right-panel {
@@ -612,6 +707,8 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  align-self: stretch;
+  min-height: 0;
 }
 
 /* --- 我的状态 --- */
@@ -679,6 +776,13 @@ body {
   color: #B0B0B0;
 }
 
+.player-row-placeholder {
+  text-align: center;
+  padding: 20px 8px;
+  font-size: 12px;
+  color: #B0B0B0;
+}
+
 .player-row {
   display: flex;
   align-items: center;
@@ -688,6 +792,7 @@ body {
   cursor: pointer;
   transition: background 0.15s;
   font-size: 13px;
+  min-height: 28px;
 }
 
 .player-row:hover { background: #F5F0E8; }
@@ -3611,14 +3716,15 @@ body {
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  background: linear-gradient(135deg, rgba(40, 12, 8, 0.95), rgba(20, 6, 4, 0.98));
+  background: linear-gradient(135deg, #FFFFFF 0%, #F5F0E8 100%);
   border-radius: 12px;
+  border: 1px solid #E8DCC8;
 }
 
 .duel-intro-overlay .di-flash {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: radial-gradient(ellipse at center, rgba(196, 58, 49, 0.5), transparent 70%);
+  background: radial-gradient(ellipse at center, rgba(201, 169, 110, 0.25), transparent 70%);
   animation: diFlash 0.8s ease-out;
 }
 
@@ -3627,7 +3733,7 @@ body {
   top: 0; left: 0; right: 0;
   height: 3px;
   background: linear-gradient(90deg, transparent, #C43A31, transparent);
-  box-shadow: 0 0 10px #C43A31, 0 0 20px rgba(196, 58, 49, 0.5);
+  box-shadow: 0 0 10px rgba(196, 58, 49, 0.4), 0 0 20px rgba(196, 58, 49, 0.2);
   animation: diScanLine 2s ease-in-out infinite;
   z-index: 3;
 }
@@ -3659,23 +3765,22 @@ body {
   font-size: 56px;
   margin-bottom: 8px;
   animation: diAvatarPulse 1s ease-in-out infinite;
-  filter: drop-shadow(0 0 8px rgba(196, 58, 49, 0.5));
+  filter: drop-shadow(0 0 8px rgba(201, 169, 110, 0.4));
 }
 
 .duel-intro-overlay .di-name {
   font-size: 18px;
   font-weight: 800;
-  color: #F5E6D3;
+  color: #4A3728;
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  text-shadow: 0 0 6px rgba(212, 175, 55, 0.3);
 }
 
 .duel-intro-overlay .di-role {
   font-size: 11px;
-  color: #B8A99A;
+  color: #8B7B6B;
   margin-top: 2px;
 }
 
@@ -3683,22 +3788,21 @@ body {
   font-size: 42px;
   font-weight: 900;
   color: #C43A31;
-  text-shadow: 0 0 20px rgba(196, 58, 49, 0.8), 0 0 40px rgba(196, 58, 49, 0.4);
+  text-shadow: 0 0 12px rgba(196, 58, 49, 0.25);
   animation: diVsIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s backwards;
 }
 
 .duel-intro-overlay .di-title {
   font-size: 26px;
   font-weight: 800;
-  color: #D4AF37;
+  color: #C43A31;
   letter-spacing: 6px;
-  text-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
   animation: diTitleIn 0.5s ease 0.8s backwards;
 }
 
 .duel-intro-overlay .di-subtitle {
   font-size: 13px;
-  color: #B8A99A;
+  color: #8B7B6B;
   margin-top: 8px;
   animation: diContentIn 0.5s ease 1s backwards;
 }
@@ -3706,7 +3810,7 @@ body {
 @keyframes diFlash {
   0% { opacity: 0; transform: scale(0.3); }
   40% { opacity: 1; }
-  100% { opacity: 0.5; }
+  100% { opacity: 0.4; }
 }
 
 @keyframes diScanLine {
@@ -3727,8 +3831,8 @@ body {
 }
 
 @keyframes diAvatarPulse {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(196, 58, 49, 0.5)); }
-  50% { transform: scale(1.2); filter: drop-shadow(0 0 16px rgba(196, 58, 49, 0.8)); }
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(201, 169, 110, 0.4)); }
+  50% { transform: scale(1.2); filter: drop-shadow(0 0 16px rgba(201, 169, 110, 0.6)); }
 }
 
 @keyframes diVsIn {
@@ -4197,15 +4301,25 @@ body {
   border-color: #D4AF37;
 }
 
-/* 已被获得 */
+/* 已被获得：整体置灰，但仍保持可见 */
 .deck-item.acquired {
-  opacity: 0.45;
-  filter: grayscale(0.55);
-  border-color: #DDD;
+  opacity: 0.55;
+  filter: grayscale(1);
+  border-color: #CCC;
+  background: #F5F5F5;
 }
 
 .deck-item.acquired .deck-emoji {
   filter: grayscale(1);
+  opacity: 0.7;
+}
+
+.deck-item.acquired .deck-name {
+  color: #999;
+}
+
+.deck-item.acquired .deck-score {
+  color: #AAA;
 }
 
 /* 分数左边框 */
@@ -4223,10 +4337,6 @@ body {
   color: #3D2B1F;
   font-weight: 600;
   margin-bottom: 2px;
-}
-
-.deck-item.acquired .deck-name {
-  color: #999;
 }
 
 .deck-score {
@@ -4845,9 +4955,17 @@ body {
 
   .game-left-panel {
     width: 260px;
+    align-self: stretch;
+    min-height: 0;
+  }
+
+  .game-right-panel {
+    align-self: stretch;
+    min-height: 0;
   }
 
   .game-action-area {
+    flex: 1;
     min-height: 400px;
     max-height: 70vh;
   }
@@ -4914,6 +5032,21 @@ body {
   .phase-visual-card-name { font-size: 13px; max-width: 140px; }
   .phase-visual-card-score { font-size: 12px; }
   .phase-crown-burst { font-size: 64px; }
+
+  /* 顶部决斗视觉区 */
+  .phase-duel-player .pdp-avatar {
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+  }
+  .phase-duel-player .pdp-name {
+    font-size: 11px;
+    max-width: 70px;
+  }
+  .phase-duel-player .pdp-role { font-size: 9px; }
+  .phase-duel-vs { font-size: 18px; }
+  .phase-duel-players { gap: 10px; }
+
   .phase-timer-bar { height: 2px; }
 
   /* 主体双列 */
@@ -4927,6 +5060,13 @@ body {
   .game-left-panel {
     width: 38%;
     gap: 4px;
+    align-self: stretch;
+    min-height: 0;
+  }
+
+  .game-right-panel {
+    align-self: stretch;
+    min-height: 0;
   }
 
   .game-my-status {
@@ -4952,6 +5092,10 @@ body {
     padding: 2px 4px;
   }
   .other-list:empty::before {
+    padding: 12px 4px;
+    font-size: 10px;
+  }
+  .player-row-placeholder {
     padding: 12px 4px;
     font-size: 10px;
   }

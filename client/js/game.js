@@ -276,6 +276,30 @@ function _renderPhaseBar(view) {
   const spectatorTag = view.isSpectator ? ' · 👁️观战' : '';
   document.getElementById('gamePhaseLabel').textContent = phaseLabel + spectatorTag;
 
+  const normalVisual = document.getElementById('phaseVisualNormal');
+  const duelVisual = document.getElementById('phaseVisualDuel');
+
+  // 决斗阶段：在顶部视觉区也展示 VS 动效
+  if (view.phase === 'duel' && view.duel && normalVisual && duelVisual) {
+    normalVisual.style.display = 'none';
+    duelVisual.style.display = 'flex';
+    duelVisual.classList.add('active');
+    // 只有首次进入决斗阶段或决斗对象变化时才重新渲染，避免动画重复触发
+    const lastDuel = _lastView?.duel;
+    const changed = !lastDuel || lastDuel.initiatorId !== view.duel.initiatorId || lastDuel.targetId !== view.duel.targetId;
+    if (changed) {
+      _renderDuelPhaseVisual(view, duelVisual);
+    }
+    return;
+  }
+
+  // 非决斗阶段：恢复常规视觉区
+  if (normalVisual) normalVisual.style.display = 'flex';
+  if (duelVisual) {
+    duelVisual.style.display = 'none';
+    duelVisual.classList.remove('active');
+  }
+
   // 相位图标/卡牌展示
   const iconEl = document.getElementById('phaseIcon');
   const cardMiniEl = document.getElementById('phaseCardMini');
@@ -314,6 +338,33 @@ function _renderPhaseBar(view) {
   // 确保图标容器可见（可能被皇冠动画隐藏）
   const wrap = document.getElementById('phaseIconWrap');
   if (wrap) wrap.style.display = 'flex';
+}
+
+function _renderDuelPhaseVisual(view, container) {
+  const duel = view.duel;
+  if (!duel) return;
+
+  const initiator = view.players.find(p => p.id === duel.initiatorId);
+  const target = view.players.find(p => p.id === duel.targetId);
+  const initName = initiator?.nickname || '?';
+  const targetName = target?.nickname || '?';
+
+  const playersEl = document.getElementById('phaseDuelPlayers');
+  if (playersEl) {
+    playersEl.innerHTML = `
+      <div class="phase-duel-player" style="animation-delay: 0.1s;">
+        <div class="pdp-avatar">🪞</div>
+        <div class="pdp-name">${initName}</div>
+        <div class="pdp-role">发起者</div>
+      </div>
+      <div class="phase-duel-vs">VS</div>
+      <div class="phase-duel-player" style="animation-delay: 0.2s;">
+        <div class="pdp-avatar">🪞</div>
+        <div class="pdp-name">${targetName}</div>
+        <div class="pdp-role">被挑战</div>
+      </div>
+    `;
+  }
 }
 
 // ==================== 操作区（按阶段） ====================
@@ -531,11 +582,16 @@ function _renderAuctionResult(view, container) {
 
 function _showCrownBurst(winnerName, commissionRate) {
   const burst = document.getElementById('phaseCrownBurst');
-  const wrap = document.getElementById('phaseIconWrap');
-  if (!burst || !wrap) return;
+  const normalVisual = document.getElementById('phaseVisualNormal');
+  const duelVisual = document.getElementById('phaseVisualDuel');
+  if (!burst) return;
 
-  // 隐藏上方原贴图，只显示皇冠
-  wrap.style.display = 'none';
+  // 隐藏上方常规/决斗视觉，只显示皇冠
+  if (normalVisual) normalVisual.style.display = 'none';
+  if (duelVisual) {
+    duelVisual.style.display = 'none';
+    duelVisual.classList.remove('active');
+  }
 
   // 重置动画
   burst.classList.remove('burst-active');
@@ -543,12 +599,12 @@ function _showCrownBurst(winnerName, commissionRate) {
   void burst.offsetWidth;
   burst.classList.add('burst-active');
 
-  // 2.8s 后隐藏皇冠并恢复图标容器（下一状态会重绘内容）
+  // 1.2s 后隐藏皇冠并恢复图标容器（下一状态会重绘内容）
   setTimeout(() => {
     burst.classList.remove('burst-active');
     burst.style.display = 'none';
-    wrap.style.display = 'flex';
-  }, 2800);
+    if (normalVisual) normalVisual.style.display = 'flex';
+  }, 1200);
 }
 
 // ==================== 拍卖阶段 ====================
@@ -1822,13 +1878,16 @@ function _renderPlayerList(view) {
     return;
   }
 
+  // 始终显示容器，便于布局和调试
+  container.style.display = 'flex';
+
   if (allPlayers.length === 0) {
-    container.style.display = 'none';
-    list.innerHTML = '';
+    list.innerHTML = '<div class="player-row-placeholder">等待玩家数据…</div>';
     console.log('[Game] 玩家列表为空');
     return;
   }
-  container.style.display = 'flex';
+
+  console.log('[Game] 渲染玩家列表:', allPlayers.length, '人');
 
   // 计算最高卡牌分和最高资金
   let maxScore = -1, maxFunds = -1;

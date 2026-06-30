@@ -240,15 +240,21 @@
 
         <!-- 相位视觉展示区：占屏幕 1/3~1/4 -->
         <div class="game-phase-visual" id="gamePhaseVisual">
-          <div class="phase-visual-icon-wrap" id="phaseIconWrap">
-            <div class="phase-visual-icon" id="phaseIcon">🏺</div>
-            <div class="phase-visual-card" id="phaseCardMini" style="display:none;">
-              <div class="phase-card-framed" id="phaseCardFramed"></div>
-              <div class="phase-visual-card-meta">
-                <span class="phase-visual-card-name" id="phaseCardName"></span>
-                <span class="phase-visual-card-score" id="phaseCardScore"></span>
+          <div class="phase-visual-normal" id="phaseVisualNormal">
+            <div class="phase-visual-icon-wrap" id="phaseIconWrap">
+              <div class="phase-visual-icon" id="phaseIcon">🏺</div>
+              <div class="phase-visual-card" id="phaseCardMini" style="display:none;">
+                <div class="phase-card-framed" id="phaseCardFramed"></div>
+                <div class="phase-visual-card-meta">
+                  <span class="phase-visual-card-name" id="phaseCardName"></span>
+                  <span class="phase-visual-card-score" id="phaseCardScore"></span>
+                </div>
               </div>
             </div>
+          </div>
+          <div class="phase-visual-duel" id="phaseVisualDuel" style="display:none;">
+            <div class="phase-duel-vs" id="phaseDuelVs">VS</div>
+            <div class="phase-duel-players" id="phaseDuelPlayers"></div>
           </div>
           <div class="phase-crown-burst" id="phaseCrownBurst" style="display:none;">👑</div>
           <div class="phase-timer-bar" id="globalTimerBar"><div class="phase-timer-fill" id="globalTimerFill"></div></div>
