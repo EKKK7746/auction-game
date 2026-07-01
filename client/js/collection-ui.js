@@ -47,7 +47,7 @@ function _renderArtifactsTab(container) {
       : '<div class="artifact-icon">🔒</div>';
 
     cardsHtml += `
-      <div class="artifact-card ${collectedClass}">
+      <div class="artifact-card ${collectedClass}" onclick="${card ? `openArtifactDetail('${cardId}')` : ''}">
         ${countBadge}
         ${lockBadge}
         <div class="artifact-img-wrap">${iconHtml}</div>
@@ -64,7 +64,45 @@ function _renderArtifactsTab(container) {
       </div>
     </div>
     <div class="artifact-grid">${cardsHtml}</div>
+    <div id="artifactDetailModal" class="artifact-modal" onclick="_closeArtifactDetail(event)">
+      <div class="artifact-modal-content" onclick="event.stopPropagation()">
+        <span class="artifact-modal-close" onclick="_closeArtifactDetail(event)">✕</span>
+        <img id="artifactModalImg" src="" alt="">
+        <h3 id="artifactModalName"></h3>
+        <div id="artifactModalMeta"></div>
+        <p id="artifactModalLore"></p>
+      </div>
+    </div>
   `;
+}
+
+function openArtifactDetail(cardId) {
+  const data = getCollection();
+  const card = data.artifacts[cardId];
+  const name = (typeof CARD_NAMES !== 'undefined' && CARD_NAMES[cardId]) ? CARD_NAMES[cardId] : cardId;
+  const lore = (typeof CARD_LORE !== 'undefined' && CARD_LORE[cardId]) ? CARD_LORE[cardId] : '神秘的古代文物...';
+  const modal = document.getElementById('artifactDetailModal');
+  const img = document.getElementById('artifactModalImg');
+  const title = document.getElementById('artifactModalName');
+  const meta = document.getElementById('artifactModalMeta');
+  const text = document.getElementById('artifactModalLore');
+  if (!modal) return;
+
+  img.src = `assets/cards/${cardId}.png`;
+  img.onerror = () => { img.style.display = 'none'; };
+  img.onload = () => { img.style.display = 'block'; };
+  title.textContent = name;
+  meta.innerHTML = card
+    ? `<span class="artifact-modal-count">已收集 ×${card.count}</span><span class="artifact-modal-date">首次获得 ${new Date(card.firstWon).toLocaleDateString('zh-CN')}</span>`
+    : `<span class="artifact-modal-locked">🔒 尚未获得</span>`;
+  text.textContent = lore;
+  modal.classList.add('show');
+}
+
+function _closeArtifactDetail(event) {
+  const modal = document.getElementById('artifactDetailModal');
+  if (modal) modal.classList.remove('show');
+  if (event) event.stopPropagation();
 }
 
 // ==================== 对局统计 ====================

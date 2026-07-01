@@ -5807,10 +5807,17 @@ body {
 .artifact-card.collected {
   border-color: #D4AF37;
   background: #FFFDF0;
+  cursor: pointer;
+}
+
+.artifact-card.collected:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
 }
 
 .artifact-card.uncollected {
   opacity: 0.6;
+  cursor: default;
 }
 
 .artifact-img-wrap {
@@ -5879,6 +5886,105 @@ body {
   line-height: 22px;
   text-align: center;
   border-radius: 50%;
+}
+
+/* 文物详情浮窗 */
+.artifact-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.artifact-modal.show {
+  display: flex;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.artifact-modal-content {
+  background: #FFFDF7;
+  border: 2px solid #D4AF37;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+}
+
+.artifact-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+}
+
+.artifact-modal-close:hover {
+  color: #C43A31;
+}
+
+.artifact-modal-content img {
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 1px solid #E8E0D0;
+  margin-bottom: 16px;
+}
+
+.artifact-modal-content h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2C2C2C;
+  margin-bottom: 8px;
+}
+
+.artifact-modal-content p {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin-top: 12px;
+  text-align: left;
+}
+
+#artifactModalMeta {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #999;
+}
+
+.artifact-modal-count {
+  background: #C43A31;
+  color: #fff;
+  padding: 2px 10px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.artifact-modal-date {
+  color: #888;
+}
+
+.artifact-modal-locked {
+  color: #999;
+  background: #F0F0F0;
+  padding: 2px 10px;
+  border-radius: 10px;
 }
 
 /* 统计面板 */
