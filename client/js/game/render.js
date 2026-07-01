@@ -825,15 +825,15 @@ function _renderTrade(view, container) {
       ${floatPanelHtml}
       <div class="trade-header">
         <span class="trade-title">🔄 交易阶段</span>
-        <div class="trade-timer-wrap">
-          <div class="trade-timer-bar"><div class="trade-timer-fill" id="tradeTimerFill"></div></div>
-          <div class="trade-timer-text" id="tradeTimerText">30秒</div>
-        </div>
+        <span class="trade-timer-text" id="tradeTimerText">30秒</span>
+      </div>
+      <div class="trade-timer-bar">
+        <div class="trade-timer-fill" id="tradeTimerFill"></div>
       </div>
       <div class="trade-info">
         <span>你的交易次数剩余：<strong>${myQuota}</strong></span>
-        ${!hasQuota ? '<span class="trade-no-quota">（交易次数已用完）</span>' : ''}
-        ${hasQuota && me.cards.length === 0 ? '<span class="trade-no-quota">（无卡牌，可用金币交易）</span>' : ''}
+        ${!hasQuota ? '<span class="trade-no-quota">交易次数已用完</span>' : ''}
+        ${hasQuota && me.cards.length === 0 ? '<span class="trade-no-quota">无卡牌，可用金币交易</span>' : ''}
       </div>
       ${proposalHtml}
       ${hasPending && !isInvolved ? '<div class="trade-info-tip">等待其他玩家处理交易提案中...</div>' : ''}
