@@ -4,8 +4,8 @@
 // ============================================================
 
 const COLLECTION_KEY = 'mwCollection';
-const TESTIFICATE_BACKUP_KEY = 'mwCollection_testificate_backup';
-const TESTIFICATE_ACTIVE_KEY = 'mwCollection_testificate_active';
+const CHEAT_BACKUP_KEY = 'mwCollection_labrat_backup';
+const CHEAT_ACTIVE_KEY = 'mwCollection_labrat_active';
 
 // 10 张文物卡牌定义（与 server/gameEngine.js CARDS 对应）
 const ARTIFACT_IDS = [
@@ -78,29 +78,29 @@ function _defaultCollection() {
 
 // ==================== 基础读写 ====================
 function _loadCollection() {
-  // testificate 作弊模式：检测状态切换
-  const wasTestificate = localStorage.getItem(TESTIFICATE_ACTIVE_KEY) === '1';
-  const isTestificate = _isTestificate();
+  // labrat 作弊模式：检测状态切换
+  const wasLabrat = localStorage.getItem(CHEAT_ACTIVE_KEY) === '1';
+  const isLabrat = _isLabrat();
 
-  if (isTestificate && !wasTestificate) {
-    // 刚切换到 testificate：备份旧存档
+  if (isLabrat && !wasLabrat) {
+    // 刚切换到 labrat：备份旧存档
     const oldData = localStorage.getItem(COLLECTION_KEY);
     if (oldData) {
-      localStorage.setItem(TESTIFICATE_BACKUP_KEY, oldData);
+      localStorage.setItem(CHEAT_BACKUP_KEY, oldData);
     }
-    localStorage.setItem(TESTIFICATE_ACTIVE_KEY, '1');
-    console.log('[Collection] 🎮 testificate 作弊模式：已备份旧存档');
+    localStorage.setItem(CHEAT_ACTIVE_KEY, '1');
+    console.log('[Collection] 🎮 labrat 作弊模式：已备份旧存档');
     return _getFullCollection();
   }
 
-  if (!isTestificate && wasTestificate) {
-    // 刚退出 testificate：恢复旧存档
-    const backup = localStorage.getItem(TESTIFICATE_BACKUP_KEY);
+  if (!isLabrat && wasLabrat) {
+    // 刚退出 labrat：恢复旧存档
+    const backup = localStorage.getItem(CHEAT_BACKUP_KEY);
     if (backup) {
       localStorage.setItem(COLLECTION_KEY, backup);
-      localStorage.removeItem(TESTIFICATE_BACKUP_KEY);
+      localStorage.removeItem(CHEAT_BACKUP_KEY);
     }
-    localStorage.removeItem(TESTIFICATE_ACTIVE_KEY);
+    localStorage.removeItem(CHEAT_ACTIVE_KEY);
     console.log('[Collection] 🔄 退出作弊模式，已恢复旧存档');
     // 继续正常加载
   }
@@ -140,9 +140,9 @@ function _getNickname() {
   }
 }
 
-/** 检查是否为 testificate 作弊模式 */
-function _isTestificate() {
-  return _getNickname() === 'testificate';
+/** 检查是否为 labrat 作弊模式 */
+function _isLabrat() {
+  return _getNickname() === 'labrat';
 }
 
 /** 获取全解锁集合数据 */
