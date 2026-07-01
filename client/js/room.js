@@ -37,13 +37,11 @@ function renderPlayerList(players) {
     `;
   }).join('');
 
-  // 应用装备的头像皮肤（仅限当前玩家）
+  // 应用装备的头像皮肤（根据服务器同步的皮肤数据）
   if (typeof applyAvatarSkin === 'function') {
-    const myAvatars = list.querySelectorAll('.lobby-avatar');
+    const avatars = list.querySelectorAll('.lobby-avatar');
     sanitized.forEach((p, i) => {
-      if (GameState.isSelf(p.id) && myAvatars[i]) {
-        applyAvatarSkin(myAvatars[i]);
-      }
+      if (avatars[i]) applyAvatarSkin(avatars[i], p.skin);
     });
   }
 }
@@ -78,6 +76,11 @@ socket.on('room:created', (data) => {
   showView(Views.LOBBY);
   if (typeof playSound === 'function') playSound('confirm');
 
+  // 同步自己装备的皮肤到服务器
+  if (typeof getSkinBundle === 'function') {
+    socket.emit('player:skin', data.roomId, getSkinBundle());
+  }
+
   // 显示模式提示
   const mode = getModeById(data.mode || 'classic');
   if (typeof showToast === 'function') showToast(`${mode.icon} 已创建${mode.name}房间`, 'info');
@@ -104,6 +107,11 @@ socket.on('room:joined', (data) => {
   updateLobbyUI();
   showView(Views.LOBBY);
   if (typeof playSound === 'function') playSound('confirm');
+
+  // 同步自己装备的皮肤到服务器
+  if (typeof getSkinBundle === 'function') {
+    socket.emit('player:skin', data.roomId, getSkinBundle());
+  }
 });
 
 socket.on('room:player_joined', (data) => {
@@ -309,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const maxPlayers = parseInt(document.getElementById('maxPlayersSelect')?.value || '6');
       const mode = GameState.selectedMode?.id || 'classic';
 
-      socket.emit('room:create', nickname, isPublic, { mode, maxPlayers }, (response) => {
+      socket.emit('room:create', nickname, isPublic, { mode, maxPlayers, skin: typeof getSkinBundle === 'function' ? getSkinBundle() : {} }, (response) => {
         if (typeof hideLoading === 'function') hideLoading();
         if (!response.success) {
           if (loginError) loginError.textContent = response.error || '创建房间失败';
@@ -331,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (loginError) loginError.textContent = '';
       if (typeof showLoading === 'function') showLoading('加入房间中…');
 
-      socket.emit('room:join', roomId, nickname, (response) => {
+      socket.emit('room:join', roomId, nickname, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (response) => {
         if (typeof hideLoading === 'function') hideLoading();
         if (!response.success) {
           if (response.gameInProgress) {

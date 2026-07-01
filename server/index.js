@@ -78,7 +78,12 @@ io.on('connection', (socket) => {
   });
 
   // --- 加入房间 ---
-  socket.on('room:join', (roomId, nickname, callback) => {
+  socket.on('room:join', (roomId, nickname, skin, callback) => {
+    // 兼容旧客户端：skin 参数可省略
+    if (typeof skin === 'function') {
+      callback = skin;
+      skin = undefined;
+    }
     if (typeof callback !== 'function') {
       console.warn('[警告] room:join 缺少回调函数');
       return;
@@ -117,8 +122,8 @@ io.on('connection', (socket) => {
 
           // 加入 Socket.IO 房间
           socket.join(roomId);
-          // 更新 roomManager 中的玩家
-          roomManager.updatePlayerId(roomId, oldId, socket.id, nickname);
+          // 更新 roomManager 中的玩家（同时刷新皮肤）
+          roomManager.updatePlayerId(roomId, oldId, socket.id, nickname, skin);
 
           console.log(`[房间] 托管玩家 ${nickname} 重连恢复，旧ID: ${oldId} → 新ID: ${socket.id}`);
 
@@ -138,7 +143,7 @@ io.on('connection', (socket) => {
         return;
       }
 
-      const result = roomManager.joinRoom(socket, roomId, nickname);
+      const result = roomManager.joinRoom(socket, roomId, nickname, skin);
       if (!result.success) {
         callback(result);
         return;
@@ -152,7 +157,25 @@ io.on('connection', (socket) => {
     }
   });
 
-  // --- 观战：进入 ---
+  // --- 玩家外观皮肤同步 ---
+  socket.on('player:skin', (roomId, skin, callback) => {
+    if (typeof callback !== 'function') callback = () => {};
+    const ok = roomManager.updatePlayerSkin(roomId, socket.id, skin);
+    if (ok) {
+      // 如果游戏已开始，也更新 game state 中的玩家皮肤
+      const game = gameEngine.getGame(roomId);
+      if (game) {
+        const gp = game.players.find(p => p.id === socket.id);
+        if (gp) gp.skin = { ...(gp.skin || {}), ...(skin || {}) };
+      }
+      // 广播更新后的玩家列表
+      const players = roomManager.getPlayers(roomId);
+      socket.emit('room:joined', { roomId, players });
+      socket.to(roomId).emit('room:player_joined', { player: players.find(p => p.id === socket.id), players });
+      gameEngine.broadcast(roomId);
+    }
+    callback({ success: ok });
+  });
   socket.on('spectator:enter', (roomId, nickname, callback) => {
     if (typeof callback !== 'function') callback = () => {};
 

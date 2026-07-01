@@ -66,7 +66,10 @@ function _renderArtifactsTab(container) {
     <div class="artifact-grid">${cardsHtml}</div>
     <div id="artifactDetailModal" class="artifact-modal" onclick="_closeArtifactDetail(event)">
       <div class="artifact-modal-content" onclick="event.stopPropagation()">
-        <span class="artifact-modal-close" onclick="_closeArtifactDetail(event)">✕</span>
+        <div class="modal-titlebar">
+          <span class="modal-titlebar-title" id="artifactModalTitle">🏛️ 文物详情</span>
+          <button class="modal-titlebar-close" onclick="_closeArtifactDetail(event)">✕</button>
+        </div>
         <img id="artifactModalImg" src="" alt="">
         <h3 id="artifactModalName"></h3>
         <div id="artifactModalMeta"></div>
@@ -84,6 +87,7 @@ function openArtifactDetail(cardId) {
   const modal = document.getElementById('artifactDetailModal');
   const img = document.getElementById('artifactModalImg');
   const title = document.getElementById('artifactModalName');
+  const titleBar = document.getElementById('artifactModalTitle');
   const meta = document.getElementById('artifactModalMeta');
   const text = document.getElementById('artifactModalLore');
   if (!modal) return;
@@ -92,6 +96,7 @@ function openArtifactDetail(cardId) {
   img.onerror = () => { img.style.display = 'none'; };
   img.onload = () => { img.style.display = 'block'; };
   title.textContent = name;
+  if (titleBar) titleBar.textContent = name;
   meta.innerHTML = card
     ? `<span class="artifact-modal-count">已收集 ×${card.count}</span><span class="artifact-modal-date">首次获得 ${new Date(card.firstWon).toLocaleDateString('zh-CN')}</span>`
     : `<span class="artifact-modal-locked">🔒 尚未获得</span>`;
@@ -274,6 +279,15 @@ function _getRewardName(reward) {
   return skin ? skin.name : reward.id;
 }
 
+/** 装备皮肤并同步到服务器 */
+function _equipAndSyncSkin(type, id) {
+  equipSkin(type, id);
+  renderCollection();
+  if (GameState.roomId && typeof getSkinBundle === 'function') {
+    socket.emit('player:skin', GameState.roomId, getSkinBundle());
+  }
+}
+
 // ==================== 外观皮肤 ====================
 function _renderSkinsTab(container) {
   const catalog = getSkinCatalog();
@@ -287,7 +301,7 @@ function _renderSkinsTab(container) {
     const isEq = equipped.avatar === skin.id;
     html += `
       <div class="skin-card ${skin.unlocked ? '' : 'locked'} ${isEq ? 'equipped' : ''}"
-        onclick="${skin.unlocked ? `equipSkin('avatar','${skin.id}');renderCollection();` : ''}">
+        onclick="${skin.unlocked ? `_equipAndSyncSkin('avatar','${skin.id}')` : ''}">
         <div class="skin-preview avatar-preview" style="background:${skin.gradient}"></div>
         <div class="skin-name">${skin.name}</div>
         ${isEq ? '<span class="skin-badge">使用中</span>' : skin.unlocked ? '<span class="skin-badge equip">点击装备</span>' : '<span class="skin-badge lock">🔒</span>'}
@@ -301,7 +315,7 @@ function _renderSkinsTab(container) {
     const isEq = equipped.avatarFrame === skin.id;
     html += `
       <div class="skin-card ${skin.unlocked ? '' : 'locked'} ${isEq ? 'equipped' : ''}"
-        onclick="${skin.unlocked ? `equipSkin('avatarFrame','${skin.id}');renderCollection();` : ''}">
+        onclick="${skin.unlocked ? `_equipAndSyncSkin('avatarFrame','${skin.id}')` : ''}">
         <div class="skin-preview frame-preview" style="${skin.css}">
           <div class="frame-preview-inner"></div>
         </div>
@@ -317,7 +331,7 @@ function _renderSkinsTab(container) {
     const isEq = equipped.diceEffect === skin.id;
     html += `
       <div class="skin-card ${skin.unlocked ? '' : 'locked'} ${isEq ? 'equipped' : ''}"
-        onclick="${skin.unlocked ? `equipSkin('diceEffect','${skin.id}');renderCollection();` : ''}">
+        onclick="${skin.unlocked ? `_equipAndSyncSkin('diceEffect','${skin.id}')` : ''}">
         <div class="skin-preview dice-preview" style="background:${skin.primary}; box-shadow: 0 0 20px ${skin.accent};">
           <span class="dice-preview-icon">🎲</span>
         </div>

@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof showLoading === 'function') showLoading('加入房间中…');
 
       // 直接走加入房间流程
-      socket.emit('room:join', roomId, GameState.nickname, (response) => {
+      socket.emit('room:join', roomId, GameState.nickname, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (response) => {
         if (typeof hideLoading === 'function') hideLoading();
         if (!response.success) {
           if (response.gameInProgress) {

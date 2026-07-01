@@ -225,6 +225,7 @@ function initGame(roomId, players, modeOpts) {
       nickname: p.nickname,
       isBot: !!p.isBot,
       isHost: !!p.isHost,
+      skin: p.skin || {},
       strategy: p.strategy || 'greedy',
       funds: startingFunds,
       cards: [],
@@ -1353,7 +1354,9 @@ function _hasTradePotential(state) {
   if (humanPlayers.length < 2) return false;
   // 经典模式每局1次，完整模式2次
   const maxQuota = state._mode === 'fulldeck' ? 2 : 1;
-  return humanPlayers.some(p => (state._tradeQuota?.[p.id] ?? maxQuota) > 0 && p.cards.length > 0);
+  const hasQuota = humanPlayers.some(p => (state._tradeQuota?.[p.id] ?? maxQuota) > 0);
+  const hasCards = state.players.some(p => p.cards.length > 0);
+  return hasQuota && hasCards;
 }
 
 /** 获取某玩家的交易配额 */
@@ -1538,8 +1541,7 @@ function skipTrade(roomId, playerId) {
   }
   const allDone = state.players.every(p => {
     if (p.isBot) return true;
-    if (p.cards.length === 0) return true;
-    // 有交易配额且未跳过的玩家还可能发起交易
+    // 有交易配额且未跳过的玩家还可能发起交易；无配额或已跳过则视为完成
     if (_getTradeQuota(state, p.id) > 0 && !state._tradeSkipped.has(p.id)) return false;
     return true;
   });
@@ -1717,6 +1719,7 @@ function getPlayerView(fullState, playerId) {
         adjustedScore: cs + Math.floor(p.funds / 3),
         isBot: !!p.isBot,
         managed: !!p.managed,  // 托管标识
+        skin: p.skin || {},    // 外观皮肤同步
         // 始终发送完整卡牌信息
         cards: p.cards.map(c => ({ id: c.id, name: c.name, score: c.score, effect: c.effect, used: !!c.used })),
         hasDragonPhoenix: p.cards.some(c => c.id === 'ltsx') && p.cards.some(c => c.id === 'kxqt'),

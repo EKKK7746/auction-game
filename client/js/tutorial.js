@@ -79,7 +79,7 @@ function startTutorial() {
   if (typeof showLoading === 'function') showLoading('正在创建教程房间...');
 
   // 1. 创建房间（极速模式，2人）
-  socket.emit('room:create', nickname, false, { mode: 'speed', maxPlayers: 2 }, (res) => {
+  socket.emit('room:create', nickname, false, { mode: 'speed', maxPlayers: 2, skin: typeof getSkinBundle === 'function' ? getSkinBundle() : {} }, (res) => {
     if (!res || !res.success) {
       if (typeof hideLoading === 'function') hideLoading();
       if (typeof showToast === 'function') showToast('创建教程房间失败: ' + (res?.error || '未知错误'), 'error');

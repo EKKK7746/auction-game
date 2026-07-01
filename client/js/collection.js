@@ -431,11 +431,21 @@ function applyDiceSkin() {
   }
 }
 
-/** 应用当前装备的头像框样式到 DOM 元素 */
-function applyAvatarSkin(el) {
+/** 获取当前装备的皮肤组合（用于上传给服务器同步） */
+function getSkinBundle() {
+  const data = _loadCollection();
+  return {
+    avatar: data.equippedSkin.avatar || 'default',
+    avatarFrame: data.equippedSkin.avatarFrame || 'default',
+    diceEffect: data.equippedSkin.diceEffect || 'default',
+  };
+}
+
+/** 应用头像框样式到 DOM 元素；优先使用传入的 skinData，否则读本地 localStorage */
+function applyAvatarSkin(el, skinData) {
   if (!el) return;
-  const frameId = getEquippedSkin('avatarFrame');
-  const avatarId = getEquippedSkin('avatar');
+  const frameId = skinData?.avatarFrame ? skinData.avatarFrame : getEquippedSkin('avatarFrame');
+  const avatarId = skinData?.avatar ? skinData.avatar : getEquippedSkin('avatar');
   // 头像底色
   if (avatarId !== 'default') {
     const avatarSkin = getSkinInfo('avatar', avatarId);

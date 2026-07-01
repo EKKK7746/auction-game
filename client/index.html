@@ -79,9 +79,9 @@
 
         <!-- 从模式选择界面加入房间的弹窗 -->
         <div class="mode-join-panel" id="modeJoinPanel" style="display:none;">
-          <div class="mode-join-header">
-            <span>🔍 加入房间</span>
-            <button class="mode-join-close" onclick="hideJoinRoomFromMode()">✕</button>
+          <div class="modal-titlebar">
+            <span class="modal-titlebar-title">🔍 加入房间</span>
+            <button class="modal-titlebar-close" onclick="hideJoinRoomFromMode()">✕</button>
           </div>
           <div class="mode-join-body">
             <input type="text" id="modeRoomInput" class="input-primary"
@@ -301,8 +301,10 @@
       <!-- 设置模态框 -->
       <div class="settings-modal-overlay" id="settingsModalOverlay" style="display:none;" onclick="if(event.target===this)toggleSettingsModal()">
         <div class="settings-modal">
-          <button class="modal-close" onclick="toggleSettingsModal()">✕</button>
-          <h3 class="settings-modal-title">⚙️ 游戏设置</h3>
+          <div class="modal-titlebar">
+            <h3 class="modal-titlebar-title">⚙️ 游戏设置</h3>
+            <button class="modal-titlebar-close" onclick="toggleSettingsModal()">✕</button>
+          </div>
           <div class="settings-row">
             <label>🔊 音量</label>
             <input type="range" id="volumeSlider" min="0" max="100" value="100" class="volume-slider" oninput="onVolumeChange(this.value)">
@@ -339,8 +341,10 @@
 <!-- ========== 本局牌堆模态框 ========== -->
 <div id="cardPoolModal" class="modal-overlay" style="display:none;">
   <div class="modal-box cardpool-modal">
-    <button class="modal-close" onclick="closeCardPool()">✕</button>
-    <h2 class="cardpool-title">📜 本局牌堆</h2>
+    <div class="modal-titlebar">
+      <h2 class="modal-titlebar-title">📜 本局牌堆</h2>
+      <button class="modal-titlebar-close" onclick="closeCardPool()">✕</button>
+    </div>
     <p class="cardpool-sub" id="cardPoolSub">加载中...</p>
     <div class="cardpool-grid" id="cardPoolGrid"></div>
   </div>
@@ -349,8 +353,10 @@
     <!-- ========== 游戏介绍模态框 ========== -->
     <div id="introModal" class="modal-overlay" style="display:none;">
       <div class="modal-box intro-modal">
-        <button class="modal-close" onclick="closeIntro()">✕</button>
-        <h2 class="intro-title">💎 琳琅 · 华夏文物拍卖</h2>
+        <div class="modal-titlebar">
+          <h2 class="modal-titlebar-title">💎 琳琅 · 华夏文物拍卖</h2>
+          <button class="modal-titlebar-close" onclick="closeIntro()">✕</button>
+        </div>
 
         <div class="intro-section">
           <h3>🎮 游戏简介</h3>
@@ -643,11 +649,11 @@
 
     <!-- ========== 公开房间列表弹窗 ========== -->
     <div id="roomListModal" class="room-list-modal" style="display:none;">
-      <div class="room-list-dialog">
-        <div class="room-list-header">
-          <h3>🌐 公开房间</h3>
-          <button class="room-list-close" onclick="closeRoomListModal()">✕</button>
-        </div>
+        <div class="room-list-dialog">
+          <div class="modal-titlebar">
+            <h3 class="modal-titlebar-title">🌐 公开房间</h3>
+            <button class="modal-titlebar-close" onclick="closeRoomListModal()">✕</button>
+          </div>
         <div class="room-list-body">
           <div id="roomListLoading" class="room-list-loading">加载中...</div>
           <div id="roomListContent"></div>
@@ -661,8 +667,10 @@
     <!-- ========== 新手引导弹窗 ========== -->
     <div id="tutorialModal" class="modal-overlay" style="display:none;">
       <div class="modal-box tutorial-modal">
-        <button class="modal-close" onclick="closeTutorialModal()">✕</button>
-        <h2 class="tutorial-title">📖 新手引导</h2>
+        <div class="modal-titlebar">
+          <h2 class="modal-titlebar-title">📖 新手引导</h2>
+          <button class="modal-titlebar-close" onclick="closeTutorialModal()">✕</button>
+        </div>
         <p class="tutorial-sub">选择一个方式开始了解游戏</p>
         <div class="tutorial-btns">
           <button class="btn btn-tutorial-primary" onclick="openIntroFromTutorial()">

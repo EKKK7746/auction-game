@@ -972,15 +972,6 @@ body {
   line-height: 1.5;
 }
 
-.player-popup .pp-close {
-  position: absolute;
-  top: 4px;
-  right: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  color: #B0B0B0;
-}
-
 /* --- 操作区 --- */
 
 .game-action-area {
@@ -3008,37 +2999,6 @@ body {
   flex-direction: column;
   animation: panelSlideUp 0.35s ease-out;
 }
-.room-list-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(180, 160, 140, 0.15);
-}
-.room-list-header h3 {
-  font-size: 18px;
-  color: #2C2C2C;
-  font-weight: 700;
-  margin: 0;
-}
-.room-list-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: rgba(0,0,0,0.06);
-  color: #888;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-}
-.room-list-close:hover {
-  background: rgba(196, 58, 49, 0.1);
-  color: #8B2252;
-}
 .room-list-body {
   flex: 1;
   overflow-y: auto;
@@ -3178,10 +3138,32 @@ body {
   position: relative;
 }
 
-.modal-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+/* ==================== 统一弹窗标题栏 ==================== */
+
+.modal-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(180, 160, 140, 0.2);
+  background: linear-gradient(135deg, #F5EBD8, #F0E0C8);
+  margin-bottom: 16px;
+}
+
+.modal-titlebar-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #6B4226;
+  margin: 0;
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modal-titlebar-close {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -3195,10 +3177,107 @@ body {
   justify-content: center;
   transition: all 0.15s;
   line-height: 1;
+  flex-shrink: 0;
+  margin-left: 12px;
 }
-.modal-close:hover {
+
+.modal-titlebar-close:hover {
   background: rgba(196, 58, 49, 0.1);
   color: #8B2252;
+}
+
+/* --- .modal-box 系列弹窗：负边距拉伸到边缘 --- */
+.modal-box .modal-titlebar {
+  margin: -24px -20px 16px;
+  border-radius: 12px 12px 0 0;
+}
+
+.intro-modal .modal-titlebar {
+  margin: -28px -24px 18px;
+}
+
+.tutorial-modal .modal-titlebar {
+  margin: -28px -24px 18px;
+}
+
+.cardpool-modal .modal-titlebar {
+  border-radius: 14px 14px 0 0;
+}
+
+/* --- 设置弹窗 --- */
+.settings-modal .modal-titlebar {
+  margin: -20px -24px 16px;
+  border-radius: 10px 10px 0 0;
+  background: linear-gradient(135deg, #F8F6F0, #F0EDE5);
+}
+
+.settings-modal .modal-titlebar-title {
+  color: #2C2C2C;
+}
+
+/* --- 文物详情浮窗 --- */
+.artifact-modal-content .modal-titlebar {
+  margin: -24px -24px 16px;
+  border-radius: 14px 14px 0 0;
+}
+
+/* --- 玩家详情浮窗 --- */
+.player-popup .modal-titlebar {
+  margin: -12px -12px 10px;
+  border-radius: 9px 9px 0 0;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #F8F5F0, #F0EBE0);
+}
+
+.player-popup .modal-titlebar-title {
+  font-size: 14px;
+  color: #2C2C2C;
+}
+
+.player-popup .modal-titlebar-close {
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+}
+
+/* --- 卡牌详情浮窗 --- */
+.card-popup-content .modal-titlebar {
+  margin: -20px -20px 14px;
+  border-radius: 10px 10px 0 0;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #FFF8F0, #F5F0E8);
+}
+
+.card-popup-content .modal-titlebar-title {
+  font-size: 14px;
+  color: #8B2252;
+}
+
+.card-popup-content .modal-titlebar-close {
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+}
+
+/* --- 房间列表弹窗 --- */
+.room-list-dialog .modal-titlebar {
+  margin: 0;
+  border-radius: 12px 12px 0 0;
+  padding: 16px 20px;
+}
+
+/* --- 加入房间面板 --- */
+.mode-join-panel .modal-titlebar {
+  margin: 0;
+  border-radius: 11px 11px 0 0;
+  padding: 12px 16px;
+  font-size: 15px;
+  background: #F8F6F0;
+}
+
+.mode-join-panel .modal-titlebar-title {
+  font-size: 15px;
+  color: #2C2C2C;
 }
 
 /* ==================== 游戏介绍模态框 ==================== */
@@ -3208,13 +3287,6 @@ body {
   max-height: 85vh;
   overflow-y: auto;
   padding: 28px 24px;
-}
-
-.intro-title {
-  text-align: center;
-  font-size: 22px;
-  margin-bottom: 18px;
-  color: #8B2252;
 }
 
 .intro-section {
@@ -3388,12 +3460,6 @@ body {
   max-width: 480px;
   padding: 28px 24px;
   text-align: center;
-}
-
-.tutorial-title {
-  font-size: 22px;
-  color: #8B2252;
-  margin-bottom: 6px;
 }
 
 .tutorial-sub {
@@ -4336,24 +4402,6 @@ body {
   box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
 
-.settings-modal-title {
-  font-size: 17px;
-  font-weight: 700;
-  color: #2C2C2C;
-  margin-bottom: 16px;
-}
-
-.settings-modal .modal-close {
-  position: absolute;
-  top: 8px;
-  right: 12px;
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  color: #B0B0B0;
-}
-
 .settings-row {
   display: flex;
   align-items: center;
@@ -4429,13 +4477,6 @@ body {
   background: linear-gradient(180deg, #FFFBF0 0%, #F8F3E8 100%);
   border: 2px solid #C9A96E;
   border-radius: 16px;
-}
-
-.cardpool-title {
-  font-size: 20px;
-  color: #6B4226;
-  text-align: center;
-  margin-bottom: 4px;
 }
 
 .cardpool-sub {
@@ -4550,7 +4591,6 @@ body {
     max-height: 85vh;
     border-radius: 12px;
   }
-  .cardpool-title { font-size: 17px; }
   .cardpool-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
@@ -4876,27 +4916,6 @@ body {
   border-radius: 12px;
   overflow: hidden;
   margin-top: 8px;
-}
-
-.mode-join-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 12px 16px;
-  background: #F8F6F0;
-  font-size: 15px;
-  font-weight: 600;
-  color: #2C2C2C;
-}
-
-.mode-join-close {
-  background: none;
-  border: none;
-  font-size: 18px;
-  color: #999;
-  cursor: pointer;
-  padding: 4px;
-  min-width: 32px;
 }
 
 .mode-join-body {
@@ -5920,19 +5939,6 @@ body {
   text-align: center;
   position: relative;
   box-shadow: 0 12px 40px rgba(0,0,0,0.2);
-}
-
-.artifact-modal-close {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  font-size: 20px;
-  color: #999;
-  cursor: pointer;
-}
-
-.artifact-modal-close:hover {
-  color: #C43A31;
 }
 
 .artifact-modal-content img {

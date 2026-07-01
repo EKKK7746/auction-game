@@ -55,7 +55,8 @@ function _isOnlyBots(room) {
 
 function createRoom(socket, nickname, isPublic, opts = {}) {
   const roomId = generateRoomId();
-  const player = { id: socket.id, nickname, isHost: true };
+  const skin = opts.skin || {};
+  const player = { id: socket.id, nickname, isHost: true, skin };
   const mode = opts.mode || 'classic';
   const maxPlayers = opts.maxPlayers || 6;
 
@@ -76,7 +77,7 @@ function createRoom(socket, nickname, isPublic, opts = {}) {
   return { roomId, players: getPlayers(roomId) };
 }
 
-function joinRoom(socket, roomId, nickname) {
+function joinRoom(socket, roomId, nickname, skin = {}) {
   const room = rooms.get(roomId);
 
   if (!room)  return { success: false, error: '房间不存在' };
@@ -85,7 +86,7 @@ function joinRoom(socket, roomId, nickname) {
   if (room.gameState !== null) return { success: false, error: '游戏已开始，无法加入' };
   if (room.players.some(p => p.nickname === nickname)) return { success: false, error: '昵称已被使用' };
 
-  const player = { id: socket.id, nickname, isHost: false };
+  const player = { id: socket.id, nickname, isHost: false, skin };
   room.players.push(player);
   socket.join(roomId);
 
@@ -232,7 +233,17 @@ function getSpectators(roomId) {
 function getPlayers(roomId) {
   const room = rooms.get(roomId);
   if (!room) return [];
-  return room.players.map(p => ({ id: p.id, nickname: p.nickname, isHost: p.isHost, isBot: !!p.isBot, strategy: p.strategy }));
+  return room.players.map(p => ({ id: p.id, nickname: p.nickname, isHost: p.isHost, isBot: !!p.isBot, strategy: p.strategy, skin: p.skin || {} }));
+}
+
+/** 更新玩家皮肤（客户端装备新皮肤或重连后同步） */
+function updatePlayerSkin(roomId, playerId, skin) {
+  const room = rooms.get(roomId);
+  if (!room) return false;
+  const player = room.players.find(p => p.id === playerId);
+  if (!player) return false;
+  player.skin = { ...(player.skin || {}), ...(skin || {}) };
+  return true;
 }
 
 // -------------------- Bot 操作 --------------------
@@ -323,18 +334,19 @@ function reAddPlayer(roomId, player) {
 /**
  * 更新玩家 ID（托管玩家重连时 socket ID 变化）
  */
-function updatePlayerId(roomId, oldId, newId, nickname) {
+function updatePlayerId(roomId, oldId, newId, nickname, skin) {
   const room = rooms.get(roomId);
   if (!room) return false;
   const player = room.players.find(p => p.id === oldId);
   if (!player) {
     // 如果旧 ID 不在（可能已被清理），直接添加
-    room.players.push({ id: newId, nickname, isHost: false, isBot: false });
+    room.players.push({ id: newId, nickname, isHost: false, isBot: false, skin: skin || {} });
     if (room.hostSocketId === oldId) room.hostSocketId = newId;
     return true;
   }
   player.id = newId;
   if (player.nickname !== nickname) player.nickname = nickname;
+  if (skin && Object.keys(skin).length) player.skin = { ...(player.skin || {}), ...skin };
 
   // 如果当前房间已有房主且不是该玩家，则取消其房主身份
   if (room.hostSocketId && room.hostSocketId !== oldId) {
@@ -363,4 +375,5 @@ module.exports = {
   getSpectators,
   reAddPlayer,
   updatePlayerId,
+  updatePlayerSkin,
 };

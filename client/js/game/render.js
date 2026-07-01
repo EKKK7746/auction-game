@@ -716,31 +716,39 @@ function _renderRollDice(view, container) {
 let _tradeCountdownInterval = null;
 let _pendingTradeProposal = null;  // 存储 trade:proposal 事件发来的提案详情
 let _collectionSaved = false;      // 防止重复保存收集数据
+let _tradeAutoSkipped = false;     // 防止交易阶段自动跳过重复触发
 
 function _renderTrade(view, container) {
   container.className = 'game-action-area';
+
+  // 刚从其他阶段进入交易阶段时重置自动跳过标记
+  if (typeof _lastView !== 'undefined' && _lastView && _lastView.phase !== 'trade') {
+    _tradeAutoSkipped = false;
+  }
 
   const me = view.players.find(p => p.id === socket.id);
   if (!me) return;
 
   const myQuota = view.tradeQuota ? (view.tradeQuota[socket.id] || 0) : 0;
-  const hasQuota = myQuota > 0 && me.cards.length > 0;
+  const hasQuota = myQuota > 0;
   const hasProposal = view.tradeProposal && view.tradeProposal.toId === socket.id && !view.tradeProposal.responded;
   const hasPending = view.tradeProposal && !view.tradeProposal.responded;
-  const isTarget = view.tradeProposal && view.tradeProposal.toId === socket.id;
+  const isTarget = hasPending && view.tradeProposal.toId === socket.id;
+  const isSender = hasPending && view.tradeProposal.fromId === socket.id;
+  const isInvolved = isTarget || isSender;
 
   // 清除之前的倒计时
   if (_tradeCountdownInterval) { clearInterval(_tradeCountdownInterval); _tradeCountdownInterval = null; }
 
-  // 其他玩家状态（所有有卡牌的玩家都可被指定为交易对象）
+  // 其他玩家状态（只要有配额且无活跃提案，即可指定为交易对象）
   const playersHtml = view.players.filter(p => p.id !== socket.id).map(p => {
-    const hasCards = (p.cardCount || 0) > 0;
-    const canTarget = hasQuota && hasCards && !hasPending;
+    const canTarget = hasQuota && !hasPending;
     const isTargetOfProposal = view.tradeProposal && view.tradeProposal.toId === p.id;
     let status = '';
-    if (!hasCards) status = '无卡牌';
-    else if (isTargetOfProposal) status = '⏳ 待回应';
+    if (isTargetOfProposal) status = '⏳ 待回应';
     else if (canTarget) status = '可交易';
+    else if (!hasQuota) status = '次数已用完';
+    else if (hasPending) status = '等待提案结束';
     else status = '';
     return `<div class="trade-player-item ${canTarget ? 'can-target' : ''}" 
       data-target-id="${p.id}"
@@ -824,13 +832,14 @@ function _renderTrade(view, container) {
       </div>
       <div class="trade-info">
         <span>你的交易次数剩余：<strong>${myQuota}</strong></span>
-        ${!hasQuota ? '<span class="trade-no-quota">（已用完或无可交易卡牌）</span>' : ''}
+        ${!hasQuota ? '<span class="trade-no-quota">（交易次数已用完）</span>' : ''}
+        ${hasQuota && me.cards.length === 0 ? '<span class="trade-no-quota">（无卡牌，可用金币交易）</span>' : ''}
       </div>
       ${proposalHtml}
-      ${hasPending && !hasProposal ? '<div class="trade-info-tip">等待对方回应中...</div>' : ''}
+      ${hasPending && !isInvolved ? '<div class="trade-info-tip">等待其他玩家处理交易提案中...</div>' : ''}
       <div class="trade-players-title">可选交易对象</div>
       <div class="trade-players-list">${playersHtml || '<div class="trade-empty">无其他玩家</div>'}</div>
-      <button class="trade-btn trade-skip-btn" onclick="skipTrade()" ${hasPending ? 'disabled' : ''}>
+      <button class="trade-btn trade-skip-btn" onclick="skipTrade()">
         ${hasQuota ? '跳过交易' : '继续'}
       </button>
     </div>
@@ -862,8 +871,9 @@ function _renderTrade(view, container) {
     _tradeCountdownInterval = setInterval(updateCountdown, 1000);
   }
 
-  // 如果无配额也无卡，自动跳过
-  if (!hasQuota && !hasProposal) {
+  // 交易次数已用完且无待回应提案时自动跳过（每个交易阶段只触发一次）
+  if (myQuota === 0 && !hasProposal && !_tradeAutoSkipped) {
+    _tradeAutoSkipped = true;
     setTimeout(() => { if (typeof skipTrade === 'function') skipTrade(); }, 500);
   }
 }
@@ -1729,10 +1739,12 @@ function _renderPlayerList(view) {
     `;
   }).join('');
 
-  // 应用装备的头像皮肤（仅限"我"）
+  // 应用装备的头像皮肤（根据服务器同步的皮肤数据）
   if (typeof applyAvatarSkin === 'function') {
-    const myAvatarEl = list.querySelector('.player-row.is-me .pl-avatar');
-    if (myAvatarEl) applyAvatarSkin(myAvatarEl);
+    const avatarEls = list.querySelectorAll('.pl-avatar');
+    allPlayers.forEach((p, i) => {
+      if (avatarEls[i]) applyAvatarSkin(avatarEls[i], p.skin);
+    });
   }
 }
 
@@ -1752,12 +1764,20 @@ function showCardPopup(cardId, cardName, isHidden, optScore, optEffect) {
 
   if (isHidden || !cardId) {
     popup.innerHTML = `<div class="card-popup-content">
+      <div class="modal-titlebar">
+        <span class="modal-titlebar-title">📋 卡牌详情</span>
+        <button class="modal-titlebar-close" onclick="closeCardPopup()">✕</button>
+      </div>
       <div class="card-popup-emoji">❓</div>
       <div class="card-popup-name">未揭示</div>
       <div class="card-popup-desc">此卡牌尚未被获得，信息隐藏</div>
     </div>`;
   } else {
     popup.innerHTML = `<div class="card-popup-content rarity-${getCardRarity(cardId)}">
+      <div class="modal-titlebar">
+        <span class="modal-titlebar-title">${cardName}</span>
+        <button class="modal-titlebar-close" onclick="closeCardPopup()">✕</button>
+      </div>
       <div class="card-popup-emoji">${getCardFramedImageHtml(cardId, 'frame-xl')}</div>
       <div class="card-popup-name">${cardName}</div>
       <div class="card-popup-score">★ ${_ps} 分</div>
@@ -1772,6 +1792,7 @@ function showCardPopup(cardId, cardName, isHidden, optScore, optEffect) {
   setTimeout(() => {
     const closePopup = (evt) => {
       if (evt.target.closest('.card-icon')) return;
+      if (evt.target.closest('.card-popup-content')) return;
       if (Date.now() - (popup._openedAt || 0) < 300) return;
       popup.style.display = 'none';
       document.removeEventListener('click', closePopup);
@@ -1782,6 +1803,11 @@ function showCardPopup(cardId, cardName, isHidden, optScore, optEffect) {
     document.addEventListener('click', closePopup);
     document.addEventListener('touchstart', closePopup, { passive: true });
   }, 100);
+}
+
+function closeCardPopup() {
+  const popup = document.getElementById('card-popup');
+  if (popup) popup.style.display = 'none';
 }
 
 // ==================== 玩家详情浮窗 ====================
@@ -1845,7 +1871,10 @@ function showPlayerDetailPopup(rowEl, playerId) {
   const isMe = p.isMe || p.id === socket.id;
   const avatarText = (p.nickname?.charAt(0) || '?').toUpperCase();
   popup.innerHTML = `
-    <span class="pp-close" onclick="_closePlayerPopup()">✕</span>
+    <div class="modal-titlebar">
+      <span class="modal-titlebar-title">👤 玩家详情</span>
+      <button class="modal-titlebar-close" onclick="_closePlayerPopup()">✕</button>
+    </div>
     <div class="pp-avatar-row">
       <div class="pp-avatar">${avatarText}</div>
     </div>
@@ -1856,10 +1885,10 @@ function showPlayerDetailPopup(rowEl, playerId) {
   `;
   document.body.appendChild(popup);
 
-  // 应用头像皮肤
-  if (isMe && typeof applyAvatarSkin === 'function') {
+  // 应用头像皮肤（所有玩家，根据服务器同步数据）
+  if (typeof applyAvatarSkin === 'function') {
     const popupAvatar = popup.querySelector('.pp-avatar');
-    if (popupAvatar) applyAvatarSkin(popupAvatar);
+    if (popupAvatar) applyAvatarSkin(popupAvatar, p.skin);
   }
 
   const rect = rowEl.getBoundingClientRect();

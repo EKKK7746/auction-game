@@ -37,7 +37,7 @@ socket.on('reconnect', () => {
   // 重连后重新进入房间
   const saved = JSON.parse(localStorage.getItem('mwPlayer') || '{}');
   if (saved.nickname && saved.roomId) {
-    socket.emit('room:join', saved.roomId, saved.nickname, (res) => {
+    socket.emit('room:join', saved.roomId, saved.nickname, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (res) => {
       if (res && res.success) {
         console.log('[Socket] 重连后已重新加入房间:', saved.roomId);
       }
