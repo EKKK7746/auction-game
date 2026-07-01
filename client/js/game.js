@@ -2353,15 +2353,16 @@ socket.on('room:left', (data) => {
     if (roomIdEl) roomIdEl.textContent = GameState.roomId;
 
     // 添加重新加入按钮
-    const lobbyDiv = document.querySelector('#view-lobby .lobby-main');
-    if (lobbyDiv && !document.getElementById('btnRejoinGame')) {
+    const lobbyActions = document.querySelector('#view-lobby .lobby-actions');
+    if (lobbyActions && !document.getElementById('btnRejoinGame')) {
       const rejoinBtn = document.createElement('button');
       rejoinBtn.id = 'btnRejoinGame';
-      rejoinBtn.className = 'btn-rejoin';
+      rejoinBtn.className = 'btn btn-primary';
       rejoinBtn.textContent = '🔄 重新加入游戏';
       rejoinBtn.onclick = rejoinGame;
-      rejoinBtn.style.cssText = 'width:100%;margin-top:12px;padding:12px;';
-      lobbyDiv.appendChild(rejoinBtn);
+      rejoinBtn.style.cssText = 'width:100%;margin-bottom:12px;padding:12px;';
+      // 插到按钮区最前面，保证可见
+      lobbyActions.insertBefore(rejoinBtn, lobbyActions.firstChild);
     }
   }
 });
