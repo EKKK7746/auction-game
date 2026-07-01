@@ -1104,7 +1104,11 @@ body {
 
 .dice-btn .dice-name { font-size: 20px; font-weight: 700; color: #2C2C2C; }
 .dice-btn .dice-cost { font-size: 12px; color: #B0B0B0; }
+.dice-btn .dice-free-tag { font-size: 12px; color: #4CAF50; font-weight: 700; }
 .dice-btn .dice-ev { font-size: 11px; color: #5B7B5E; }
+
+.dice-btn.dice-free { border-color: #4CAF50; background: #F0FFF0; }
+.dice-btn.dice-free:hover { background: #E0FFE0; }
 
 .dice-btn.pass-btn-full {
   grid-column: 1 / -1;

@@ -485,6 +485,8 @@ function _renderRentDice(view, container) {
   container.className = 'game-action-area my-turn';
 
   const costs = view.diceCosts || { d4: 1, d6: 2, d12: 4, d20: 6, pass: 0 };
+  const remainingCards = view.deckSize || 0;
+  const d4Free = costs.d4 === 0 || remainingCards <= 2;  // 末两轮免费
   const me = view.players.find(p => p.id === socket.id);
   const myFunds = me ? me.funds : 0;
   const hasUpgrade = view.hasUpgrade;
@@ -492,19 +494,20 @@ function _renderRentDice(view, container) {
   const UPGRADE_MAP = { d4: 'd6', d6: 'd12', d12: 'd20' };
 
   const diceTypes = [
-    { type: 'd4', sides: 4, ev: 2.5, cost: costs.d4 },
-    { type: 'd6', sides: 6, ev: 3.5, cost: costs.d6 },
-    { type: 'd12', sides: 12, ev: 6.5, cost: costs.d12 },
-    { type: 'd20', sides: 20, ev: 10.5, cost: costs.d20 },
+    { type: 'd4', sides: 4, ev: 2.5, cost: costs.d4, free: d4Free },
+    { type: 'd6', sides: 6, ev: 3.5, cost: costs.d6, free: false },
+    { type: 'd12', sides: 12, ev: 6.5, cost: costs.d12, free: false },
+    { type: 'd20', sides: 20, ev: 10.5, cost: costs.d20, free: false },
   ];
 
   const buttons = diceTypes.map(d => {
-    const canAfford = myFunds >= d.cost;
+    const canAfford = d.free || myFunds >= d.cost;
+    const costLabel = d.free ? '<span class="dice-free-tag">免费</span>' : `$${d.cost}`;
     const upgraded = UPGRADE_MAP[d.type];
-    return `<button class="dice-btn${!canAfford ? ' disabled' : ''}"
+    return `<button class="dice-btn${!canAfford ? ' disabled' : ''}${d.free ? ' dice-free' : ''}"
       onclick="doSelectDiceWithUpgrade('${d.type}')">
       <span class="dice-name">${d.type}<span class="dice-upgrade-preview"></span></span>
-      <span class="dice-cost">$${d.cost}</span>
+      <span class="dice-cost">${costLabel}</span>
       <span class="dice-ev">EV ${d.ev}</span>
     </button>`;
   }).join('');
@@ -1155,13 +1158,15 @@ function _renderFinished(view, container) {
             const isFirst = rank === 1;
             const isTied = r.cardScore === results[0].cardScore && r.funds === results[0].funds && i > 0;
             const rankClass = isFirst ? 'finish-first' : (rank <= 3 ? 'finish-podium' : '');
-            const prevScore = i > 0 ? results[i-1].cardScore : -1;
+            const prevAdjusted = i > 0 ? (results[i-1].adjustedScore || results[i-1].cardScore) : -1;
             const prevFunds = i > 0 ? results[i-1].funds : -1;
-            const trulyTied = i > 0 && r.cardScore === prevScore && r.funds === prevFunds
-              && r.cardScore !== results[0].cardScore;
+            const trulyTied = i > 0 && (r.adjustedScore || r.cardScore) === prevAdjusted && r.funds === prevFunds
+              && (r.adjustedScore || r.cardScore) !== (results[0].adjustedScore || results[0].cardScore);
 
             const cards = r.cards && r.cards.length ? r.cards : [];
             const cardScore = r.cardScore != null ? r.cardScore : cards.reduce((sum, c) => sum + (c.score || 0), 0);
+            const adjustedScore = r.adjustedScore != null ? r.adjustedScore : (cardScore + Math.floor((r.funds || 0) / 3));
+            const fundsBonus = adjustedScore - cardScore;
 
             return `<div class="finish-rank-item ${rankClass} ${r.isMe ? 'is-me' : ''} slide-in" style="animation-delay:${i * 0.15}s">
               <div class="finish-rank-badge">${RANK_MEDALS[rank] || rank}</div>
@@ -1181,8 +1186,9 @@ function _renderFinished(view, container) {
                 </div>
               </div>
               <div class="finish-rank-score">
-                <span class="score-num">${cardScore}</span>
+                <span class="score-num">${adjustedScore}</span>
                 <span class="score-label">分</span>
+                ${fundsBonus > 0 ? `<span class="funds-note" style="color:#4CAF50;">+${fundsBonus}折算</span>` : ''}
                 <span class="funds-note">$${r.funds}</span>
               </div>
             </div>`;
@@ -1224,17 +1230,18 @@ function _buildFallbackResults(view) {
   for (const p of view.players) {
     const cards = p.cards || [];
     const cardScore = cards.reduce((sum, c) => sum + (c.score || 0), 0);
+    const adjustedScore = cardScore + Math.floor((p.funds || 0) / 3);
     scores.push({
-      id: p.id, nickname: p.nickname, cardScore, funds: p.funds,
+      id: p.id, nickname: p.nickname, cardScore, adjustedScore, funds: p.funds,
       cardCount: p.cardCount, cards, isMe: p.isMe, rank: 0
     });
   }
   scores.sort((a, b) => {
-    if (b.cardScore !== a.cardScore) return b.cardScore - a.cardScore;
+    if (b.adjustedScore !== a.adjustedScore) return b.adjustedScore - a.adjustedScore;
     return b.funds - a.funds;
   });
   for (let i = 0; i < scores.length; i++) {
-    if (i > 0 && scores[i].cardScore === scores[i-1].cardScore && scores[i].funds === scores[i-1].funds) {
+    if (i > 0 && scores[i].adjustedScore === scores[i-1].adjustedScore && scores[i].funds === scores[i-1].funds) {
       scores[i].rank = scores[i-1].rank;
     } else {
       scores[i].rank = i + 1;
@@ -1295,22 +1302,29 @@ function _renderPlayerList(view) {
 
   let maxScore = -1, maxFunds = -1;
   for (const p of allPlayers) {
-    if ((p.cardScore || 0) > maxScore) maxScore = p.cardScore || 0;
+    const as = p.adjustedScore || p.cardScore || 0;
+    if (as > maxScore) maxScore = as;
     if ((p.funds || 0) > maxFunds) maxFunds = p.funds || 0;
   }
 
   list.innerHTML = allPlayers.map(p => {
     const isMe = p.isMe || p.id === socket.id;
     const cardScore = p.cardScore || 0;
+    const adjustedScore = p.adjustedScore != null ? p.adjustedScore : cardScore;
     const funds = p.funds || 0;
     const nickname = p.nickname || '未知';
-    const isTopScore = cardScore > 0 && cardScore === maxScore && maxScore > 0;
+    const isTopScore = adjustedScore > 0 && adjustedScore === maxScore && maxScore > 0;
     const isRichest = funds === maxFunds && maxFunds > 0;
     const botTag = p.isBot ? '<span class="pl-tag pl-tag-bot">AI</span>' : '';
     const managedTag = p.managed ? '<span class="pl-tag pl-tag-managed">托管</span>' : '';
     const avatarText = (nickname.charAt(0) || '?').toUpperCase();
     const moneyIcon = isRichest ? '💎' : '💰';
     const scoreIcon = isTopScore ? '👑' : '⭐';
+    // 如果有资金折算，显示 "文物分+折算=调整分"；否则只显示文物分
+    const fundsBonus = Math.floor(funds / 3);
+    const scoreDisplay = fundsBonus > 0
+      ? `${cardScore}+${fundsBonus}=${adjustedScore}`
+      : `${adjustedScore}`;
 
     return `
       <div class="player-row${isMe ? ' is-me' : ''}" data-player-id="${p.id}" onclick="showPlayerDetailPopup(this, '${p.id}')">
@@ -1320,7 +1334,7 @@ function _renderPlayerList(view) {
         </div>
         <div class="pl-main">
           <div class="pl-nick" title="${nickname}">${nickname}</div>
-          <div class="pl-stats">${moneyIcon}$${funds} · ${scoreIcon}${cardScore}</div>
+          <div class="pl-stats">${moneyIcon}$${funds} · ${scoreIcon}${scoreDisplay}</div>
         </div>
         <div class="pl-right">
           <span class="pl-expand-icon">▶</span>

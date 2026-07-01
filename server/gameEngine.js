@@ -349,9 +349,15 @@ function selectDice(roomId, playerId, diceType) {
   const p = state.players.find(p => p.id === playerId);
 
   // --- 扣费 ---
+  // 末两轮 d4 免费（建议六）
+  const remainingCards = state.deck.length;
   let expense = 0;
   if (diceType !== 'pass') {
-    const cost = DICE_COSTS[diceType];
+    let cost = DICE_COSTS[diceType];
+    if (diceType === 'd4' && remainingCards <= 2) {
+      cost = 0;
+      console.log(`[引擎] ${p.nickname} 末两轮免费 d4`);
+    }
     if (p.funds < cost) {
       return { error: `资金不足，${diceType} 需要 $${cost}（当前 $${p.funds}）` };
     }
@@ -1294,33 +1300,39 @@ function calculateCardScore(cards) {
 }
 
 /**
- * 最终排名：卡牌分 desc → 资金 desc（平局决胜）
+ * 最终排名：调整后总分 desc → 资金 desc（平局决胜）
+ * 调整后总分 = 卡牌分 + floor(资金 / 3)
  * 资金也相同 → 共享排名
  */
 function calculateFinalScores(roomId) {
   const state = games.get(roomId);
   if (!state) return [];
 
-  const scores = state.players.map(p => ({
-    id: p.id,
-    nickname: p.nickname,
-    cardScore: calculateCardScore(p.cards),
-    funds: p.funds,
-    cardCount: p.cards.length,
-    cards: p.cards.map(c => ({
-      id: c.id, name: c.name, score: c.score, effect: c.effect, used: c.used || false, wonAtRound: c.wonAtRound,
-    })),
-  }));
+  const scores = state.players.map(p => {
+    const cs = calculateCardScore(p.cards);
+    const adjusted = cs + Math.floor(p.funds / 3);
+    return {
+      id: p.id,
+      nickname: p.nickname,
+      cardScore: cs,
+      funds: p.funds,
+      adjustedScore: adjusted,
+      cardCount: p.cards.length,
+      cards: p.cards.map(c => ({
+        id: c.id, name: c.name, score: c.score, effect: c.effect, used: c.used || false, wonAtRound: c.wonAtRound,
+      })),
+    };
+  });
 
-  // 排序：卡牌分降序 → 资金降序
+  // 排序：调整后总分降序 → 资金降序
   scores.sort((a, b) => {
-    if (b.cardScore !== a.cardScore) return b.cardScore - a.cardScore;
+    if (b.adjustedScore !== a.adjustedScore) return b.adjustedScore - a.adjustedScore;
     return b.funds - a.funds;
   });
 
-  // 排名（同分+同资金共享排名）
+  // 排名（同调整分+同资金共享排名）
   for (let i = 0; i < scores.length; i++) {
-    if (i > 0 && scores[i].cardScore === scores[i - 1].cardScore && scores[i].funds === scores[i - 1].funds) {
+    if (i > 0 && scores[i].adjustedScore === scores[i - 1].adjustedScore && scores[i].funds === scores[i - 1].funds) {
       scores[i].rank = scores[i - 1].rank;
     } else {
       scores[i].rank = i + 1;
@@ -1329,7 +1341,7 @@ function calculateFinalScores(roomId) {
 
   console.log('[引擎] 终局计分：');
   for (const s of scores) {
-    console.log(`  #${s.rank} ${s.nickname}: 卡牌${s.cardScore}分 + 资金$${s.funds} | ${s.cardCount}张卡`);
+    console.log(`  #${s.rank} ${s.nickname}: 卡牌${s.cardScore}分 + 折算${s.adjustedScore - s.cardScore}分 = ${s.adjustedScore}分 | 资金$${s.funds} | ${s.cardCount}张卡`);
   }
 
   return scores;
@@ -1368,6 +1380,7 @@ function getPlayerView(fullState, playerId) {
     turnDeadline: fullState.turnDeadline || null,
     commissionRate: fullState.commissionRate,
     auctioneerStreak: fullState.auctioneerStreak,
+    deckSize: fullState.deck.length,  // 剩余卡牌数（=剩余轮次）
     // 全卡池总览（点击回合标签查看）→ 本局牌堆
     cardPool: (fullState.originalDeck || fullState.deck).map((c, i) => {
       const owner = fullState.players.find(p => p.cards.some(pc => pc.id === c.id));
@@ -1385,23 +1398,27 @@ function getPlayerView(fullState, playerId) {
     }),
     totalDeckSize: (fullState.originalDeck || fullState.deck).length,  // 本局牌堆总数
     // 玩家信息 — 卡牌被获得后即公开
-    players: fullState.players.map(p => ({
-      id: p.id,
-      nickname: p.nickname,
-      funds: p.funds,
-      cardCount: p.cards.length,
-      cardScore: calculateCardScore(p.cards),
-      isBot: !!p.isBot,
-      managed: !!p.managed,  // 托管标识
-      // 始终发送完整卡牌信息
-      cards: p.cards.map(c => ({ id: c.id, name: c.name, score: c.score, effect: c.effect, used: !!c.used })),
-      hasDragonPhoenix: p.cards.some(c => c.id === 'ltsx') && p.cards.some(c => c.id === 'kxqt'),
-      hasReroll: hasRerollAbility(p),
-      hasDoubleComm: p.cards.some(c => c.id === 'sq'),
-      hasUpgrade: p.cards.some(c => c.id === 'dhft' && !c.used),
-      isMe: p.id === playerId,
-      isHost: !!p.isHost,
-    })),
+    players: fullState.players.map(p => {
+      const cs = calculateCardScore(p.cards);
+      return {
+        id: p.id,
+        nickname: p.nickname,
+        funds: p.funds,
+        cardCount: p.cards.length,
+        cardScore: cs,
+        adjustedScore: cs + Math.floor(p.funds / 3),
+        isBot: !!p.isBot,
+        managed: !!p.managed,  // 托管标识
+        // 始终发送完整卡牌信息
+        cards: p.cards.map(c => ({ id: c.id, name: c.name, score: c.score, effect: c.effect, used: !!c.used })),
+        hasDragonPhoenix: p.cards.some(c => c.id === 'ltsx') && p.cards.some(c => c.id === 'kxqt'),
+        hasReroll: hasRerollAbility(p),
+        hasDoubleComm: p.cards.some(c => c.id === 'sq'),
+        hasUpgrade: p.cards.some(c => c.id === 'dhft' && !c.used),
+        isMe: p.id === playerId,
+        isHost: !!p.isHost,
+      };
+    }),
   };
 
   // 阶段裁剪
