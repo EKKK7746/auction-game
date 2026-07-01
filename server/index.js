@@ -168,10 +168,9 @@ io.on('connection', (socket) => {
         const gp = game.players.find(p => p.id === socket.id);
         if (gp) gp.skin = { ...(gp.skin || {}), ...(skin || {}) };
       }
-      // 广播更新后的玩家列表
+      // 广播更新后的玩家列表（统一使用 room:player_joined，避免 room:joined 触发客户端再次发送 skin）
       const players = roomManager.getPlayers(roomId);
-      socket.emit('room:joined', { roomId, players });
-      socket.to(roomId).emit('room:player_joined', { player: players.find(p => p.id === socket.id), players });
+      io.to(roomId).emit('room:player_joined', { player: players.find(p => p.id === socket.id), players });
       gameEngine.broadcast(roomId);
     }
     callback({ success: ok });
