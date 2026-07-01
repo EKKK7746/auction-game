@@ -2604,4 +2604,5 @@ module.exports = {
   unmanagePlayer,
   restartGame,
   playerRejoin,
+  broadcast,
 };
