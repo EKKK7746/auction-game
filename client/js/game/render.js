@@ -255,6 +255,7 @@ function _renderPhaseContent(view, container) {
     case 'rentDice':    _renderRentDice(view, container); break;
     case 'rollDice':    _renderRollDice(view, container); break;
     case 'settle':      _renderSettle(view, container); break;
+    case 'trade':       _renderTrade(view, container); break;
     case 'duel':
       if (_lastView && _lastView.phase !== 'duel') {
         _renderDuel._playedSound = false;
@@ -287,6 +288,8 @@ function _renderSpectatorAction(view, container) {
     selectCard: { icon: '🃏', text: '拍卖师选卡中', sub: '等待拍卖师从牌堆中选择...' },
     rentDice: { icon: '🎲', text: '玩家租骰中', sub: '玩家们正在选择骰子...' },
     rollDice: { icon: '🎯', text: '掷骰中', sub: '签筒抽签进行中...' },
+    settle: { icon: '💰', text: '结算中', sub: '正在结算本轮结果...' },
+    trade: { icon: '🔄', text: '交易中', sub: '玩家可在本轮结束后交换文物...' },
     duel: { icon: '🪞', text: '镜中决斗', sub: '决斗正在进行...' },
   };
 
@@ -668,6 +671,212 @@ function _renderRollDice(view, container) {
   if (typeof playSound === 'function') {
     setTimeout(() => playSound('diceRoll'), 200);
   }
+}
+
+// ==================== 交易阶段 ====================
+
+let _tradeCountdownInterval = null;
+
+function _renderTrade(view, container) {
+  container.className = 'game-action-area';
+
+  const me = view.players.find(p => p.id === socket.id);
+  if (!me) return;
+
+  const myQuota = view.tradeQuota ? (view.tradeQuota[socket.id] || 0) : 0;
+  const hasQuota = myQuota > 0 && me.cards.length > 0;
+  const hasProposal = view.tradeProposal && view.tradeProposal.toId === socket.id && !view.tradeProposal.responded;
+  const hasPending = view.tradeProposal && !view.tradeProposal.responded;
+
+  // 清除之前的倒计时
+  if (_tradeCountdownInterval) { clearInterval(_tradeCountdownInterval); _tradeCountdownInterval = null; }
+
+  // 倒计时
+  const deadline = view.turnDeadline;
+  if (deadline) {
+    const updateCountdown = () => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      const cdEl = document.getElementById('tradeCountdown');
+      if (cdEl) cdEl.textContent = `${remaining}秒`;
+      if (remaining <= 0 && _tradeCountdownInterval) {
+        clearInterval(_tradeCountdownInterval);
+        _tradeCountdownInterval = null;
+      }
+    };
+    updateCountdown();
+    _tradeCountdownInterval = setInterval(updateCountdown, 1000);
+  }
+
+  // 其他玩家状态
+  const playersHtml = view.players.filter(p => p.id !== socket.id && !p.isBot).map(p => {
+    const quota = view.tradeQuota ? (view.tradeQuota[p.id] || 0) : 0;
+    const hasCards = (p.cardCount || 0) > 0;
+    const canTarget = hasQuota && hasCards && quota > 0 && !hasPending;
+    const skipped = view.tradeSkipped && view.tradeSkipped.includes(p.id);
+    const isTargetOfProposal = view.tradeProposal && view.tradeProposal.toId === p.id;
+    let status = '';
+    if (skipped) status = '已跳过';
+    else if (quota <= 0) status = '无可交易';
+    else if (!hasCards) status = '无卡牌';
+    else if (isTargetOfProposal) status = '⏳ 待回应';
+    else if (canTarget) status = '可交易';
+    else status = '';
+    return `<div class="trade-player-item ${canTarget ? 'can-target' : ''}" 
+      data-target-id="${p.id}"
+      onclick="${canTarget ? `openTradeProposal('${p.id}')` : ''}"
+      style="${canTarget ? 'cursor:pointer' : 'cursor:default'}">
+      <span class="trade-player-nick">${p.nickname}</span>
+      <span class="trade-player-status">${status}</span>
+    </div>`;
+  }).join('');
+
+  // 提案弹窗（如果目标是自己）
+  let proposalHtml = '';
+  if (hasProposal) {
+    proposalHtml = `<div class="trade-proposal-banner">
+      <span class="trade-proposal-icon">🤝</span>
+      <span>有人向你发起交易！</span>
+      <button class="trade-btn trade-accept" onclick="respondTrade(true)">接受</button>
+      <button class="trade-btn trade-reject" onclick="respondTrade(false)">拒绝</button>
+    </div>`;
+  }
+
+  container.innerHTML = `
+    <div class="trade-container">
+      <div class="trade-header">
+        <span class="trade-title">🔄 交易阶段</span>
+        <span class="trade-countdown" id="tradeCountdown">30秒</span>
+      </div>
+      <div class="trade-info">
+        <span>你的交易次数剩余：<strong>${myQuota}</strong></span>
+        ${!hasQuota ? '<span class="trade-no-quota">（已用完或无可交易卡牌）</span>' : ''}
+      </div>
+      ${proposalHtml}
+      ${hasPending && !hasProposal ? '<div class="trade-info-tip">等待对方回应中...</div>' : ''}
+      <div class="trade-players-title">可选交易对象</div>
+      <div class="trade-players-list">${playersHtml || '<div class="trade-empty">无其他玩家</div>'}</div>
+      <button class="trade-btn trade-skip-btn" onclick="skipTrade()" ${hasPending ? 'disabled' : ''}>
+        ${hasQuota ? '跳过交易' : '继续'}
+      </button>
+    </div>
+  `;
+
+  // 如果无配额也无卡，自动跳过
+  if (!hasQuota && !hasProposal) {
+    setTimeout(() => { if (typeof skipTrade === 'function') skipTrade(); }, 500);
+  }
+}
+
+// 打开交易提案面板
+function openTradeProposal(targetId) {
+  const panel = document.getElementById('tradeProposalPanel');
+  if (panel) panel.remove();
+
+  const view = (typeof _lastView !== 'undefined') ? _lastView : null;
+  if (!view) return;
+
+  const me = view.players.find(p => p.id === socket.id);
+  const target = view.players.find(p => p.id === targetId);
+  if (!me || !target) return;
+
+  const myCards = me.cards || [];
+  const targetCards = target.cards || [];
+
+  const panelHtml = `
+    <div class="trade-proposal-overlay" id="tradeProposalPanel" onclick="event.target===this && closeTradeProposal()">
+      <div class="trade-proposal-panel">
+        <div class="trade-proposal-title">发起交易 → ${target.nickname}</div>
+        <div class="trade-proposal-body">
+          <div class="trade-col">
+            <div class="trade-col-label">你出的卡</div>
+            <div class="trade-card-grid">
+              ${myCards.map(c => `<label class="trade-card-option">
+                <input type="checkbox" class="trade-from-card" value="${c.id}" />
+                <span class="trade-card-name">${c.name || c.id} ★${c.score}</span>
+              </label>`).join('')}
+            </div>
+            <div class="trade-gold-input">
+              <span>你的金币：$${me.funds}</span>
+              <input type="number" id="tradeFromGold" value="0" min="0" max="${me.funds}" />
+            </div>
+          </div>
+          <div class="trade-arrow">⇄</div>
+          <div class="trade-col">
+            <div class="trade-col-label">你要对方的卡</div>
+            <div class="trade-card-grid">
+              ${targetCards.map(c => `<label class="trade-card-option">
+                <input type="checkbox" class="trade-to-card" value="${c.id}" />
+                <span class="trade-card-name">${c.name || c.id} ★${c.score}</span>
+              </label>`).join('')}
+            </div>
+            <div class="trade-gold-input">
+              <span>对方金币：$${target.funds}</span>
+              <input type="number" id="tradeToGold" value="0" min="0" max="${target.funds}" />
+            </div>
+          </div>
+        </div>
+        <div class="trade-proposal-actions">
+          <button class="trade-btn trade-accept" onclick="submitTradeProposal('${targetId}')">发送提案</button>
+          <button class="trade-btn trade-reject" onclick="closeTradeProposal()">取消</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML('beforeend', panelHtml);
+}
+
+function closeTradeProposal() {
+  const panel = document.getElementById('tradeProposalPanel');
+  if (panel) panel.remove();
+}
+
+function submitTradeProposal(toId) {
+  const fromCards = [...document.querySelectorAll('.trade-from-card:checked')].map(el => el.value);
+  const toCards = [...document.querySelectorAll('.trade-to-card:checked')].map(el => el.value);
+  const fromGold = parseInt(document.getElementById('tradeFromGold')?.value) || 0;
+  const toGold = parseInt(document.getElementById('tradeToGold')?.value) || 0;
+
+  if (fromCards.length === 0 && fromGold === 0) {
+    alert('你至少要出一些卡牌或金币');
+    return;
+  }
+
+  const roomId = (typeof GameState !== 'undefined' && GameState.roomId) ? GameState.roomId : '';
+  socket.emit('trade:propose', roomId, toId, fromCards, fromGold, toCards, toGold, (result) => {
+    if (result && result.error) {
+      alert(result.error);
+    } else {
+      closeTradeProposal();
+    }
+  });
+}
+
+function respondTrade(accepted) {
+  const roomId = (typeof GameState !== 'undefined' && GameState.roomId) ? GameState.roomId : '';
+  socket.emit('trade:respond', roomId, accepted, (result) => {
+    if (result && result.error) alert(result.error);
+  });
+}
+
+function skipTrade() {
+  const roomId = (typeof GameState !== 'undefined' && GameState.roomId) ? GameState.roomId : '';
+  socket.emit('trade:skip', roomId);
+}
+
+// 监听交易提案
+if (typeof socket !== 'undefined') {
+  socket.on('trade:proposal', (data) => {
+    console.log('[Trade] 收到交易提案:', data);
+    // 由 renderTrade 处理显示
+  });
+  socket.on('trade:result', (data) => {
+    if (data && data.success) {
+      console.log('[Trade] 交易成功:', data.fromNick, '⇄', data.toNick);
+    } else {
+      console.log('[Trade] 交易未完成:', data.reason);
+    }
+  });
 }
 
 // ==================== 镜中决斗阶段 ====================

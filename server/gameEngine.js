@@ -1327,6 +1327,13 @@ function endRound(roomId) {
   state.playersDone = new Set();
   state.lastBidResults = null;   // 清除上轮暗标结果
   state.tieInfo = null;          // 清除平局信息
+
+  // ★ 交易阶段（极速模式跳过；经典=1次/人，完整=2次/人）
+  if (state._mode !== 'speed' && _hasTradePotential(state)) {
+    _startTradePhase(state, roomId);
+    return { ok: true, trade: true, round: state.round };
+  }
+
   // 极速模式自动翻牌 → 非极速模式重新竞标
   initBiddingOrder(state);
 
@@ -1334,6 +1341,246 @@ function endRound(roomId) {
   // 极速模式的 broadcast 已在 _speedAutoReveal 中完成
   if (state._mode !== 'speed') broadcast(roomId);
   return { ok: true, round: state.round };
+}
+
+// -------------------- 8b. 交易系统 --------------------
+
+const TRADE_PHASE_SECONDS = 30;
+
+/** 检查是否有玩家还有交易配额且有交易对象 */
+function _hasTradePotential(state) {
+  const humanPlayers = state.players.filter(p => !p.isBot);
+  if (humanPlayers.length < 2) return false;
+  // 经典模式每局1次，完整模式2次
+  const maxQuota = state._mode === 'fulldeck' ? 2 : 1;
+  return humanPlayers.some(p => (state._tradeQuota?.[p.id] ?? maxQuota) > 0 && p.cards.length > 0);
+}
+
+/** 获取某玩家的交易配额 */
+function _getTradeQuota(state, playerId) {
+  if (!state._tradeQuota) {
+    const maxQuota = state._mode === 'fulldeck' ? 2 : 1;
+    state._tradeQuota = {};
+    for (const p of state.players) {
+      state._tradeQuota[p.id] = p.isBot ? 0 : maxQuota;
+    }
+  }
+  return state._tradeQuota[playerId] || 0;
+}
+
+/** 启动交易阶段 */
+function _startTradePhase(state, roomId) {
+  clearTurnTimer(roomId);
+
+  state.phase = 'trade';
+  state._tradeSkipped = new Set();
+  state._tradeProposal = null;  // { fromId, toId, fromCards[], fromGold, toCards[], toGold }
+  state._tradeResponse = null;  // { accepted: bool }
+
+  const playersLeft = state.players.filter(p => _getTradeQuota(state, p.id) > 0);
+  console.log(`[引擎] 交易阶段开始 — 可交易: ${playersLeft.map(p => p.nickname).join(', ') || '无'}`);
+
+  broadcast(roomId);
+
+  // 30秒倒计时
+  setTurnTimer(roomId, TRADE_PHASE_SECONDS * 1000, 'trade', () => {
+    const s = games.get(roomId);
+    if (!s || s.phase !== 'trade') return;
+    console.log('[引擎] 交易阶段超时');
+    _endTradePhase(s, roomId);
+  });
+}
+
+/** 发起交易提案 */
+function proposeTrade(roomId, fromId, toId, fromCards, fromGold, toCards, toGold) {
+  const state = games.get(roomId);
+  if (!state) return { error: '游戏不存在' };
+  if (state.phase !== 'trade') return { error: '当前不在交易阶段' };
+
+  // 验证发起方
+  const quota = _getTradeQuota(state, fromId);
+  if (quota <= 0) return { error: '你的交易次数已用完' };
+
+  const from = state.players.find(p => p.id === fromId);
+  const to = state.players.find(p => p.id === toId);
+  if (!from || !to) return { error: '玩家不存在' };
+  if (to.isBot) return { error: '不能与 AI 玩家交易' };
+  if (fromId === toId) return { error: '不能与自己交易' };
+
+  // 验证卡牌归属
+  fromCards = fromCards || [];
+  toCards = toCards || [];
+  fromGold = Math.max(0, parseInt(fromGold) || 0);
+  toGold = Math.max(0, parseInt(toGold) || 0);
+
+  for (const cid of fromCards) {
+    if (!from.cards.some(c => c.id === cid)) return { error: `你没有卡牌: ${cid}` };
+  }
+  for (const cid of toCards) {
+    if (!to.cards.some(c => c.id === cid)) return { error: `对方没有卡牌: ${cid}` };
+  }
+
+  if (from.funds < fromGold) return { error: '你的资金不足' };
+  if (to.funds < toGold) return { error: '对方资金不足' };
+  if (fromCards.length === 0 && fromGold === 0) return { error: '你至少要出一些东西' };
+  if (fromCards.length === 0 && toCards.length === 0 && fromGold === 0 && toGold === 0) {
+    return { error: '交易不能为空' };
+  }
+
+  // 创建提案
+  state._tradeProposal = {
+    fromId, toId,
+    fromCards: [...fromCards], fromGold,
+    toCards: [...toCards], toGold,
+    responded: false,
+  };
+
+  const fromNick = from.nickname;
+  const toNick = to.nickname;
+  const fromDesc = _describeTrade(fromCards, fromGold);
+  const toDesc = _describeTrade(toCards, toGold);
+  console.log(`[引擎] 交易提案: ${fromNick} 出 ${fromDesc} ⇄ ${toNick} 出 ${toDesc}`);
+
+  // 通知目标玩家
+  const proposalView = {
+    fromId, fromNick,
+    fromCards: fromCards.map(cid => {
+      const c = from.cards.find(cc => cc.id === cid);
+      return { id: cid, name: c?.name || cid, score: c?.score || 1 };
+    }),
+    fromGold,
+    toCards: toCards.map(cid => {
+      const c = to.cards.find(cc => cc.id === cid);
+      return { id: cid, name: c?.name || cid, score: c?.score || 1 };
+    }),
+    toGold,
+  };
+
+  _io.to(toId).emit('trade:proposal', proposalView);
+  broadcast(roomId);
+  return { ok: true };
+}
+
+/** 响应交易提案 */
+function respondTrade(roomId, playerId, accepted) {
+  const state = games.get(roomId);
+  if (!state) return { error: '游戏不存在' };
+  if (state.phase !== 'trade') return { error: '当前不在交易阶段' };
+
+  const proposal = state._tradeProposal;
+  if (!proposal) return { error: '没有待处理的交易提案' };
+  if (proposal.toId !== playerId) return { error: '这个提案不是发给你的' };
+  if (proposal.responded) return { error: '已经回应过了' };
+
+  proposal.responded = true;
+
+  if (accepted) {
+    // 执行交易
+    const from = state.players.find(p => p.id === proposal.fromId);
+    const to = state.players.find(p => p.id === proposal.toId);
+
+    // 交换卡牌
+    for (const cid of proposal.fromCards) {
+      const idx = from.cards.findIndex(c => c.id === cid);
+      if (idx >= 0) to.cards.push(from.cards.splice(idx, 1)[0]);
+    }
+    for (const cid of proposal.toCards) {
+      const idx = to.cards.findIndex(c => c.id === cid);
+      if (idx >= 0) from.cards.push(to.cards.splice(idx, 1)[0]);
+    }
+
+    // 交换金币
+    from.funds -= proposal.fromGold;
+    to.funds += proposal.fromGold;
+    to.funds -= proposal.toGold;
+    from.funds += proposal.toGold;
+
+    // 消耗发起方交易次数
+    state._tradeQuota[proposal.fromId]--;
+
+    console.log(`[引擎] 交易成功: ${from.nickname} ⇄ ${to.nickname} | ${from.nickname}剩余${state._tradeQuota[proposal.fromId]}次`);
+
+    _io.to(roomId).emit('trade:result', {
+      success: true,
+      fromId: proposal.fromId,
+      toId: proposal.toId,
+      fromNick: from.nickname,
+      toNick: to.nickname,
+    });
+  } else {
+    console.log(`[引擎] ${state.players.find(p => p.id === playerId)?.nickname} 拒绝了交易`);
+    _io.to(roomId).emit('trade:result', {
+      success: false,
+      fromId: proposal.fromId,
+      toId: proposal.toId,
+      reason: 'rejected',
+    });
+  }
+
+  state._tradeProposal = null;
+  broadcast(roomId);
+  return { ok: true };
+}
+
+/** 玩家跳过交易阶段 */
+function skipTrade(roomId, playerId) {
+  const state = games.get(roomId);
+  if (!state) return { error: '游戏不存在' };
+  if (state.phase !== 'trade') return { error: '当前不在交易阶段' };
+
+  state._tradeSkipped.add(playerId);
+  console.log(`[引擎] ${state.players.find(p => p.id === playerId)?.nickname} 跳过交易`);
+
+  // 检查是否所有人都跳过了
+  const allDone = state.players.every(p => {
+    // AI 自动跳过
+    if (p.isBot) return true;
+    // 无交易次数的自动跳过
+    if (_getTradeQuota(state, p.id) <= 0) return true;
+    // 无卡牌的自动跳过
+    if (p.cards.length === 0) return true;
+    return state._tradeSkipped.has(p.id);
+  });
+
+  if (allDone) {
+    console.log('[引擎] 全员跳过交易');
+    clearTurnTimer(roomId);
+    _endTradePhase(state, roomId);
+    return { ok: true, allDone: true };
+  }
+
+  broadcast(roomId);
+  return { ok: true, waiting: true };
+}
+
+/** 结束交易阶段，进入下一轮 */
+function _endTradePhase(state, roomId) {
+  state._tradeProposal = null;
+  state._tradeSkipped = new Set();
+
+  // 进入竞标阶段
+  state.phase = 'auction';
+  state.bids = [];
+  state.diceSelections = {};
+  state.diceResults = {};
+  state.revealedCard = null;
+  state.commissionRate = 0;
+  state._roundExpense = {};
+  state.playersDone = new Set();
+  state.lastBidResults = null;
+  state.tieInfo = null;
+
+  initBiddingOrder(state);
+  console.log(`[引擎] → 第 ${state.round} 轮开始（交易结束）`);
+  if (state._mode !== 'speed') broadcast(roomId);
+}
+
+/** 描述交易内容 */
+function _describeTrade(cardIds, gold) {
+  const parts = [];
+  if (cardIds && cardIds.length > 0) parts.push(`${cardIds.length}张卡`);
+  if (gold > 0) parts.push(`$${gold}`);
+  return parts.join(' + ') || '空';
 }
 
 // -------------------- 9. 终局计分 — calculateFinalScores --------------------
@@ -1484,6 +1731,27 @@ function getPlayerView(fullState, playerId) {
   switch (fullState.phase) {
     case 'waiting': {
       base.readyPlayers = fullState.readyPlayers ? [...fullState.readyPlayers] : [];
+      break;
+    }
+
+    case 'trade': {
+      // 交易阶段：公开提案状态 + 各玩家配额
+      const maxQuota = fullState._mode === 'fulldeck' ? 2 : 1;
+      base.tradeQuota = {};
+      base.tradeSkipped = fullState._tradeSkipped ? [...fullState._tradeSkipped] : [];
+      for (const p of fullState.players) {
+        const q = fullState._tradeQuota?.[p.id];
+        base.tradeQuota[p.id] = q != null ? q : (p.isBot ? 0 : maxQuota);
+      }
+      if (fullState._tradeProposal) {
+        base.tradeProposal = {
+          fromId: fullState._tradeProposal.fromId,
+          toId: fullState._tradeProposal.toId,
+          responded: fullState._tradeProposal.responded,
+        };
+      } else {
+        base.tradeProposal = null;
+      }
       break;
     }
 
@@ -2293,6 +2561,11 @@ module.exports = {
   awardCard,
   endRound,
   calculateFinalScores,
+
+  // Trade 交易系统
+  proposeTrade,
+  respondTrade,
+  skipTrade,
 
   // Duel（重做版）
   duelSelectTarget,

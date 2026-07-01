@@ -495,6 +495,23 @@ io.on('connection', (socket) => {
     gameEngine.playerRejoin(socket, io, roomId);
   });
 
+  // ------ 交易系统 ------
+
+  socket.on('trade:propose', (roomId, toId, fromCards, fromGold, toCards, toGold, callback) => {
+    const result = gameEngine.proposeTrade(roomId, socket.id, toId, fromCards, fromGold, toCards, toGold);
+    if (callback) callback(result);
+  });
+
+  socket.on('trade:respond', (roomId, accepted, callback) => {
+    const result = gameEngine.respondTrade(roomId, socket.id, accepted);
+    if (callback) callback(result);
+  });
+
+  socket.on('trade:skip', (roomId, callback) => {
+    const result = gameEngine.skipTrade(roomId, socket.id);
+    if (callback) callback(result);
+  });
+
   // ------ 断开连接 ------
 
   socket.on('disconnect', () => {
