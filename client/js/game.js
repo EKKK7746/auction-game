@@ -20,6 +20,12 @@ let _cardRevealTimer = null;      // 卡牌揭晓动画计时器
 socket.on('game_state_update', (view) => {
   console.log(`[Game] ✓ 收到 game_state_update! phase=${view.phase}, round=${view.round}, view=${GameState.currentView}`);
 
+  // ★ 已主动退出（托管中）→ 忽略游戏状态更新，防止被拉回游戏
+  if (GameState._hasExitedManaged) {
+    console.log('[Game] 已主动退出托管，忽略 game_state_update');
+    return;
+  }
+
   // 缓存最新玩家列表（供 doRestartGame 使用）
   GameState._lastPlayers = view.players || [];
 
@@ -2339,6 +2345,7 @@ function exitGame() {
 // 监听 room:left（含托管标记）
 socket.on('room:left', (data) => {
   if (data && data.managed) {
+    GameState._hasExitedManaged = true;  // ★ 标记已托管退出，阻止 game_state_update 拉回游戏
     if (typeof showToast === 'function') showToast('🤖 已退出，Bot 托管中。可随时重新加入。', 'info');
     showView(Views.LOBBY);
     // 保持 roomId 用于重连
@@ -2364,6 +2371,7 @@ function rejoinGame() {
     if (typeof showToast === 'function') showToast('无法重新加入', 'error');
     return;
   }
+  GameState._hasExitedManaged = false;  // ★ 清除托管退出标记
   // 移除重连按钮
   const btn = document.getElementById('btnRejoinGame');
   if (btn) btn.remove();

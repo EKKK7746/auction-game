@@ -188,6 +188,8 @@ io.on('connection', (socket) => {
       gameEngine.disconnectPlayer(roomId, socket.id);
       // ★ 显式调度托管 Bot
       botManager.processBots(roomId);
+      // ★ 离开 Socket.IO 房间（停止接收 game_state_update 广播）
+      socket.leave(roomId);
       socket.emit('room:left', { roomId, managed: true });
       return;
     }
