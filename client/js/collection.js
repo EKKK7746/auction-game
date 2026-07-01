@@ -105,7 +105,7 @@ function _loadCollection() {
     // 继续正常加载
   }
 
-  if (isTestificate) {
+  if (isLabrat) {
     return _getFullCollection();
   }
 
