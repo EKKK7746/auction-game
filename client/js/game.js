@@ -1921,6 +1921,8 @@ function _renderPlayerList(view) {
     const botTag = p.isBot ? '<span class="pl-tag pl-tag-bot">AI</span>' : '';
     const managedTag = p.managed ? '<span class="pl-tag pl-tag-managed">托管</span>' : '';
     const avatarText = (nickname.charAt(0) || '?').toUpperCase();
+    const moneyIcon = isRichest ? '💎' : '💰';
+    const scoreIcon = isTopScore ? '👑' : '⭐';
 
     return `
       <div class="player-row${isMe ? ' is-me' : ''}" data-player-id="${p.id}" onclick="showPlayerDetailPopup(this, '${p.id}')">
@@ -1930,13 +1932,9 @@ function _renderPlayerList(view) {
         </div>
         <div class="pl-main">
           <div class="pl-nick" title="${nickname}">${nickname}</div>
-          <div class="pl-stats">💰$${funds} · ⭐${cardScore}</div>
+          <div class="pl-stats">${moneyIcon}$${funds} · ${scoreIcon}${cardScore}</div>
         </div>
         <div class="pl-right">
-          <div class="pl-icon-group">
-            ${isRichest ? '<span class="pl-icon-box pl-icon-diamond" title="资金领先">💎</span>' : ''}
-            ${isTopScore ? '<span class="pl-icon-box pl-icon-crown" title="卡牌分领先">👑</span>' : ''}
-          </div>
           <span class="pl-expand-icon">▶</span>
         </div>
       </div>
