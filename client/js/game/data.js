@@ -13,6 +13,7 @@ const PHASE_ICONS = {
   rentDice: '🎲',
   rollDice: '🎲',
   settle: '📊',
+  trade: '🔄',
   duel: '🪞',
   finished: '🏆',
 };

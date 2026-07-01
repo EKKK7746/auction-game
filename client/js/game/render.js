@@ -224,6 +224,11 @@ function _renderActionArea(view) {
   }
 
   if (prevPhase && prevPhase !== newPhase) {
+    // 离开交易阶段时清理提案缓存
+    if (prevPhase === 'trade') {
+      _pendingTradeProposal = null;
+      if (_tradeCountdownInterval) { clearInterval(_tradeCountdownInterval); _tradeCountdownInterval = null; }
+    }
     container.classList.add('phase-leave');
     setTimeout(() => {
       if (_renderVersion !== thisVersion) return;
@@ -676,6 +681,7 @@ function _renderRollDice(view, container) {
 // ==================== 交易阶段 ====================
 
 let _tradeCountdownInterval = null;
+let _pendingTradeProposal = null;  // 存储 trade:proposal 事件发来的提案详情
 
 function _renderTrade(view, container) {
   container.className = 'game-action-area';
@@ -694,10 +700,19 @@ function _renderTrade(view, container) {
   // 倒计时
   const deadline = view.turnDeadline;
   if (deadline) {
+    const totalSec = 30; // 服务端 TRADE_PHASE_SECONDS
     const updateCountdown = () => {
       const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-      const cdEl = document.getElementById('tradeCountdown');
-      if (cdEl) cdEl.textContent = `${remaining}秒`;
+      const pct = (remaining / totalSec) * 100;
+      const fillEl = document.getElementById('tradeTimerFill');
+      const textEl = document.getElementById('tradeTimerText');
+      if (fillEl) {
+        fillEl.style.width = pct + '%';
+        if (pct < 30) fillEl.style.background = '#C43A31';
+        else if (pct < 60) fillEl.style.background = '#D4A017';
+        else fillEl.style.background = '#5B7B5E';
+      }
+      if (textEl) textEl.textContent = remaining === 0 ? '已结束' : `${remaining}秒`;
       if (remaining <= 0 && _tradeCountdownInterval) {
         clearInterval(_tradeCountdownInterval);
         _tradeCountdownInterval = null;
@@ -733,11 +748,43 @@ function _renderTrade(view, container) {
   // 提案弹窗（如果目标是自己）
   let proposalHtml = '';
   if (hasProposal) {
+    const pp = _pendingTradeProposal;
+    const fromNick = pp ? pp.fromNick : (view.players.find(p => p.id === view.tradeProposal.fromId) || {}).nickname || '玩家';
+    let detailsHtml = '';
+    if (pp) {
+      // 对方出的内容
+      const fromParts = [];
+      if (pp.fromCards && pp.fromCards.length > 0) {
+        fromParts.push(pp.fromCards.map(c => `<span class="trade-prop-card">${c.name} ★${c.score}</span>`).join('、'));
+      }
+      if (pp.fromGold > 0) fromParts.push(`<span class="trade-prop-gold">$${pp.fromGold}</span>`);
+      
+      // 对方要的内容
+      const toParts = [];
+      if (pp.toCards && pp.toCards.length > 0) {
+        toParts.push(pp.toCards.map(c => `<span class="trade-prop-card">${c.name} ★${c.score}</span>`).join('、'));
+      }
+      if (pp.toGold > 0) toParts.push(`<span class="trade-prop-gold">$${pp.toGold}</span>`);
+
+      detailsHtml = `
+        <div class="trade-proposal-detail">
+          <div class="trade-prop-row">🤝 <strong>${fromNick}</strong> 向你发起交易</div>
+          ${fromParts.length > 0 ? `<div class="trade-prop-row">📤 对方出：${fromParts.join(' + ')}</div>` : ''}
+          ${toParts.length > 0 ? `<div class="trade-prop-row">📥 要你的：${toParts.join(' + ')}</div>` : ''}
+        </div>`;
+    } else {
+      detailsHtml = `
+        <div class="trade-proposal-detail">
+          <div class="trade-prop-row">🤝 <strong>${fromNick}</strong> 向你发起交易</div>
+          <div class="trade-prop-row" style="opacity:0.7">（详情加载中...）</div>
+        </div>`;
+    }
     proposalHtml = `<div class="trade-proposal-banner">
-      <span class="trade-proposal-icon">🤝</span>
-      <span>有人向你发起交易！</span>
-      <button class="trade-btn trade-accept" onclick="respondTrade(true)">接受</button>
-      <button class="trade-btn trade-reject" onclick="respondTrade(false)">拒绝</button>
+      ${detailsHtml}
+      <div class="trade-proposal-btns">
+        <button class="trade-btn trade-accept" onclick="respondTrade(true)">接受</button>
+        <button class="trade-btn trade-reject" onclick="respondTrade(false)">拒绝</button>
+      </div>
     </div>`;
   }
 
@@ -745,7 +792,10 @@ function _renderTrade(view, container) {
     <div class="trade-container">
       <div class="trade-header">
         <span class="trade-title">🔄 交易阶段</span>
-        <span class="trade-countdown" id="tradeCountdown">30秒</span>
+        <div class="trade-timer-wrap">
+          <div class="trade-timer-bar"><div class="trade-timer-fill" id="tradeTimerFill"></div></div>
+          <div class="trade-timer-text" id="tradeTimerText">30秒</div>
+        </div>
       </div>
       <div class="trade-info">
         <span>你的交易次数剩余：<strong>${myQuota}</strong></span>
@@ -868,14 +918,35 @@ function skipTrade() {
 if (typeof socket !== 'undefined') {
   socket.on('trade:proposal', (data) => {
     console.log('[Trade] 收到交易提案:', data);
-    // 由 renderTrade 处理显示
+    _pendingTradeProposal = data;
+    // 即时更新 banner 详情（处理 data 比 game_state_update 晚到的情况）
+    const detail = document.querySelector('.trade-proposal-detail');
+    if (detail && data) {
+      const fromParts = [];
+      if (data.fromCards && data.fromCards.length > 0) {
+        fromParts.push(data.fromCards.map(c => `<span class="trade-prop-card">${c.name} ★${c.score}</span>`).join('、'));
+      }
+      if (data.fromGold > 0) fromParts.push(`<span class="trade-prop-gold">$${data.fromGold}</span>`);
+      const toParts = [];
+      if (data.toCards && data.toCards.length > 0) {
+        toParts.push(data.toCards.map(c => `<span class="trade-prop-card">${c.name} ★${c.score}</span>`).join('、'));
+      }
+      if (data.toGold > 0) toParts.push(`<span class="trade-prop-gold">$${data.toGold}</span>`);
+      detail.innerHTML = `
+        <div class="trade-prop-row">🤝 <strong>${data.fromNick}</strong> 向你发起交易</div>
+        ${fromParts.length > 0 ? `<div class="trade-prop-row">📤 对方出：${fromParts.join(' + ')}</div>` : ''}
+        ${toParts.length > 0 ? `<div class="trade-prop-row">📥 要你的：${toParts.join(' + ')}</div>` : ''}`;
+    }
   });
   socket.on('trade:result', (data) => {
     if (data && data.success) {
-      console.log('[Trade] 交易成功:', data.fromNick, '⇄', data.toNick);
+      showToast(`✅ ${data.fromNick} 与 ${data.toNick} 交易成功！`, 'info');
     } else {
-      console.log('[Trade] 交易未完成:', data.reason);
+      const reason = (data && data.reason) || '交易未完成';
+      const msg = reason === 'rejected' ? '❌ 对方拒绝了交易' : `❌ ${reason}`;
+      showToast(msg, 'error');
     }
+    _pendingTradeProposal = null;  // 清除提案缓存
   });
 }
 
@@ -1530,11 +1601,7 @@ function _renderPlayerList(view) {
     const avatarText = (nickname.charAt(0) || '?').toUpperCase();
     const moneyIcon = isRichest ? '💎' : '💰';
     const scoreIcon = isTopScore ? '👑' : '⭐';
-    // 如果有资金折算，显示 "文物分+折算=调整分"；否则只显示文物分
-    const fundsBonus = Math.floor(funds / 3);
-    const scoreDisplay = fundsBonus > 0
-      ? `${cardScore}+${fundsBonus}=${adjustedScore}`
-      : `${adjustedScore}`;
+    const scoreDisplay = `${adjustedScore}`;
 
     return `
       <div class="player-row${isMe ? ' is-me' : ''}" data-player-id="${p.id}" onclick="showPlayerDetailPopup(this, '${p.id}')">
@@ -1664,7 +1731,7 @@ function showPlayerDetailPopup(rowEl, playerId) {
   popup.innerHTML = `
     <span class="pp-close" onclick="_closePlayerPopup()">✕</span>
     <div class="pp-header">${p.nickname || '未知'} ${isMe ? '<span class="me-tag">你</span>' : ''}</div>
-    <div class="pp-stats">💰 $${p.funds || 0} · ⭐ ${p.cardScore||0}分 · 🃏 ${p.cardCount||0}张 ${effects}</div>
+    <div class="pp-stats">💰 $${p.funds || 0} · ⭐ ${(p.cardScore||0) + Math.floor((p.funds||0) / 3)}分 · 🃏 ${p.cardCount||0}张 ${effects}</div>
     ${cardDetail ? `<div class="pp-cards-section">${cardDetail}</div>` : ''}
     ${skillStr}
   `;

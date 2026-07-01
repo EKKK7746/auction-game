@@ -5395,13 +5395,34 @@ body {
   color: #2C2C2C;
 }
 
-.trade-countdown {
-  font-size: 20px;
-  font-weight: 700;
-  color: #C43A31;
-  background: #FFF0F0;
-  padding: 4px 12px;
-  border-radius: 8px;
+.trade-timer-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 120px;
+}
+
+.trade-timer-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(0,0,0,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.trade-timer-fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 3px;
+  background: #5B7B5E;
+  transition: width 0.3s linear;
+}
+
+.trade-timer-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
 }
 
 .trade-info {
@@ -5432,10 +5453,53 @@ body {
   border-radius: 10px;
   flex-wrap: wrap;
   justify-content: center;
+  flex-direction: column;
 }
 
 .trade-proposal-icon {
   font-size: 24px;
+}
+
+.trade-proposal-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  text-align: center;
+}
+
+.trade-prop-row {
+  font-size: 14px;
+  color: #2C2C2C;
+  line-height: 1.6;
+}
+
+.trade-prop-card {
+  display: inline-block;
+  background: #8B2252;
+  color: #FFF;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  margin: 0 2px;
+}
+
+.trade-prop-gold {
+  display: inline-block;
+  background: #D4A574;
+  color: #FFF;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 2px;
+}
+
+.trade-proposal-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 .trade-players-title {
