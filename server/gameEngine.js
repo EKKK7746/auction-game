@@ -1744,10 +1744,17 @@ function getPlayerView(fullState, playerId) {
         base.tradeQuota[p.id] = q != null ? q : (p.isBot ? 0 : maxQuota);
       }
       if (fullState._tradeProposal) {
+        const tp = fullState._tradeProposal;
+        const isInvolved = playerId === tp.fromId || playerId === tp.toId;
         base.tradeProposal = {
-          fromId: fullState._tradeProposal.fromId,
-          toId: fullState._tradeProposal.toId,
-          responded: fullState._tradeProposal.responded,
+          fromId: tp.fromId,
+          toId: tp.toId,
+          responded: tp.responded,
+          // 只有交易双方能看到具体提案内容
+          fromCards: isInvolved ? (tp.fromCards || []).map(c => ({ id: c.id, name: c.name, score: c.score })) : [],
+          fromGold: isInvolved ? tp.fromGold : 0,
+          toCards: isInvolved ? (tp.toCards || []).map(c => ({ id: c.id, name: c.name, score: c.score })) : [],
+          toGold: isInvolved ? tp.toGold : 0,
         };
       } else {
         base.tradeProposal = null;

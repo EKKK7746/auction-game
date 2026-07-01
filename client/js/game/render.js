@@ -748,8 +748,9 @@ function _renderTrade(view, container) {
   // 提案弹窗（如果目标是自己）
   let proposalHtml = '';
   if (hasProposal) {
-    const pp = _pendingTradeProposal;
-    const fromNick = pp ? pp.fromNick : (view.players.find(p => p.id === view.tradeProposal.fromId) || {}).nickname || '玩家';
+    // 优先用 socket 事件缓存，否则回退到 view.tradeProposal（刷新/重连后）
+    const pp = _pendingTradeProposal || view.tradeProposal || null;
+    const fromNick = pp ? (pp.fromNick || (view.players.find(p => p.id === view.tradeProposal.fromId) || {}).nickname || '玩家') : '玩家';
     let detailsHtml = '';
     if (pp) {
       // 对方出的内容
