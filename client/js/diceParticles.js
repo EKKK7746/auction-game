@@ -509,15 +509,7 @@
       }
     }
 
-    // 3. 在粒子之上绘制清晰数字（全程显示，早期半透明，定格最清晰）
-    const numAlpha = _numAlphaForPhase(phase, phaseProgress);
-    const numScale = (state.isReroll && state.v2 != null) ? 0.55 : 1;
-    for (let i = 0; i < centers.length; i++) {
-      const c = centers[i];
-      _drawNumber(values[i], c.x, c.y, numAlpha, numScale);
-    }
-
-    // 继续或结束
+    // 3. 继续或结束
     if (phase === PHASE.DONE || state.elapsed >= 4000) {
       // 延长 0.5s 让消散完成
       if (state.elapsed >= 4500) {
