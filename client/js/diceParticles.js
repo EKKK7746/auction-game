@@ -259,14 +259,17 @@
     if (isReroll && v2 != null) {
       const CX2 = W * 0.25, CY2 = H / 2;
       const CX3 = W * 0.75, CY3 = H / 2;
-      // 两骰并排，各占一半空间，缩小
-      const R2 = 55 * (W / 360);
+      // 两骰并排，各占一半空间
+      const R2 = 62 * (W / 360);
       const verts2 = polygonVertices(CX2, CY2, R2, sides);
       const verts3 = polygonVertices(CX3, CY3, R2, sides);
-      outlineTargets2 = samplePolygonEdges(verts2, Math.floor(PARTICLE_COUNT * 0.25));
-      outlineTargets3 = samplePolygonEdges(verts3, Math.floor(PARTICLE_COUNT * 0.25));
-      numTargets2 = sampleNumberShape(resultNum, CX2, CY2, 70 * (W / 360), 70 * (H / 300));
-      numTargets3 = sampleNumberShape(v2, CX3, CY3, 70 * (W / 360), 70 * (H / 300));
+      // 轮廓少分点，把粒子留给数字
+      outlineTargets2 = samplePolygonEdges(verts2, Math.floor(PARTICLE_COUNT * 0.12));
+      outlineTargets3 = samplePolygonEdges(verts3, Math.floor(PARTICLE_COUNT * 0.12));
+      // 数字采样框：按半幅空间比例计算，确保足够大
+      const numBox2 = Math.min(W * 0.5, H) * 0.62;
+      numTargets2 = sampleNumberShape(resultNum, CX2, CY2, numBox2, numBox2);
+      numTargets3 = sampleNumberShape(v2, CX3, CY3, numBox2, numBox2);
 
       // 合并
       return [
