@@ -1383,15 +1383,15 @@ function _startTradePhase(state, roomId) {
   const playersLeft = state.players.filter(p => _getTradeQuota(state, p.id) > 0);
   console.log(`[引擎] 交易阶段开始 — 可交易: ${playersLeft.map(p => p.nickname).join(', ') || '无'}`);
 
-  broadcast(roomId);
-
-  // 30秒倒计时
+  // 30秒倒计时（先设置，再广播，保证客户端拿到准确剩余时间）
   setTurnTimer(roomId, TRADE_PHASE_SECONDS * 1000, 'trade', () => {
     const s = games.get(roomId);
     if (!s || s.phase !== 'trade') return;
     console.log('[引擎] 交易阶段超时');
     _endTradePhase(s, roomId);
   });
+
+  broadcast(roomId);
 }
 
 /** 发起交易提案 */
