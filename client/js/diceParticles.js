@@ -15,7 +15,7 @@
 
   /* ========== 配置 ========== */
 
-  let PARTICLE_COUNT = 280;             // 粒子总数（可被皮肤覆盖）
+  let PARTICLE_COUNT = 500;             // 粒子总数（可被皮肤覆盖）
   const DICE_OUTLINE_R = 100;          // 骰子轮廓半径
   const NUMBER_W = 80;                 // 数字采样区宽
   const NUMBER_H = 80;                 // 数字采样区高
@@ -157,7 +157,7 @@
     // 采样像素
     const imageData = ctx.getImageData(0, 0, w, h);
     const positions = [];
-    const step = 2; // 每 2px 采样一次
+    const step = 1; // 每 1px 采样一次（高密度，配合小粒子）
     for (let y = 0; y < h; y += step) {
       for (let x = 0; x < w; x += step) {
         const idx = (y * w + x) * 4;
@@ -189,7 +189,7 @@
       y: Math.sin(angle) * dist,
       tx: 0, ty: 0,                 // 目标位置
       vx: 0, vy: 0,                 // 当前速度
-      size: 1.5 + Math.random() * 3.5,
+      size: 0.8 + Math.random() * 1.7,
       color: PALETTE[Math.floor(Math.random() * PALETTE.length)],
       alpha: 0.7 + Math.random() * 0.3,
       // 漩涡状态
@@ -462,7 +462,7 @@
           p.x += (tx - p.x) * 0.06 * (dt / 16);
           p.y += (ty - p.y) * 0.06 * (dt / 16);
           p.alpha = 0.5 + effProgress * 0.5;
-          p.size = 1.5 + (3.5 - 1.5) * (1 - effProgress * 0.6); // 聚拢时缩小
+          p.size = 0.8 + (2.5 - 0.8) * (1 - effProgress * 0.6); // 聚拢时缩小
           break;
         }
         case PHASE.GLOW: {
@@ -473,7 +473,7 @@
           p.x = tx + (Math.random() - 0.5) * jitter;
           p.y = ty + (Math.random() - 0.5) * jitter;
           p.alpha = 0.8 + Math.sin(effProgress * Math.PI * 3) * 0.2;
-          p.size = 2 + 2 * Math.sin(effProgress * Math.PI * 4) * 0.5;
+          p.size = 1.2 + 1 * Math.sin(effProgress * Math.PI * 4) * 0.5;
           break;
         }
         case PHASE.DISSOLVE: {
@@ -501,7 +501,7 @@
         ctx.globalAlpha = p.alpha;
         ctx.fillStyle = p.color;
         ctx.shadowColor = p.color;
-        ctx.shadowBlur = phase >= PHASE.GLOW ? 6 + 4 * Math.sin(phaseProgress * Math.PI * 3) : 3;
+        ctx.shadowBlur = phase >= PHASE.GLOW ? 4 + 2 * Math.sin(phaseProgress * Math.PI * 3) : 2;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();

@@ -45,10 +45,10 @@ const SKINS = {
     'frame_gold':   { name:'黄金框',  css:'box-shadow: 0 0 0 3px #FFD700, 0 0 12px rgba(255,215,0,0.7);' },
   },
   diceEffect: {
-    'default':      { name:'默认·漆器金',   primary:'#d4a84b', secondary:'#B85C3A', accent:'#F0D78C', particleCount:280 },
-    'dice_golden':  { name:'流光溢彩',      primary:'#9B59FF', secondary:'#00D4C4', accent:'#FF6BB5', particleCount:350 },
-    'dice_inferno': { name:'烈焰燎原',      primary:'#FF4500', secondary:'#8B0000', accent:'#FF2400', particleCount:320 },
-    'dice_lucky':   { name:'四叶幸运',      primary:'#00CC66', secondary:'#006633', accent:'#AAFFCC', particleCount:260 },
+    'default':      { name:'默认·漆器金',   primary:'#d4a84b', secondary:'#B85C3A', accent:'#F0D78C', particleCount:500 },
+    'dice_golden':  { name:'流光溢彩',      primary:'#9B59FF', secondary:'#00D4C4', accent:'#FF6BB5', particleCount:600 },
+    'dice_inferno': { name:'烈焰燎原',      primary:'#FF4500', secondary:'#8B0000', accent:'#FF2400', particleCount:550 },
+    'dice_lucky':   { name:'四叶幸运',      primary:'#00CC66', secondary:'#006633', accent:'#AAFFCC', particleCount:450 },
   }
 };
 
