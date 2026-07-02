@@ -460,24 +460,25 @@
           break;
         }
         case PHASE.COLLAPSE: {
-          // 向目标位置聚拢
+          // 向目标位置聚拢（提高系数确保 GLOW 前基本到位）
           const tx = CX + p.tx;
           const ty = CY + p.ty;
-          p.x += (tx - p.x) * 0.06 * (dt / 16);
-          p.y += (ty - p.y) * 0.06 * (dt / 16);
+          p.x += (tx - p.x) * 0.09 * (dt / 16);
+          p.y += (ty - p.y) * 0.09 * (dt / 16);
           p.alpha = 0.5 + effProgress * 0.5;
-          p.size = 0.8 + (2.5 - 0.8) * (1 - effProgress * 0.6); // 聚拢时缩小
+          p.size = 0.8 + (2.0 - 0.8) * (1 - effProgress * 0.6); // 聚拢时缩小
           break;
         }
         case PHASE.GLOW: {
           // 在目标位置微颤 + 金光脉冲
           const tx = CX + p.tx;
           const ty = CY + p.ty;
-          const jitter = 2 * (1 - effProgress);
+          // 极小抖动（仅前 20% 阶段 0.3px），定型后完全稳定
+          const jitter = 0.3 * Math.max(0, 1 - effProgress * 5);
           p.x = tx + (Math.random() - 0.5) * jitter;
           p.y = ty + (Math.random() - 0.5) * jitter;
-          p.alpha = 0.8 + Math.sin(effProgress * Math.PI * 3) * 0.2;
-          p.size = 1.2 + 1 * Math.sin(effProgress * Math.PI * 4) * 0.5;
+          p.alpha = 0.9;
+          p.size = 1.6; // 固定大小，不波动
           break;
         }
         case PHASE.DISSOLVE: {
