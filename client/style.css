@@ -4984,8 +4984,9 @@ body {
 .room-header-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
+  justify-content: space-between;
+  padding: 8px 0;
+  gap: 8px;
 }
 
 .room-back-btn {
@@ -4993,10 +4994,11 @@ body {
   border: none;
   color: #8B2252;
   font-size: 15px;
-  font-weight: 500;
   cursor: pointer;
   padding: 8px 0;
+  font-weight: 500;
   min-width: 44px;
+  text-align: left;
 }
 
 .room-mode-badge {
@@ -5769,8 +5771,21 @@ body {
 .collection-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
+  justify-content: space-between;
+  padding: 8px 0;
+  gap: 8px;
+}
+
+.col-back-btn {
+  background: none;
+  border: none;
+  color: #8B2252;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 8px 0;
+  font-weight: 500;
+  min-width: 44px;
+  text-align: left;
 }
 
 .collection-title {
