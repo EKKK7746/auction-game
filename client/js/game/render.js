@@ -1482,22 +1482,19 @@ function _renderSettle(view, container) {
 let _achBannerTimer = null;
 function _showAchievementBanner(ach) {
   let banner = document.getElementById('achievementBanner');
-  if (!banner) {
-    banner = document.createElement('div');
-    banner.id = 'achievementBanner';
-    banner.className = 'achievement-banner';
-    const gameArea = document.querySelector('.game-action-area');
-    if (gameArea) {
-      gameArea.parentNode.insertBefore(banner, gameArea);
-    } else {
-      document.body.appendChild(banner);
-    }
-  }
+  if (banner) banner.remove();
+  banner = document.createElement('div');
+  banner.id = 'achievementBanner';
+  banner.className = 'achievement-banner';
+  document.body.appendChild(banner);
   banner.innerHTML = `<span class="ach-banner-icon">${ach.icon}</span><span class="ach-banner-text">🏆 成就解锁：<strong>${ach.name}</strong> — ${ach.desc}</span>`;
+  // 强制重排以触发进入动画
+  void banner.offsetWidth;
   banner.classList.add('ach-banner-show');
   if (_achBannerTimer) clearTimeout(_achBannerTimer);
   _achBannerTimer = setTimeout(() => {
     banner.classList.remove('ach-banner-show');
+    setTimeout(() => banner.remove(), 500);
   }, 4000);
 }
 

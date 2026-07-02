@@ -37,6 +37,10 @@ body {
   flex-direction: column;
 }
 
+#app.game-active {
+  padding-bottom: 0;
+}
+
 /* -------------------- View System -------------------- */
 
 .view {
@@ -3136,6 +3140,35 @@ body {
   animation: panelSlideUp 0.35s ease-out;
   padding: 24px 20px;
   position: relative;
+}
+
+/* --- 确认弹窗 --- */
+.confirm-modal-box {
+  max-width: 360px;
+  padding: 0;
+  overflow: hidden;
+}
+.confirm-modal-box .modal-titlebar {
+  margin: 0;
+  border-radius: 14px 14px 0 0;
+  padding: 14px 18px;
+}
+.confirm-modal-body {
+  padding: 20px 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #2C2C2C;
+  text-align: center;
+}
+.confirm-modal-buttons {
+  display: flex;
+  gap: 12px;
+  padding: 0 18px 18px;
+}
+.confirm-modal-buttons .btn {
+  flex: 1;
+  min-height: 44px;
+  font-size: 15px;
 }
 
 /* ==================== 统一弹窗标题栏 ==================== */
@@ -6383,26 +6416,31 @@ body {
   border-radius: 8px;
 }
 
-/* ==================== 成就解锁横幅 ==================== */
+/* ==================== 成就解锁横幅（固定顶部浮层） ==================== */
 .achievement-banner {
-  position: relative;
-  width: 100%;
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #D4AF37, #C43A31);
-  color: #fff;
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translate(-50%, -120%);
+  width: auto;
+  min-width: 280px;
+  max-width: 90%;
+  padding: 12px 18px;
+  background: linear-gradient(135deg, #FFFDF7, #F5F0E8);
+  color: #6B4226;
   font-size: 14px;
   font-weight: 600;
   text-align: center;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  transform: translateY(-120%);
+  border-radius: 10px;
+  border: 1.5px solid #D4AF37;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+  z-index: 2000;
   opacity: 0;
-  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
-  z-index: 100;
-  box-shadow: 0 4px 16px rgba(212, 175, 55, 0.4);
+  transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s;
+  pointer-events: none;
 }
 .achievement-banner.ach-banner-show {
-  transform: translateY(0);
+  transform: translate(-50%, 0);
   opacity: 1;
 }
 .ach-banner-icon {

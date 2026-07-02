@@ -47,11 +47,51 @@ function renderPlayerList(players) {
 }
 
 function doKickPlayer(targetId) {
-  if (!confirm('确定要踢出该玩家吗？')) return;
-  socket.emit('room:kick', GameState.roomId, targetId, (res) => {
-    if (!res.success) {
-      if (typeof showToast === 'function') showToast(res.error || '踢人失败', 'error');
+  showConfirmModal({
+    title: '踢出确认',
+    message: '确定要踢出该玩家吗？',
+    confirmText: '确定',
+    cancelText: '取消',
+    onConfirm: () => {
+      socket.emit('room:kick', GameState.roomId, targetId, (res) => {
+        if (!res.success) {
+          if (typeof showToast === 'function') showToast(res.error || '踢人失败', 'error');
+        }
+      });
     }
+  });
+}
+
+/** 通用确认弹窗（避免使用浏览器原生 confirm，防止部分浏览器按钮文案错乱） */
+function showConfirmModal({ title, message, confirmText = '确定', cancelText = '取消', onConfirm }) {
+  const existing = document.getElementById('confirmModal');
+  if (existing) existing.remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'confirmModal';
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="modal-box confirm-modal-box" role="dialog" aria-modal="true">
+      <div class="modal-titlebar">
+        <span class="modal-titlebar-title">${title}</span>
+        <button class="modal-titlebar-close" aria-label="关闭">✕</button>
+      </div>
+      <div class="confirm-modal-body">${message}</div>
+      <div class="confirm-modal-buttons">
+        <button class="btn btn-secondary confirm-modal-cancel">${cancelText}</button>
+        <button class="btn btn-primary confirm-modal-confirm">${confirmText}</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  overlay.querySelector('.modal-titlebar-close').addEventListener('click', close);
+  overlay.querySelector('.confirm-modal-cancel').addEventListener('click', close);
+  overlay.querySelector('.confirm-modal-confirm').addEventListener('click', () => {
+    close();
+    if (typeof onConfirm === 'function') onConfirm();
+  });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
   });
 }
 

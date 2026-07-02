@@ -322,6 +322,62 @@
     animId = requestAnimationFrame(tick);
   }
 
+  /**
+   * 绘制单个数字（带皮肤色发光）
+   */
+  function _drawNumber(value, cx, cy, alpha, scale) {
+    const W = _canvasW || 360;
+    const H = _canvasH || 300;
+    const base = Math.min(90, Math.floor(Math.min(W, H) * 0.38));
+    const fontSize = Math.max(18, Math.floor(base * scale));
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = SKIN_SECONDARY;
+    ctx.shadowColor = _hexToRgba(SKIN_ACCENT, 0.9);
+    ctx.shadowBlur = 8;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `bold ${fontSize}px "Georgia", "Times New Roman", serif`;
+    ctx.fillText(String(value), cx, cy);
+    ctx.restore();
+  }
+
+  /**
+   * 绘制中心泛光（皮肤色系）
+   */
+  function _drawGlow(cx, cy, radius, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    const grad = ctx.createRadialGradient(cx, cy, radius * 0.3, cx, cy, radius);
+    grad.addColorStop(0, _lighten(SKIN_ACCENT, 0.2));
+    grad.addColorStop(0.4, SKIN_PRIMARY);
+    grad.addColorStop(0.7, _hexToRgba(SKIN_SECONDARY, 0.4));
+    grad.addColorStop(1, _hexToRgba(SKIN_PRIMARY, 0));
+    ctx.fillStyle = grad;
+    ctx.fillRect(cx - radius, cy - radius, radius * 2, radius * 2);
+    ctx.restore();
+  }
+
+  function _glowAlphaForPhase(phase, phaseProgress) {
+    switch (phase) {
+      case PHASE.SWIRL: return 0.06;
+      case PHASE.COLLAPSE: return 0.08 + 0.12 * phaseProgress;
+      case PHASE.GLOW: return 0.16 + 0.1 * Math.sin(phaseProgress * Math.PI * 4);
+      case PHASE.DISSOLVE: return 0.2 * (1 - phaseProgress);
+      default: return 0;
+    }
+  }
+
+  function _numAlphaForPhase(phase, phaseProgress) {
+    switch (phase) {
+      case PHASE.SWIRL: return 0.1 + 0.08 * Math.sin(phaseProgress * Math.PI * 3);
+      case PHASE.COLLAPSE: return 0.25 + 0.65 * phaseProgress;
+      case PHASE.GLOW: return 0.9 + 0.1 * Math.sin(phaseProgress * Math.PI * 3);
+      case PHASE.DISSOLVE: return 1 - phaseProgress;
+      default: return 0;
+    }
+  }
+
   function tick(now) {
     if (!state) return;
 
@@ -329,7 +385,10 @@
     state.lastTime = now;
     state.elapsed += dt;
 
-    const { CX, CY } = state;
+    const W = _canvasW || 360;
+    const H = _canvasH || 300;
+    const ratio = W / 360;
+    const CX = W / 2, CY = H / 2;
 
     // 决定当前阶段
     let phase = PHASE.SWIRL;
@@ -358,10 +417,29 @@
       if (typeof playSound === 'function') playSound('qianPop');
     }
 
-    // 清除画布（透明背景）
-    ctx.clearRect(0, 0, _canvasW || 360, _canvasH || 300);
+    // 双掷/单掷的骰子中心与数字
+    const centers = [];
+    const values = [];
+    if (state.isReroll && state.v2 != null) {
+      const r = 55 * ratio * 1.3;
+      centers.push({ x: W * 0.25, y: H / 2, r }, { x: W * 0.75, y: H / 2, r });
+      values.push(state.resultNum, state.v2);
+    } else {
+      centers.push({ x: CX, y: CY, r: DICE_OUTLINE_R * ratio * 1.3 });
+      values.push(state.resultNum);
+    }
 
-    // 更新 + 渲染粒子
+    // 清除画布（透明背景）
+    ctx.clearRect(0, 0, W, H);
+
+    // 1. 先绘制皮肤泛光（始终显示，定格时最强）
+    const glowAlpha = _glowAlphaForPhase(phase, phaseProgress);
+    for (let i = 0; i < centers.length; i++) {
+      const c = centers[i];
+      _drawGlow(c.x, c.y, c.r, glowAlpha);
+    }
+
+    // 2. 更新 + 渲染粒子
     for (const p of particles) {
       const effProgress = Math.max(0, Math.min(1, phaseProgress - p.phaseOffset));
 
@@ -431,51 +509,12 @@
       }
     }
 
-    // 阶段 3 (GLOW) — 中心辉光环
-    if (phase === PHASE.GLOW) {
-      const glowAlpha = 0.15 + 0.1 * Math.sin(phaseProgress * Math.PI * 4);
-      ctx.save();
-      ctx.globalAlpha = glowAlpha;
-      const grad = ctx.createRadialGradient(CX, CY, DICE_OUTLINE_R * 0.3, CX, CY, DICE_OUTLINE_R * 1.4);
-      grad.addColorStop(0, _lighten(SKIN_ACCENT, 0.2));
-      grad.addColorStop(0.3, SKIN_PRIMARY);
-      grad.addColorStop(0.6, _hexToRgba(SKIN_SECONDARY, 0.35));
-      grad.addColorStop(1, _hexToRgba(SKIN_PRIMARY, 0));
-      ctx.fillStyle = grad;
-      ctx.fillRect(CX - DICE_OUTLINE_R * 2, CY - DICE_OUTLINE_R * 2, DICE_OUTLINE_R * 4, DICE_OUTLINE_R * 4);
-      ctx.restore();
-
-      // ★ 兜底：中心绘制清晰大数字，确保移动端可见
-      ctx.save();
-      ctx.fillStyle = SKIN_SECONDARY;
-      ctx.shadowColor = 'rgba(255,255,255,0.9)';
-      ctx.shadowBlur = 8;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      if (state.isReroll && state.v2 != null) {
-        const fontSize = Math.min(56, Math.floor(Math.min(W, H) * 0.22));
-        ctx.font = `bold ${fontSize}px "Georgia", "Times New Roman", serif`;
-        ctx.fillText(String(state.resultNum), W * 0.25, H / 2);
-        ctx.fillText(String(state.v2), W * 0.75, H / 2);
-      } else {
-        const fontSize = Math.min(90, Math.floor(Math.min(W, H) * 0.38));
-        ctx.font = `bold ${fontSize}px "Georgia", "Times New Roman", serif`;
-        ctx.fillText(String(state.resultNum), CX, CY);
-      }
-      ctx.restore();
-    }
-
-    // 阶段 1-2 — 漩涡中心微光
-    if (phase <= PHASE.COLLAPSE) {
-      const glowR = SWIRL_R * (phase === PHASE.COLLAPSE ? (1 - phaseProgress) * 0.6 : 0.6);
-      ctx.save();
-      ctx.globalAlpha = 0.08;
-      const grad = ctx.createRadialGradient(CX, CY, 0, CX, CY, glowR);
-      grad.addColorStop(0, SKIN_ACCENT);
-      grad.addColorStop(1, _hexToRgba(SKIN_SECONDARY, 0));
-      ctx.fillStyle = grad;
-      ctx.fillRect(CX - glowR, CY - glowR, glowR * 2, glowR * 2);
-      ctx.restore();
+    // 3. 在粒子之上绘制清晰数字（全程显示，早期半透明，定格最清晰）
+    const numAlpha = _numAlphaForPhase(phase, phaseProgress);
+    const numScale = (state.isReroll && state.v2 != null) ? 0.55 : 1;
+    for (let i = 0; i < centers.length; i++) {
+      const c = centers[i];
+      _drawNumber(values[i], c.x, c.y, numAlpha, numScale);
     }
 
     // 继续或结束

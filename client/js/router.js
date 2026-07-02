@@ -29,6 +29,10 @@ function showView(viewName) {
   if (target) {
     target.classList.add('active');
     GameState.currentView = viewName;
+    const app = document.getElementById('app');
+    if (app) {
+      app.classList.toggle('game-active', viewName === Views.GAME);
+    }
     console.log(`[Router] ✓ 切换到视图: ${viewName} (#view-${viewName})`);
   } else {
     console.error(`[Router] ✗ 视图不存在: ${viewName}, 可用视图:`, [...document.querySelectorAll('.view')].map(e => e.id));
