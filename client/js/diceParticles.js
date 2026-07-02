@@ -139,17 +139,19 @@
 
   /**
    * 通过离屏 canvas 采样数字形状 → 粒子位置列表
+   * @param {number} step - 采样步长，双掷/小画布用较大步长让粒子更密、字形更端正
    */
-  function sampleNumberShape(number, cx, cy, w, h) {
+  function sampleNumberShape(number, cx, cy, w, h, step) {
+    step = step || 1;
     const offscreen = document.createElement('canvas');
     offscreen.width = w;
     offscreen.height = h;
     const ctx = offscreen.getContext('2d');
 
-    // 渲染文字（按目标区域缩放，避免小画布上文字被裁剪）
+    // 渲染文字：使用端正的无衬线字体，减少衬线造成的"歪斜"感
     ctx.fillStyle = '#FFFFFF';
     const fontSize = Math.min(80, Math.floor(Math.min(w, h) * 0.75));
-    ctx.font = `bold ${fontSize}px "Georgia", "Times New Roman", serif`;
+    ctx.font = `bold ${fontSize}px "PingFang SC", "Microsoft YaHei", "Arial", sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(String(number), w / 2, h / 2);
@@ -157,10 +159,9 @@
     // 采样像素
     const imageData = ctx.getImageData(0, 0, w, h);
     const positions = [];
-    const step = 1; // 每 1px 采样一次（高密度，配合小粒子）
     for (let y = 0; y < h; y += step) {
       for (let x = 0; x < w; x += step) {
-        const idx = (y * w + x) * 4;
+        const idx = (Math.floor(y) * w + Math.floor(x)) * 4;
         if (imageData.data[idx + 3] > 100) {
           positions.push({ x: cx + x - w / 2, y: cy + y - h / 2 });
         }
@@ -250,8 +251,8 @@
     const numW = numBox;
     const numH = numBox;
 
-    // 生成数字形状目标点
-    const numTargets = sampleNumberShape(resultNum, CX, CY, numW, numH);
+    // 生成数字形状目标点（步长 2：让粒子更密，字形更端正，避免 1px 采样导致的稀疏歪斜）
+    const numTargets = sampleNumberShape(resultNum, CX, CY, numW, numH, 2);
 
     // 双签模式：第二颗骰子偏移
     let outlineTargets2 = [], outlineTargets3 = [];
@@ -264,12 +265,12 @@
       const verts2 = polygonVertices(CX2, CY2, R2, sides);
       const verts3 = polygonVertices(CX3, CY3, R2, sides);
       // 轮廓少分点，把粒子留给数字
-      outlineTargets2 = samplePolygonEdges(verts2, Math.floor(PARTICLE_COUNT * 0.12));
-      outlineTargets3 = samplePolygonEdges(verts3, Math.floor(PARTICLE_COUNT * 0.12));
-      // 数字采样框：按半幅空间比例计算，确保足够大
-      const numBox2 = Math.min(W * 0.5, H) * 0.62;
-      numTargets2 = sampleNumberShape(resultNum, CX2, CY2, numBox2, numBox2);
-      numTargets3 = sampleNumberShape(v2, CX3, CY3, numBox2, numBox2);
+      outlineTargets2 = samplePolygonEdges(verts2, Math.floor(PARTICLE_COUNT * 0.10));
+      outlineTargets3 = samplePolygonEdges(verts3, Math.floor(PARTICLE_COUNT * 0.10));
+      // 数字采样框：按内接圆比例，确保数字完全落在骰子内，不溢出造成"歪"
+      const numBox2 = Math.min(W * 0.5, H) * 0.55;
+      numTargets2 = sampleNumberShape(resultNum, CX2, CY2, numBox2, numBox2, 2);
+      numTargets3 = sampleNumberShape(v2, CX3, CY3, numBox2, numBox2, 2);
 
       // 合并
       return [
@@ -340,7 +341,7 @@
     ctx.shadowBlur = 8;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.font = `bold ${fontSize}px "Georgia", "Times New Roman", serif`;
+    ctx.font = `bold ${fontSize}px "PingFang SC", "Microsoft YaHei", "Arial", sans-serif`;
     ctx.fillText(String(value), cx, cy);
     ctx.restore();
   }
