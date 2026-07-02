@@ -44,7 +44,7 @@ const EVENT_SCHEMAS = {
   },
   'game:select_card': {
     roomId:    { type: 'string', len: 6 },
-    cardIndex: { type: 'number', min: 0, max: 9 },
+    cardIndex: { type: 'number', min: 0 },  // 上限由 gameEngine 按当前 deck.length 动态校验
   },
   'game:select_dice': {
     roomId:   { type: 'string', len: 6 },
