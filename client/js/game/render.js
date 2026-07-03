@@ -949,14 +949,14 @@ function submitTradeProposal(toId) {
   const toGold = parseInt(document.getElementById('tradeToGold')?.value) || 0;
 
   if (fromCards.length === 0 && fromGold === 0) {
-    alert('你至少要出一些卡牌或金币');
+    showToast('你至少要出一些卡牌或金币', 'error');
     return;
   }
 
   const roomId = (typeof GameState !== 'undefined' && GameState.roomId) ? GameState.roomId : '';
   socket.emit('trade:propose', roomId, toId, fromCards, fromGold, toCards, toGold, (result) => {
     if (result && result.error) {
-      alert(result.error);
+      showToast(result.error, 'error');
     } else {
       closeTradeProposal();
     }
@@ -966,7 +966,7 @@ function submitTradeProposal(toId) {
 function respondTrade(accepted) {
   const roomId = (typeof GameState !== 'undefined' && GameState.roomId) ? GameState.roomId : '';
   socket.emit('trade:respond', roomId, accepted, (result) => {
-    if (result && result.error) alert(result.error);
+    if (result && result.error) showToast(result.error, 'error');
   });
 }
 

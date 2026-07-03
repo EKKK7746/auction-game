@@ -34,8 +34,15 @@ function backToLobby() {
 }
 
 function exitGame() {
-  if (!confirm('确定退出游戏吗？退出后 Bot 将以自动难度托管你的身份继续游戏。你可以随时重新加入。')) return;
-  socket.emit('room:leave', GameState.roomId);
+  showConfirmModal({
+    title: '退出确认',
+    message: '确定退出游戏吗？退出后 Bot 将以自动难度托管你的身份继续游戏。你可以随时重新加入。',
+    confirmText: '确定退出',
+    cancelText: '取消',
+    onConfirm: () => {
+      socket.emit('room:leave', GameState.roomId);
+    }
+  });
 }
 
 function rejoinGame() {
