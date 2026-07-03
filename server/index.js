@@ -325,7 +325,7 @@ io.on('connection', (socket) => {
       // ★ 获取房间模式配置，传给游戏引擎
       const roomData = roomManager.getRoom(roomId);
       const modeId = (roomData && roomData.mode) || 'classic';
-      const modeConfig = require('./gameEngine').getModeConfig(modeId);
+      const modeConfig = gameEngine.getModeConfig(modeId);
       gameEngine.initGame(roomId, room, modeConfig);
 
       console.log(`[服务器] 房间 ${roomId} 游戏开始！（模式: ${modeId}），玩家: ${room.map(p => p.nickname).join(', ')}`);
@@ -334,7 +334,7 @@ io.on('connection', (socket) => {
       const state = gameEngine.getGame(roomId);
       if (state) {
         try {
-          const pv = require('./gameEngine').getPlayerView(state, socket.id);
+          const pv = gameEngine.getPlayerView(state, socket.id);
           socket.emit('game_state_update', pv);
           console.log(`[服务器] ✓ 已直接推送 game_state_update 给房主 ${socket.id}`);
         } catch (e) {
@@ -345,7 +345,7 @@ io.on('connection', (socket) => {
           for (const p of state.players) {
             if (p.id === socket.id) continue;
             try {
-              const pv2 = require('./gameEngine').getPlayerView(state, p.id);
+              const pv2 = gameEngine.getPlayerView(state, p.id);
               _io.to(p.id).emit('game_state_update', pv2);
             } catch (e) { /* ignore */ }
           }
@@ -367,7 +367,7 @@ io.on('connection', (socket) => {
     const state = gameEngine.getGame(roomId);
     if (state) {
       try {
-        const view = require('./gameEngine').getPlayerView(state, socket.id);
+        const view = gameEngine.getPlayerView(state, socket.id);
         socket.emit('game_state_update', view);
         console.log(`[服务器] 主动推送状态给 ${socket.id}, phase=${view.phase}`);
       } catch (err) {

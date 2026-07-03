@@ -90,16 +90,25 @@ function _renderSpectatorBar() {
 // ==================== 顶部相位栏 + 视觉展示区 ====================
 
 function _renderPhaseBar(view) {
-  document.getElementById('gameRoundLabel').textContent =
-    `第 ${view.round}/${view.maxRounds} 轮`;
-  const phaseLabel = PHASE_LABELS[view.phase] || view.phase;
-  const spectatorTag = view.isSpectator ? ' · 👁️观战' : '';
-  document.getElementById('gamePhaseLabel').textContent = phaseLabel + spectatorTag;
-
-  const normalVisual = document.getElementById('phaseVisualNormal');
-  const duelVisual = document.getElementById('phaseVisualDuel');
+  // 一次性缓存所有 DOM 查询
+  const $ = id => document.getElementById(id);
+  const roundLabel = $('gameRoundLabel');
+  const phaseLabelEl = $('gamePhaseLabel');
+  const normalVisual = $('phaseVisualNormal');
+  const duelVisual = $('phaseVisualDuel');
   const visualWrap = document.querySelector('.game-phase-visual');
   const phaseBar = document.querySelector('.game-phase-bar');
+  const iconEl = $('phaseIcon');
+  const cardMiniEl = $('phaseCardMini');
+  const cardNameEl = $('phaseCardName');
+  const cardScoreEl = $('phaseCardScore');
+  const cardFramedEl = $('phaseCardFramed');
+  const iconWrap = $('phaseIconWrap');
+
+  roundLabel.textContent = `第 ${view.round}/${view.maxRounds} 轮`;
+  const phaseLabel = PHASE_LABELS[view.phase] || view.phase;
+  const spectatorTag = view.isSpectator ? ' · 👁️观战' : '';
+  phaseLabelEl.textContent = phaseLabel + spectatorTag;
 
   // 阶段切换动效
   const prevPhase = _lastView?.phase;
@@ -139,12 +148,6 @@ function _renderPhaseBar(view) {
     duelVisual.classList.remove('active');
   }
 
-  const iconEl = document.getElementById('phaseIcon');
-  const cardMiniEl = document.getElementById('phaseCardMini');
-  const cardNameEl = document.getElementById('phaseCardName');
-  const cardScoreEl = document.getElementById('phaseCardScore');
-  const cardFramedEl = document.getElementById('phaseCardFramed');
-
   const card = view.revealedCard;
   const phaseIcon = PHASE_ICONS[view.phase] || '🏛️';
 
@@ -170,8 +173,7 @@ function _renderPhaseBar(view) {
     cardScoreEl.textContent = '';
   }
 
-  const wrap = document.getElementById('phaseIconWrap');
-  if (wrap) wrap.style.display = 'flex';
+  if (iconWrap) iconWrap.style.display = 'flex';
 }
 
 function _renderDuelPhaseVisual(view, container) {
@@ -280,9 +282,29 @@ function _renderActionContent(view, container) {
     container.innerHTML = tHtml + '<div id="tut-phase-inner"></div>';
     const inner = document.getElementById('tut-phase-inner');
     _renderPhaseContent(view, inner);
+    // 延迟高亮教程指引按钮（等待 DOM 渲染完成）
+    setTimeout(() => _highlightTutorialButton(view.phase), 150);
     return;
   }
   _renderPhaseContent(view, container);
+}
+
+/** 教程模式：给当前阶段推荐操作的按钮加高亮 */
+function _highlightTutorialButton(phase) {
+  const map = {
+    auction: '#btnSubmitBid, .bid-submit-btn',
+    select_card: '.card-icon, .card-option',
+    rent_dice: '.dice-btn:not(.pass-btn-full), .dice-option-btn',
+    roll_dice: '#btnRollDice, .roll-btn',
+    settle: '#btnNextRound, .settle-next-btn',
+  };
+  const sel = map[phase];
+  if (!sel) return;
+  document.querySelectorAll(sel).forEach(el => {
+    el.classList.add('tutorial-highlight');
+    // 3 秒后自动移除（下一次阶段渲染会重新添加）
+    setTimeout(() => el.classList.remove('tutorial-highlight'), 3000);
+  });
 }
 
 function _renderPhaseContent(view, container) {
@@ -989,7 +1011,7 @@ function skipTrade() {
 // 监听交易提案（全房间广播，含详情）
 if (typeof socket !== 'undefined') {
   socket.on('trade:proposal', (data) => {
-    console.log('[Trade] 收到交易提案公示:', data);
+    window.__MW_DEBUG__ && console.log('[Trade] 收到交易提案公示:', data);
     _pendingTradeProposal = data;
     // 即时更新浮窗
     const floatPanel = document.querySelector('.trade-float-panel');

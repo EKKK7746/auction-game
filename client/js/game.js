@@ -4,6 +4,10 @@
 // 操作: game/actions.js  |  数据: game/data.js
 // ============================================================
 
+// ★ 调试开关：URL 加 ?debug=1 或在控制台执行 __MW_DEBUG__ = true 启用详细日志
+window.__MW_DEBUG__ = window.__MW_DEBUG__ || (new URLSearchParams(location.search).get('debug') === '1');
+const dbg = (...args) => window.__MW_DEBUG__ && console.log(...args);
+
 // 缓存上一次状态用于 diff（动画触发等）
 let _lastView = null;
 let _renderVersion = 0;       // 版本号防抖，避免竞态渲染
@@ -23,7 +27,7 @@ let _totalDeckSize = 0;           // 牌堆总数
 // ==================== 入口：接收 game:state_update ====================
 
 socket.on('game_state_update', (view) => {
-  console.log(`[Game] ✓ 收到 game_state_update! phase=${view.phase}, round=${view.round}, view=${GameState.currentView}`);
+  dbg(`[Game] game_state_update phase=${view.phase} round=${view.round} view=${GameState.currentView}`);
 
   // ★ 已主动退出（托管中）→ 忽略游戏状态更新，防止被拉回游戏
   if (GameState._hasExitedManaged) {

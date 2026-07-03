@@ -3622,6 +3622,19 @@ body {
   line-height: 1.6;
 }
 
+/* 教程按钮高亮 — 脉冲金框 */
+.tutorial-highlight {
+  animation: tutorialPulse 1.2s ease-in-out infinite !important;
+  box-shadow: 0 0 0 3px #D4AF37, 0 0 16px rgba(212, 175, 55, 0.5) !important;
+  border-color: #D4AF37 !important;
+  position: relative;
+  z-index: 2;
+}
+@keyframes tutorialPulse {
+  0%, 100% { box-shadow: 0 0 0 3px #D4AF37, 0 0 16px rgba(212, 175, 55, 0.5); }
+  50% { box-shadow: 0 0 0 3px #FFD700, 0 0 28px rgba(255, 215, 0, 0.7); }
+}
+
 /* ==================== 观战功能 ==================== */
 
 .spectator-bar {

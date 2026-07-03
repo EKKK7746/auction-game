@@ -163,6 +163,8 @@ function spawnConfetti(parent) {
 // ==================== 数字动画 ====================
 
 function animateValue(el, start, end, duration) {
+  // 取消上一次同元素动画，防止频繁重启
+  if (el._animId) cancelAnimationFrame(el._animId);
   const startTime = performance.now();
   function update(now) {
     const elapsed = now - startTime;
@@ -171,9 +173,10 @@ function animateValue(el, start, end, duration) {
     el.textContent = Math.round(start + (end - start) * ease);
     const diff = end - start;
     el.className = diff > 0 ? 'funds-up' : diff < 0 ? 'funds-down' : '';
-    if (progress < 1) requestAnimationFrame(update);
+    if (progress < 1) { el._animId = requestAnimationFrame(update); }
+    else { el._animId = null; }
   }
-  requestAnimationFrame(update);
+  el._animId = requestAnimationFrame(update);
 }
 
 // ==================== 结算倒计时 ====================

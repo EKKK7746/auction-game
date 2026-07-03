@@ -15,7 +15,9 @@
 
   /* ========== 配置 ========== */
 
-  let PARTICLE_COUNT = 500;             // 粒子总数（可被皮肤覆盖）
+  let PARTICLE_COUNT = 500;             // 粒子总数（启动时按画布面积自动缩放）
+  let _skinParticleCount = 0;           // 皮肤显式指定的粒子数（0=自动缩放）
+  const AREA_BASE = 360 * 300;          // 基准画布面积（desktop 360×300）
   const DICE_OUTLINE_R = 100;          // 骰子轮廓半径
   const NUMBER_W = 80;                 // 数字采样区宽
   const NUMBER_H = 80;                 // 数字采样区高
@@ -230,6 +232,14 @@
     // 存储逻辑尺寸供动画使用
     _canvasW = W;
     _canvasH = H;
+
+    // 粒子数按画布面积自适应（皮肤显式指定时跳过）
+    if (!_skinParticleCount) {
+      const dpr = window.devicePixelRatio || 1;
+      const scale = (W * H) / AREA_BASE;
+      const dprFactor = dpr >= 2 ? 0.85 : 1;
+      PARTICLE_COUNT = Math.max(250, Math.round(500 * scale * dprFactor));
+    }
   }
 
   /**
@@ -564,7 +574,10 @@
       PALETTE = _generatePalette(primary, secondary, accent);
     }
     if (typeof count === 'number' && count > 0) {
+      _skinParticleCount = count;
       PARTICLE_COUNT = count;
+    } else {
+      _skinParticleCount = 0; // 恢复为自动缩放
     }
   };
 
