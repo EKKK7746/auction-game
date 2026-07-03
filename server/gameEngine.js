@@ -1750,14 +1750,23 @@ function getPlayerView(fullState, playerId) {
       }
       if (fullState._tradeProposal) {
         const tp = fullState._tradeProposal;
+        const fromP = fullState.players.find(p => p.id === tp.fromId);
+        const toP = fullState.players.find(p => p.id === tp.toId);
         base.tradeProposal = {
           fromId: tp.fromId,
           toId: tp.toId,
           responded: tp.responded,
           // 交易详情向全房间公示（浮窗可见）
-          fromCards: (tp.fromCards || []).map(c => ({ id: c.id, name: c.name, score: c.score })),
+          // 注意：tp.fromCards / tp.toCards 内部存的是 card ID 字符串数组
+          fromCards: (tp.fromCards || []).map(cid => {
+            const c = fromP?.cards.find(cc => cc.id === cid);
+            return { id: cid, name: c?.name || cid, score: c?.score || 1 };
+          }),
           fromGold: tp.fromGold,
-          toCards: (tp.toCards || []).map(c => ({ id: c.id, name: c.name, score: c.score })),
+          toCards: (tp.toCards || []).map(cid => {
+            const c = toP?.cards.find(cc => cc.id === cid);
+            return { id: cid, name: c?.name || cid, score: c?.score || 1 };
+          }),
           toGold: tp.toGold,
         };
       } else {
@@ -2390,8 +2399,19 @@ function setPlayerManaged(roomId, playerId) {
   state.bids = state.bids.filter(b => b.playerId !== playerId);
 
   console.log(`[引擎] 玩家 ${player.nickname}(${playerId}) 主动托管 → ${player.strategy} (${humanCount}活跃真人)`);
+
+  // ★ 无活跃真人 → 结束游戏（避免全托管房间无限运行）
+  if (humanCount === 0) {
+    state.phase = 'finished';
+    console.log(`[引擎] 房间 ${roomId} 无活跃真人玩家，游戏终止`);
+    const fr = calculateFinalScores(roomId);
+    state.finalResults = fr;
+    broadcast(roomId);
+    return { player, ended: true, finalResults: fr };
+  }
+
   broadcast(roomId);
-  return player;
+  return { player, ended: false };
 }
 
 /**

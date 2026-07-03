@@ -359,11 +359,23 @@ function updatePlayerId(roomId, oldId, newId, nickname, skin) {
   return true;
 }
 
+/**
+ * 强制销毁房间（用于全托管/下线后清理）
+ */
+function destroyRoom(roomId) {
+  const room = rooms.get(roomId);
+  if (!room) return false;
+  rooms.delete(roomId);
+  console.log(`[房间] 房间 ${roomId} 已强制销毁`);
+  return true;
+}
+
 module.exports = {
   createRoom,
   joinRoom,
   leaveRoom,
   handleDisconnect,
+  destroyRoom,
   getPlayers,
   getRoom,
   roomExists,

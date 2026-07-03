@@ -207,7 +207,16 @@ io.on('connection', (socket) => {
     const game = gameEngine.getGame(roomId);
     if (game && game.phase !== 'finished' && game.phase !== 'waiting') {
       // 游戏进行中 → Bot 托管接管，并从 roomManager 中移除真人玩家
-      gameEngine.disconnectPlayer(roomId, socket.id);
+      const fr = gameEngine.disconnectPlayer(roomId, socket.id);
+      // ★ 无活跃真人 → 结束游戏并关闭房间
+      if (fr) {
+        botManager.cancelRoom(roomId);
+        gameEngine.destroyGame(roomId);
+        roomManager.leaveRoom(socket, roomId);
+        socket.emit('room:left', { roomId, managed: true, ended: true });
+        return;
+      }
+
       const result = roomManager.leaveRoom(socket, roomId);
       if (result) {
         if (!result.destroyed) {
@@ -237,7 +246,15 @@ io.on('connection', (socket) => {
 
   // --- ★ 托管 / 取消托管（玩家保持连接） ---
   socket.on('game:autoPlay', (roomId) => {
-    gameEngine.setPlayerManaged(roomId, socket.id);
+    const result = gameEngine.setPlayerManaged(roomId, socket.id);
+    // ★ 无活跃真人 → 结束游戏并关闭房间
+    if (result && result.ended) {
+      botManager.cancelRoom(roomId);
+      gameEngine.destroyGame(roomId);
+      roomManager.destroyRoom(roomId);
+      socket.emit('room:left', { roomId, ended: true });
+      return;
+    }
     botManager.processBots(roomId);
   });
 
@@ -521,6 +538,8 @@ io.on('connection', (socket) => {
 
   socket.on('trade:propose', (roomId, toId, fromCards, fromGold, toCards, toGold, callback) => {
     const result = gameEngine.proposeTrade(roomId, socket.id, toId, fromCards, fromGold, toCards, toGold);
+    // ★ 提案发出后显式调度 Bot，确保人机目标能即时回应（即使 broadcast 回调链丢失）
+    if (result && result.ok) botManager.processBots(roomId);
     if (callback) callback(result);
   });
 
@@ -548,7 +567,14 @@ io.on('connection', (socket) => {
       const game = gameEngine.getGame(r.roomId);
       if (game && game.phase !== 'finished' && game.phase !== 'waiting') {
         // 游戏进行中 → Bot 托管接管
-        gameEngine.disconnectPlayer(r.roomId, socket.id);
+        const fr = gameEngine.disconnectPlayer(r.roomId, socket.id);
+        if (fr) {
+          // ★ 无活跃真人 → 结束游戏并关闭房间
+          botManager.cancelRoom(r.roomId);
+          gameEngine.destroyGame(r.roomId);
+          if (!r.destroyed) roomManager.destroyRoom(r.roomId);
+          continue;
+        }
         // ★ 显式调度托管 Bot（不依赖 broadcast 回调链，消除竞态窗口）
         botManager.processBots(r.roomId);
         // 将玩家加回 roomManager（保留房间成员身份，方便重连）

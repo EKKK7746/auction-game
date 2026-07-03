@@ -40,6 +40,8 @@ class BotManager {
     const bots = state.players.filter(p => p.isBot || p.managed);
     if (bots.length === 0) return;
 
+    console.log(`[Bot] processBots 调度: 房间=${roomId}, 阶段=${state.phase}, bots/managed=${bots.length}, 提案=${state._tradeProposal ? 'to ' + state._tradeProposal.toId : '无'}`);
+
     for (const bot of bots) {
       this.scheduleBot(roomId, bot, state);
     }
@@ -199,6 +201,35 @@ class BotManager {
         }
 
         // roll_dice / resolve 阶段自动结算，Bot 无需操作
+        return null;
+      }
+
+      case 'trade': {
+        const proposal = state._tradeProposal;
+
+        // 场景1：Bot/托管玩家是待处理提案的目标 → 评估并回应
+        if (proposal && !proposal.responded && proposal.toId === playerId) {
+          const me = state.players.find(p => p.id === playerId);
+          console.log(`[Bot] ${me?.nickname || playerId} 收到交易提案，准备回应 (from=${proposal.fromId})`);
+          return { label: '回应交易', fn: (rid, pid, s) => {
+            const accept = tradeResponseStrategy(pid, s);
+            console.log(`[Bot] ${me?.nickname || pid} 交易决策: ${accept ? '接受' : '拒绝'}`);
+            const result = this._engine.respondTrade(rid, pid, accept);
+            console.log(`[Bot] ${me?.nickname || pid} respondTrade 结果:`, result);
+            return result;
+          }};
+        }
+
+        // 场景2：托管玩家有交易配额但未跳过 → 自动跳过
+        const tp = state.players.find(pp => pp.id === playerId);
+        if (tp && !tp.isBot && tp.managed) {
+          const quota = state._tradeQuota?.[playerId] ?? (state._mode === 'fulldeck' ? 2 : 1);
+          if (quota > 0 && !state._tradeSkipped?.has(playerId)) {
+            console.log(`[Bot] ${tp.nickname} 托管中，自动跳过交易`);
+            return { label: '跳过交易', fn: (rid, pid) => this._engine.skipTrade(rid, pid) };
+          }
+        }
+
         return null;
       }
 
@@ -572,6 +603,77 @@ function duelDiceStrategy(playerId, state) {
   if (funds >= 2) return 'd6';
   if (funds >= 1) return Math.random() < 0.3 ? 'd4' : 'pass';
   return 'pass';
+}
+
+// -------------------- 交易回应策略 --------------------
+
+/**
+ * 评估交易提案，决定是否接受
+ * 复用 evaluateCardValue 评估卡牌实际价值（含联动/特效）
+ * @param {string} playerId - 被提案的玩家 ID（Bot/托管）
+ * @param {object} state - 游戏状态
+ * @returns {boolean} true=接受, false=拒绝
+ */
+function tradeResponseStrategy(playerId, state) {
+  const proposal = state._tradeProposal;
+  if (!proposal || proposal.toId !== playerId) {
+    console.log(`[Bot] tradeResponseStrategy: 无提案或目标不匹配 (playerId=${playerId}, proposal=${!!proposal})`);
+    return false;
+  }
+
+  const me = state.players.find(pp => pp.id === playerId);
+  if (!me) {
+    console.log(`[Bot] tradeResponseStrategy: 玩家 ${playerId} 不存在`);
+    return false;
+  }
+
+  const difficulty = getDifficulty(me);
+  const fromPlayer = state.players.find(pp => pp.id === proposal.fromId);
+  if (!fromPlayer) {
+    console.log(`[Bot] tradeResponseStrategy: 发起方 ${proposal.fromId} 不存在`);
+    return false;
+  }
+
+  // 收到的卡牌（fromCards 属于发起方，交易后归我）
+  const receivedCards = proposal.fromCards
+    .map(cid => fromPlayer.cards.find(c => c.id === cid))
+    .filter(Boolean);
+
+  // 给出的卡牌（toCards 属于我，交易后归对方）
+  const givenCards = proposal.toCards
+    .map(cid => me.cards.find(c => c.id === cid))
+    .filter(Boolean);
+
+  console.log(`[Bot] tradeResponseStrategy: ${me.nickname} 收到 ${receivedCards.length} 张卡，给出 ${givenCards.length} 张卡`);
+
+  // 交易后我的卡组（用于评估联动价值）
+  const myCardsAfter = [
+    ...me.cards.filter(c => !proposal.toCards.includes(c.id)),
+    ...receivedCards,
+  ];
+
+  // 金币权重：1 金币 ≈ 0.5 分价值
+  const GOLD_WEIGHT = 0.5;
+
+  const gainValue = receivedCards.reduce(
+    (sum, c) => sum + evaluateCardValue(c, myCardsAfter), 0
+  ) + (proposal.fromGold || 0) * GOLD_WEIGHT;
+
+  const loseValue = givenCards.reduce(
+    (sum, c) => sum + evaluateCardValue(c, me.cards), 0
+  ) + (proposal.toGold || 0) * GOLD_WEIGHT;
+
+  const netGain = gainValue - loseValue;
+
+  console.log(`[Bot] tradeResponseStrategy: ${me.nickname} gain=${gainValue.toFixed(2)}, lose=${loseValue.toFixed(2)}, net=${netGain.toFixed(2)}, difficulty=${difficulty}`);
+
+  // 难度分级阈值
+  switch (difficulty) {
+    case 'easy':   return netGain > -1;    // 宽容，偶尔吃亏
+    case 'normal': return netGain > 0;     // 只接受不亏的
+    case 'hard':   return netGain > 0.5;   // 精明，必须有赚头
+    default:       return netGain > 0;
+  }
 }
 
 // -------------------- 创建 Bot 玩家 --------------------
