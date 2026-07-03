@@ -25,7 +25,7 @@ const ACHIEVEMENTS = {
   rich_50:         { id:'rich_50',         name:'富可敌国',   desc:'一局游戏结束时拥有50+金币',   icon:'💰', reward:{ type:'avatar',     id:'avatar_merchant' } },
   win_3_streak:    { id:'win_3_streak',    name:'连战连捷',   desc:'连续3局获胜',               icon:'🔥', reward:{ type:'diceEffect', id:'dice_inferno' } },
   play_10_games:   { id:'play_10_games',   name:'身经百战',   desc:'参与10局游戏',              icon:'⚔️', reward:{ type:'avatar',     id:'avatar_veteran' } },
-  d4_winner:       { id:'d4_winner',       name:'以小博大',   desc:'用d4骰子赢得一次决斗',       icon:'🎲', reward:{ type:'diceEffect', id:'dice_lucky' } },
+  d4_winner:       { id:'d4_winner',       name:'以小博大',   desc:'在镜中决斗中用d4骰子获胜',  icon:'🎲', reward:{ type:'diceEffect', id:'dice_lucky' } },
   high_score_20:   { id:'high_score_20',   name:'高分猎手',   desc:'单局最终分达到20分',         icon:'⭐', reward:{ type:'avatar',     id:'avatar_star' } },
 };
 
@@ -312,7 +312,7 @@ function _checkAchievements(data, me, view) {
   return newAch;
 }
 
-/** 标记最近一次决斗使用的骰子类型（用于 d4_winner 成就） */
+/** 标记最近一次镜中决斗使用的骰子类型（用于 d4_winner 成就） */
 function recordDuelDice(diceType, won) {
   if (!won) return;
   const data = _loadCollection();

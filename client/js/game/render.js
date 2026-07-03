@@ -44,17 +44,15 @@ function renderGame(view) {
     if (view.phase === 'settle' && _lastView.phase !== 'settle' && view.auctioneerId === socket.id) {
       if (typeof recordAuctioneerRound === 'function') recordAuctioneerRound();
     }
-    // 决斗骰子记录 & 成就检查
-    if (view.phase === 'settle' && _lastView.phase === 'rollDice') {
-      const diceSel = view.diceSelections?.[socket.id];
-      const results = view.diceResults || {};
-      const _val = (v) => v !== null ? (typeof v === 'object' && v.value != null ? v.value : v) : -1;
-      let maxVal = -1, winnerId = null;
-      for (const [pid, val] of Object.entries(results)) {
-        if (val !== null && _val(val) > maxVal) { maxVal = _val(val); winnerId = pid; }
-      }
-      if (winnerId === socket.id && diceSel) {
-        if (typeof recordDuelDice === 'function') recordDuelDice(diceSel, true);
+    // 镜中决斗结果记录 & 成就检查
+    if (view.phase === 'duel' && view.duel?.step === 'resolve'
+        && _lastView?.duel?.step !== 'resolve') {
+      const duel = view.duel;
+      if (duel.winnerId === socket.id) {
+        const diceSel = duel.diceSelections?.[socket.id];
+        if (diceSel && typeof recordDuelDice === 'function') {
+          recordDuelDice(diceSel, true);
+        }
       }
     }
     // 每阶段结束后检查局内成就
