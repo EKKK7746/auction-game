@@ -553,12 +553,7 @@ function _renderRentDice(view, container) {
     </button>`;
   }).join('');
 
-  const upgradeCheckbox = hasUpgrade ? `
-    <label class="upgrade-checkbox">
-      <input type="checkbox" id="useUpgradeCheck" onchange="onUpgradeCheckChange()" />
-      <span class="upgrade-check-label">⬆️ 使用敦煌飞天升级骰子（本轮限用一次）</span>
-    </label>
-  ` : '';
+  const upgradeCheckbox = hasUpgrade ? _buildUpgradeCheckbox() : '';
 
   container.innerHTML = `
     <div class="action-title">${isSpeedMode ? '⚡ 极速模式 — 选择骰子' : '🎲 选择你的骰子'}</div>
@@ -575,11 +570,7 @@ function _renderRentDice(view, container) {
   }
 
   if (hasUpgrade) {
-    setTimeout(() => {
-      const cb = document.getElementById('useUpgradeCheck');
-      if (cb) cb.checked = false;
-      onUpgradeCheckChange();
-    }, 0);
+    _initUpgradeCheckbox();
   }
 }
 
@@ -611,6 +602,25 @@ function _renderDiceWaiting(view, container) {
       ${others.length > 0 ? `<div class="player-status">${statusHtml}</div>` : ''}
     </div>
   `;
+}
+
+// 共享工具：升级骰子 checkbox HTML
+function _buildUpgradeCheckbox() {
+  return `
+    <label class="upgrade-checkbox">
+      <input type="checkbox" id="useUpgradeCheck" onchange="onUpgradeCheckChange()" />
+      <span class="upgrade-check-label">⬆️ 使用敦煌飞天升级骰子（本轮限用一次）</span>
+    </label>
+  `;
+}
+
+// 共享工具：初始化升级 checkbox（重置为未勾选）
+function _initUpgradeCheckbox() {
+  setTimeout(() => {
+    const cb = document.getElementById('useUpgradeCheck');
+    if (cb) cb.checked = false;
+    onUpgradeCheckChange();
+  }, 0);
 }
 
 // ==================== 掷骰阶段 ====================
@@ -717,6 +727,7 @@ let _tradeCountdownInterval = null;
 let _pendingTradeProposal = null;  // 存储 trade:proposal 事件发来的提案详情
 let _collectionSaved = false;      // 防止重复保存收集数据
 let _tradeAutoSkipped = false;     // 防止交易阶段自动跳过重复触发
+let _cardPopupCloseHandler = null;  // 追踪卡牌弹窗关闭处理器，防止事件监听器泄漏
 
 function _renderTrade(view, container) {
   container.className = 'game-action-area';
@@ -1163,12 +1174,7 @@ function _renderDuelRentDice(view, container) {
     </button>`;
   }).join('');
 
-  const upgradeCheckbox = hasUpgrade ? `
-    <label class="upgrade-checkbox">
-      <input type="checkbox" id="useUpgradeCheck" onchange="onUpgradeCheckChange()" />
-      <span class="upgrade-check-label">⬆️ 使用敦煌飞天升级骰子（本轮限用一次）</span>
-    </label>
-  ` : '';
+  const upgradeCheckbox = hasUpgrade ? _buildUpgradeCheckbox() : '';
 
   const targetCardId = duel.targetCardId;
   const cardVis = targetCardId ? getCardVisual(targetCardId) : { emoji: '❓', color: '#C43A31' };
@@ -1203,11 +1209,7 @@ function _renderDuelRentDice(view, container) {
   `;
 
   if (hasUpgrade) {
-    setTimeout(() => {
-      const cb = document.getElementById('useUpgradeCheck');
-      if (cb) cb.checked = false;
-      onUpgradeCheckChange();
-    }, 0);
+    _initUpgradeCheckbox();
   }
 }
 
@@ -1787,6 +1789,11 @@ function showCardPopup(cardId, cardName, isHidden, optScore, optEffect) {
   popup._openedAt = Date.now();
 
   setTimeout(() => {
+    // 先移除上一次的处理器，防止泄漏
+    if (_cardPopupCloseHandler) {
+      document.removeEventListener('click', _cardPopupCloseHandler);
+      document.removeEventListener('touchstart', _cardPopupCloseHandler);
+    }
     const closePopup = (evt) => {
       if (evt.target.closest('.card-icon')) return;
       if (evt.target.closest('.card-popup-content')) return;
@@ -1794,9 +1801,9 @@ function showCardPopup(cardId, cardName, isHidden, optScore, optEffect) {
       popup.style.display = 'none';
       document.removeEventListener('click', closePopup);
       document.removeEventListener('touchstart', closePopup);
+      _cardPopupCloseHandler = null;
     };
-    document.removeEventListener('click', closePopup);
-    document.removeEventListener('touchstart', closePopup);
+    _cardPopupCloseHandler = closePopup;
     document.addEventListener('click', closePopup);
     document.addEventListener('touchstart', closePopup, { passive: true });
   }, 100);
@@ -1927,7 +1934,14 @@ function _closePlayerPopup() {
   if (popup) popup.remove();
 }
 
+let _lastCardIconClickTime = 0;
 function _onCardIconClick(e) {
+  // 防移动端 click + touchend 双重触发（300ms 内忽略第二次）
+  if (e.type === 'touchend') {
+    _lastCardIconClickTime = Date.now();
+  } else if (e.type === 'click') {
+    if (Date.now() - _lastCardIconClickTime < 500) return;
+  }
   const icon = e.target.closest('.card-icon');
   if (!icon) return;
   e.preventDefault();
