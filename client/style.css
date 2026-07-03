@@ -3540,61 +3540,16 @@ body {
   color: #999;
 }
 
-/* 游戏内教程面板 */
-.tutorial-panel {
-  background: linear-gradient(135deg, #FFF8E7, #FFFDE8);
-  border: 2px solid #C9A96E;
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin-bottom: 12px;
-  animation: tutorialPulse 2s ease-in-out infinite;
+/* 教程聚光灯高亮目标 */
+.tg-spotlight-target {
+  box-shadow: 0 0 0 3px #D4AF37, 0 0 20px rgba(212, 175, 55, 0.6) !important;
+  border-radius: 8px !important;
+  animation: tgPulse 1.5s ease-in-out infinite;
 }
 
-@keyframes tutorialPulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 169, 110, 0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(201, 169, 110, 0); }
-}
-
-.tutorial-panel-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #8B2252;
-  margin-bottom: 6px;
-}
-
-.tutorial-panel-icon {
-  font-size: 20px;
-}
-
-.tutorial-panel-text {
-  font-size: 13px;
-  color: #5C3D2E;
-  line-height: 1.6;
-}
-
-.tutorial-panel-progress {
-  display: flex;
-  gap: 6px;
-  margin-top: 10px;
-}
-
-.tutorial-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #DDD;
-  transition: background 0.3s;
-}
-
-.tutorial-dot.active {
-  background: #C9A96E;
-}
-
-.tutorial-dot.done {
-  background: #8B2252;
+@keyframes tgPulse {
+  0%, 100% { box-shadow: 0 0 0 3px #D4AF37, 0 0 20px rgba(212, 175, 55, 0.6); }
+  50% { box-shadow: 0 0 0 4px #FFD700, 0 0 32px rgba(255, 215, 0, 0.8); }
 }
 
 /* 教程完成页 */
@@ -3620,19 +3575,6 @@ body {
   color: #666;
   margin-bottom: 16px;
   line-height: 1.6;
-}
-
-/* 教程按钮高亮 — 脉冲金框 */
-.tutorial-highlight {
-  animation: tutorialPulse 1.2s ease-in-out infinite !important;
-  box-shadow: 0 0 0 3px #D4AF37, 0 0 16px rgba(212, 175, 55, 0.5) !important;
-  border-color: #D4AF37 !important;
-  position: relative;
-  z-index: 2;
-}
-@keyframes tutorialPulse {
-  0%, 100% { box-shadow: 0 0 0 3px #D4AF37, 0 0 16px rgba(212, 175, 55, 0.5); }
-  50% { box-shadow: 0 0 0 3px #FFD700, 0 0 28px rgba(255, 215, 0, 0.7); }
 }
 
 /* ==================== 观战功能 ==================== */

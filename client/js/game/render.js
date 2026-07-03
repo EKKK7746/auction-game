@@ -276,39 +276,16 @@ function _renderActionArea(view) {
 
 function _renderActionContent(view, container) {
   if (GameState._tutorial && GameState._tutorial.active) {
-    const tHtml = renderTutorialPanel(view.phase);
-    container.innerHTML = tHtml + '<div id="tut-phase-inner"></div>';
-    const inner = document.getElementById('tut-phase-inner');
-    _renderPhaseContent(view, inner);
-    // TutorialGuide 聚光灯引导（若未激活则回退到旧高亮）
+    _renderPhaseContent(view, container);
+    // TutorialGuide 全屏引导
     setTimeout(() => {
       if (window.TutorialGuide && TutorialGuide.active) {
-        TutorialGuide.onPhaseRender(view, container);
-      } else {
-        _highlightTutorialButton(view.phase);
+        TutorialGuide.onPhaseRender(view);
       }
     }, 150);
     return;
   }
   _renderPhaseContent(view, container);
-}
-
-/** 教程模式：给当前阶段推荐操作的按钮加高亮 */
-function _highlightTutorialButton(phase) {
-  const map = {
-    auction: '#btnSubmitBid, .bid-submit-btn',
-    select_card: '.card-icon, .card-option',
-    rent_dice: '.dice-btn:not(.pass-btn-full), .dice-option-btn',
-    roll_dice: '#btnRollDice, .roll-btn',
-    settle: '#btnNextRound, .settle-next-btn',
-  };
-  const sel = map[phase];
-  if (!sel) return;
-  document.querySelectorAll(sel).forEach(el => {
-    el.classList.add('tutorial-highlight');
-    // 3 秒后自动移除（下一次阶段渲染会重新添加）
-    setTimeout(() => el.classList.remove('tutorial-highlight'), 3000);
-  });
 }
 
 function _renderPhaseContent(view, container) {

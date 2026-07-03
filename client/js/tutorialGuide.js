@@ -1,6 +1,6 @@
 // ============================================================
-// tutorialGuide.js — 新手教程聚光灯引导系统
-// 强迫玩家一步步操作，了解游戏基本流程
+// tutorialGuide.js — 新手教程全屏引导系统（重写版）
+// 全屏fixed遮罩 + 聚光灯高亮 + 交互驱动推进
 // 依赖: showToast, _lastView, socket, GameState
 // ============================================================
 
@@ -8,22 +8,25 @@
   'use strict';
 
   // ==================== 步骤定义 ====================
-  // type: 'intro' (遮罩+居中提示+"下一步") | 'action' (聚光灯目标+提示) | 'tip' (遮罩+居中提示+"下一步") | 'info' (无遮罩，自动推进)
-  // advanceOn: 'bidSubmitted' | 'phaseChange' | 'diceSelected' | 'tradeAction' | 'manual'
+  // type: 'info' (居中提示+"知道了"按钮) | 'action' (聚光灯目标+提示，等交互)
+  // advanceOn: 'bidSubmitted' | 'phaseChange' | 'diceSelected' | 'tradeAction' | null
+  //   - info + advanceOn=null: 点"知道了"推进
+  //   - info + advanceOn='phaseChange': 点"知道了"关闭提示，等phase变化推进
+  //   - action + advanceOn: 等玩家完成指定交互后推进
 
   function getSteps(phase, isAuctioneer, isFirstTime) {
     switch (phase) {
       case 'auction':
         return [
-          { type: 'intro', text: '欢迎来到马王堆拍卖！所有人同时秘密报价佣金比例（10%~50%）。佣金最低者当选拍卖师——拍卖师不掷骰，但收取其他人的佣金。' },
-          { type: 'action', text: '点击一个佣金比例按钮报价。比例越低越容易当选，但佣金也越少。', target: '.bid-btn:not(.pass-btn)', advanceOn: 'bidSubmitted' },
+          { type: 'info', text: '欢迎来到马王堆拍卖！\n所有人同时秘密报价佣金比例（10%~50%）。\n佣金最低者当选拍卖师——拍卖师不掷骰，但收取其他人的佣金。' },
+          { type: 'action', text: '点击一个佣金比例按钮报价。\n比例越低越容易当选，但佣金也越少。', target: '.bid-btn:not(.pass-btn)', advanceOn: 'bidSubmitted' },
           { type: 'info', text: '已提交报价！等待其他玩家报价中...', advanceOn: 'phaseChange' },
         ];
 
       case 'selectCard':
         if (isAuctioneer) {
           return [
-            { type: 'intro', text: '你当选了拍卖师！从牌堆中选一张文物进行拍卖。选择高分卡牌可以拉开分差，但也要考虑特殊效果联动。' },
+            { type: 'info', text: '你当选了拍卖师！\n从牌堆中选一张文物进行拍卖。' },
             { type: 'action', text: '点击你想拍卖的文物卡牌。', target: '.select-card-item', advanceOn: 'phaseChange' },
           ];
         }
@@ -38,26 +41,24 @@
           ];
         }
         return [
-          { type: 'intro', text: '现在选择骰子争夺这张卡牌！' },
-          { type: 'tip', text: 'd4=1💰(1-4点) d6=2💰(1-6) d12=4💰(1-12) d20=6💰(1-20)。骰子越贵出点越高，但要注意留够金币应付后续轮次。' },
+          { type: 'info', text: '现在选择骰子争夺这张卡牌！\nd4=1💰(1-4点) d6=2💰(1-6)\nd12=4💰(1-12) d20=6💰(1-20)\n骰子越贵出点越高，但要注意留够金币。' },
           { type: 'action', text: '点击你想要的骰子，或点击"放弃"跳过。', target: '.dice-btn:not(.pass-btn-full), .dice-btn.pass-btn-full', advanceOn: 'diceSelected' },
         ];
 
       case 'rollDice':
         return [
-          { type: 'info', text: '掷骰结果出来了！点数最高者赢得卡牌。平局会重掷直到分出胜负。', advanceOn: 'phaseChange' },
+          { type: 'info', text: '掷骰结果出来了！\n点数最高者赢得卡牌。平局会重掷直到分出胜负。', advanceOn: 'phaseChange' },
         ];
 
       case 'settle':
         return [
-          { type: 'intro', text: '本轮结算！看看谁赢得了卡牌，拍卖师获得佣金。' },
-          { type: 'tip', text: '核心策略：终局排名只看卡牌总分，剩余金币仅用于平局决胜。不要囤钱，要积极争卡！' },
+          { type: 'info', text: '本轮结算！看看谁赢得了卡牌，拍卖师获得佣金。\n核心策略：终局排名只看卡牌总分，不要囤钱，要积极争卡！' },
         ];
 
       case 'trade':
         if (isFirstTime) {
           return [
-            { type: 'intro', text: '交易阶段！你可以和其他玩家交换卡牌或金币，调整你的收藏组合。' },
+            { type: 'info', text: '交易阶段！\n你可以和其他玩家交换卡牌或金币，调整你的收藏组合。' },
             { type: 'action', text: '选择目标玩家发起交易，或点击"跳过交易"。', target: '.trade-player-item.can-target, .trade-skip-btn', advanceOn: 'tradeAction' },
           ];
         }
@@ -67,13 +68,12 @@
 
       case 'duel':
         return [
-          { type: 'info', text: '镜中决斗！双方各押一张卡，掷骰定胜负。这是一次抢夺对手珍品的机会。', advanceOn: 'phaseChange' },
+          { type: 'info', text: '镜中决斗！\n双方各押一张卡，掷骰定胜负。\n这是一次抢夺对手珍品的机会。', advanceOn: 'phaseChange' },
         ];
 
       case 'finished':
         return [
-          { type: 'intro', text: '游戏结束！看看你的最终排名。' },
-          { type: 'tip', text: '总分 = 所有卡牌分值之和。特殊卡牌联动可以大幅提升低分卡的价值——注意收集成套组合！' },
+          { type: 'info', text: '游戏结束！看看你的最终排名。\n总分 = 所有卡牌分值之和。\n特殊卡牌联动可以大幅提升低分卡的价值——注意收集成套组合！' },
         ];
 
       default:
@@ -93,14 +93,13 @@
     _lastView: null,
     _prevTradeQuota: -1,
 
-    // DOM 引用（每次渲染重建）
+    // DOM 引用
     _maskEl: null,
     _tooltipEl: null,
     _targetEl: null,
     _targetPrevState: null,
-    _parent: null,
+    _infoDismissed: false,
     _resizeHandler: null,
-    _scrollHandler: null,
     _observer: null,
     _repositionTimer: null,
 
@@ -115,6 +114,7 @@
       this.finishedStepsDone = false;
       this._lastView = null;
       this._prevTradeQuota = -1;
+      this._infoDismissed = false;
       this._cleanup();
     },
 
@@ -123,24 +123,24 @@
       this._cleanup();
     },
 
-    // ==================== 主入口：每次渲染后调用 ====================
+    // ==================== 主入口 ====================
 
-    onPhaseRender(view, container) {
+    onPhaseRender(view) {
       if (!this.active) return;
       if (!GameState._tutorial || !GameState._tutorial.active) return;
 
       this._lastView = view;
-
       const phase = view.phase;
       const isAuctioneer = view.auctioneerId === socket.id;
 
-      // 检测阶段变化 → 加载新步骤序列
+      // 阶段变化 → 加载新步骤序列
       if (phase !== this.currentPhase) {
         this.currentPhase = phase;
         this.stepIndex = 0;
         const isFirstTime = !this.seenPhases[phase];
         this.seenPhases[phase] = true;
         this.steps = getSteps(phase, isAuctioneer, isFirstTime);
+        this._infoDismissed = false;
         this._cleanup();
       }
 
@@ -149,7 +149,7 @@
         return;
       }
 
-      // 被动检测：是否应自动推进
+      // 检测自动推进
       if (this._shouldAutoAdvance(view)) {
         this._advanceStep();
         return;
@@ -165,6 +165,9 @@
       if (!this.steps || this.stepIndex >= this.steps.length) return false;
       const step = this.steps[this.stepIndex];
       if (!step.advanceOn) return false;
+
+      // info 类型：必须先点"知道了"才能自动推进
+      if (step.type === 'info' && !this._infoDismissed) return false;
 
       const myId = socket.id;
 
@@ -195,12 +198,13 @@
 
     _advanceStep() {
       this.stepIndex++;
+      this._infoDismissed = false;
       this._cleanup();
+
       if (this.stepIndex >= this.steps.length) {
         // 该阶段所有步骤完成
         if (this.currentPhase === 'finished' && !this.finishedStepsDone) {
           this.finishedStepsDone = true;
-          // 重新渲染以显示教程完成页
           if (this._lastView) {
             const container = document.getElementById('gameActionArea');
             if (container && typeof _renderActionContent === 'function') {
@@ -213,10 +217,6 @@
       this._renderCurrentStep();
     },
 
-    nextStepManual() {
-      this._advanceStep();
-    },
-
     // ==================== 渲染当前步骤 ====================
 
     _renderCurrentStep() {
@@ -226,51 +226,40 @@
       }
 
       const step = this.steps[this.stepIndex];
-      const inner = document.getElementById('tut-phase-inner');
-      if (!inner) return;
-
-      // 确保 inner 有定位上下文
-      inner.style.position = 'relative';
 
       // 清理上一次覆盖层
       this._removeOverlay();
-      this._parent = inner;
 
       switch (step.type) {
         case 'info':
-          // info 步骤：无遮罩，仅等待自动推进
-          break;
-
-        case 'intro':
-        case 'tip':
-          this._createMask(inner);
-          this._createCenteredTooltip(inner, step.text, step.type === 'tip');
+          this._createMask();
+          this._createCenteredTooltip(step.text, !!step.advanceOn);
           break;
 
         case 'action':
-          // 用 requestAnimationFrame 确保 DOM 已完成布局
+          // 用 rAF 确保 DOM 已完成布局
           requestAnimationFrame(() => {
-            if (this._parent !== inner) return; // 已被清理
-            this._createMask(inner);
-            this._spotlightTarget(inner, step);
+            if (!this.active || this.stepIndex >= this.steps.length) return;
+            const currentStep = this.steps[this.stepIndex];
+            if (currentStep !== step) return; // 已切换
+            this._createMask();
+            this._spotlightTarget(step);
           });
           break;
       }
     },
 
-    // ==================== 遮罩 ====================
+    // ==================== 全屏遮罩 ====================
 
-    _createMask(parent) {
+    _createMask() {
       const mask = document.createElement('div');
       mask.className = 'tg-mask';
       mask.style.cssText = [
-        'position:absolute',
+        'position:fixed',
         'inset:0',
-        'background:rgba(0,0,0,0.55)',
-        'z-index:9998',
+        'background:rgba(0,0,0,0.75)',
+        'z-index:99999',
         'pointer-events:auto',
-        'border-radius:inherit',
-        'cursor:not-allowed',
       ].join(';');
 
       mask.addEventListener('click', (e) => {
@@ -281,40 +270,41 @@
         }
       });
 
-      parent.appendChild(mask);
+      document.body.appendChild(mask);
       this._maskEl = mask;
     },
 
-    // ==================== 居中提示（intro / tip） ====================
+    // ==================== 居中提示（info） ====================
 
-    _createCenteredTooltip(parent, text, isTip) {
+    _createCenteredTooltip(text, hasAdvanceOn) {
       const tooltip = document.createElement('div');
       tooltip.className = 'tg-centered-tooltip';
       tooltip.style.cssText = [
-        'position:absolute',
+        'position:fixed',
         'top:50%',
         'left:50%',
         'transform:translate(-50%,-50%)',
-        'z-index:10000',
+        'z-index:100001',
         'background:rgba(30,20,10,0.95)',
         'color:#F0E0C0',
-        'padding:16px 20px',
-        'border-radius:12px',
-        'border:1px solid rgba(201,169,110,0.4)',
-        'max-width:320px',
+        'padding:20px 24px',
+        'border-radius:14px',
+        'border:1px solid rgba(201,169,110,0.5)',
+        'max-width:360px',
         'font-size:14px',
-        'line-height:1.6',
+        'line-height:1.8',
         'text-align:center',
-        'box-shadow:0 4px 24px rgba(0,0,0,0.5)',
+        'box-shadow:0 8px 32px rgba(0,0,0,0.6)',
         'pointer-events:auto',
+        'white-space:pre-line',
       ].join(';');
 
-      const tipIcon = isTip ? '<span style="font-size:18px;margin-right:4px;">💡</span>' : '';
       tooltip.innerHTML =
-        '<div style="margin-bottom:14px;">' + tipIcon + text + '</div>' +
+        '<div class="tg-info-text">' + text + '</div>' +
         '<button class="tg-next-btn" style="' + [
           'display:inline-block',
-          'padding:8px 28px',
+          'margin-top:16px',
+          'padding:8px 32px',
           'background:#C9A96E',
           'color:#1a1a1a',
           'border:none',
@@ -322,35 +312,47 @@
           'font-size:14px',
           'font-weight:600',
           'cursor:pointer',
-        ].join(';') + '">下一步 →</button>';
+          'transition:background 0.2s',
+        ].join(';') + '">知道了</button>';
 
       const btn = tooltip.querySelector('.tg-next-btn');
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.nextStepManual();
+        if (hasAdvanceOn) {
+          // info with advanceOn: dismiss tooltip + mask, wait for auto-advance
+          this._infoDismissed = true;
+          this._removeOverlay();
+        } else {
+          // info without advanceOn: advance to next step
+          this._advanceStep();
+        }
       });
 
-      parent.appendChild(tooltip);
+      btn.addEventListener('mouseenter', () => {
+        btn.style.background = '#D4B97E';
+      });
+      btn.addEventListener('mouseleave', () => {
+        btn.style.background = '#C9A96E';
+      });
+
+      document.body.appendChild(tooltip);
       this._tooltipEl = tooltip;
     },
 
-    // ==================== 聚光灯目标 ====================
+    // ==================== 聚光灯目标（action） ====================
 
-    _spotlightTarget(parent, step) {
-      // 查找目标元素
+    _spotlightTarget(step) {
+      // 在全文档搜索目标元素
       let targetEl = null;
       const selectors = (step.target || '').split(',').map(s => s.trim()).filter(Boolean);
       for (const sel of selectors) {
-        targetEl = parent.querySelector(sel);
+        targetEl = document.querySelector(sel);
         if (targetEl) break;
       }
 
       if (!targetEl) {
         // 目标未找到，降级为居中提示
-        if (typeof window.__MW_DEBUG__ !== 'undefined' && window.__MW_DEBUG__) {
-          console.warn('[TutorialGuide] Target not found:', step.target);
-        }
-        this._createCenteredTooltip(parent, step.text, false);
+        this._createCenteredTooltip(step.text, false);
         return;
       }
 
@@ -363,136 +365,123 @@
         zIndex: targetEl.style.zIndex,
         boxShadow: targetEl.style.boxShadow,
         borderRadius: targetEl.style.borderRadius,
+        isolation: targetEl.style.isolation,
       };
       targetEl.style.position = 'relative';
-      targetEl.style.zIndex = '9999';
+      targetEl.style.zIndex = '100000';
+      targetEl.style.isolation = 'isolate';
       targetEl.classList.add('tg-spotlight-target');
       this._targetEl = targetEl;
 
       // 创建提示气泡
-      this._createTargetTooltip(parent, step.text);
+      this._createTargetTooltip(step.text);
 
-      // 精确定位气泡
-      // 用 double-rAF 确保布局已完成（scrollIntoView 可能触发布局变化）
+      // 精确定位气泡（double rAF 确保布局完成）
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (this._targetEl === targetEl && this._tooltipEl) {
-            this._positionTooltip(parent, targetEl);
+            this._positionTooltip(targetEl);
           }
         });
       });
 
       // 监听位置变化
-      this._addPositionHandlers(parent);
+      this._addPositionHandlers();
     },
 
-    _createTargetTooltip(parent, text) {
+    _createTargetTooltip(text) {
       const tooltip = document.createElement('div');
       tooltip.className = 'tg-target-tooltip';
       tooltip.style.cssText = [
-        'position:absolute',
-        'z-index:10000',
+        'position:fixed',
+        'z-index:100001',
         'background:rgba(30,20,10,0.95)',
         'color:#F0E0C0',
         'padding:10px 14px',
         'border-radius:10px',
-        'border:1px solid rgba(201,169,110,0.4)',
-        'max-width:260px',
+        'border:1px solid rgba(201,169,110,0.5)',
+        'max-width:280px',
         'font-size:13px',
-        'line-height:1.5',
-        'box-shadow:0 4px 16px rgba(0,0,0,0.4)',
+        'line-height:1.6',
+        'box-shadow:0 4px 16px rgba(0,0,0,0.5)',
         'pointer-events:none',
         'opacity:0',
-        'transition:opacity 0.15s',
+        'transition:opacity 0.2s',
+        'white-space:pre-line',
       ].join(';');
       tooltip.textContent = text;
-      parent.appendChild(tooltip);
+      document.body.appendChild(tooltip);
       this._tooltipEl = tooltip;
     },
 
-    // ==================== 精确定位（核心！） ====================
+    // ==================== 精确定位（viewport 坐标） ====================
 
-    _positionTooltip(parent, targetEl) {
+    _positionTooltip(targetEl) {
       const tooltip = this._tooltipEl;
-      if (!tooltip || !targetEl || !parent) return;
+      if (!tooltip || !targetEl) return;
 
-      // 使用 getBoundingClientRect 获取精确位置
       const targetRect = targetEl.getBoundingClientRect();
-      const parentRect = parent.getBoundingClientRect();
       const tooltipRect = tooltip.getBoundingClientRect();
 
       const tooltipW = Math.round(tooltipRect.width);
       const tooltipH = Math.round(tooltipRect.height);
-      const gap = 10; // 目标与气泡之间的间距
-      const pad = 8;  // 安全边距
+      const gap = 10;
+      const pad = 8;
 
-      // 计算可用空间
-      const spaceBelow = parentRect.bottom - targetRect.bottom;
-      const spaceAbove = targetRect.top - parentRect.top;
+      const spaceBelow = window.innerHeight - targetRect.bottom;
+      const spaceAbove = targetRect.top;
 
-      // 默认放在目标下方，水平居中
       let top, placeAbove;
 
       if (spaceBelow >= tooltipH + gap + pad || spaceBelow >= spaceAbove) {
-        // 下方放得下，或下方比上方大 → 放下方
-        top = targetRect.bottom - parentRect.top + gap;
+        top = targetRect.bottom + gap;
         placeAbove = false;
       } else {
-        // 放上方
-        top = targetRect.top - parentRect.top - tooltipH - gap;
+        top = targetRect.top - tooltipH - gap;
         placeAbove = true;
       }
 
-      // 水平居中于目标
-      let left = targetRect.left - parentRect.left + targetRect.width / 2 - tooltipW / 2;
+      let left = targetRect.left + targetRect.width / 2 - tooltipW / 2;
 
-      // 水平边界钳制
       if (left < pad) left = pad;
-      if (left + tooltipW > parentRect.width - pad) {
-        left = parentRect.width - tooltipW - pad;
+      if (left + tooltipW > window.innerWidth - pad) {
+        left = window.innerWidth - tooltipW - pad;
       }
 
-      // 垂直边界钳制
       if (top < pad) top = pad;
-      if (top + tooltipH > parentRect.height - pad) {
-        top = parentRect.height - tooltipH - pad;
+      if (top + tooltipH > window.innerHeight - pad) {
+        top = window.innerHeight - tooltipH - pad;
       }
 
       tooltip.style.top = Math.round(top) + 'px';
       tooltip.style.left = Math.round(left) + 'px';
       tooltip.style.opacity = '1';
 
-      // 箭头方向
       tooltip.classList.remove('tg-tip-below', 'tg-tip-above');
       tooltip.classList.add(placeAbove ? 'tg-tip-above' : 'tg-tip-below');
     },
 
     // ==================== 位置监听 ====================
 
-    _addPositionHandlers(parent) {
+    _addPositionHandlers() {
       const handler = () => {
-        if (this._targetEl && this._tooltipEl && this._parent === parent) {
-          this._positionTooltip(parent, this._targetEl);
+        if (this._targetEl && this._tooltipEl) {
+          this._positionTooltip(this._targetEl);
         }
       };
 
-      // 防抖
       const debounced = () => {
         if (this._repositionTimer) cancelAnimationFrame(this._repositionTimer);
         this._repositionTimer = requestAnimationFrame(handler);
       };
 
       this._resizeHandler = debounced;
-      this._scrollHandler = debounced;
-
       window.addEventListener('resize', debounced);
-      parent.addEventListener('scroll', debounced, { passive: true });
+      window.addEventListener('scroll', debounced, { passive: true, capture: true });
 
-      // 监听父容器尺寸变化
       if (window.ResizeObserver) {
         this._observer = new ResizeObserver(debounced);
-        this._observer.observe(parent);
-        // 也监听目标元素尺寸变化
+        this._observer.observe(document.body);
         if (this._targetEl) {
           this._observer.observe(this._targetEl);
         }
@@ -522,6 +511,7 @@
           this._targetEl.style.zIndex = this._targetPrevState.zIndex || '';
           this._targetEl.style.boxShadow = this._targetPrevState.boxShadow || '';
           this._targetEl.style.borderRadius = this._targetPrevState.borderRadius || '';
+          this._targetEl.style.isolation = this._targetPrevState.isolation || '';
         }
         this._targetEl = null;
         this._targetPrevState = null;
@@ -530,11 +520,8 @@
       // 移除事件监听
       if (this._resizeHandler) {
         window.removeEventListener('resize', this._resizeHandler);
+        window.removeEventListener('scroll', this._resizeHandler, { capture: true });
         this._resizeHandler = null;
-      }
-      if (this._scrollHandler && this._parent) {
-        this._parent.removeEventListener('scroll', this._scrollHandler);
-        this._scrollHandler = null;
       }
       if (this._observer) {
         this._observer.disconnect();
@@ -544,12 +531,11 @@
         cancelAnimationFrame(this._repositionTimer);
         this._repositionTimer = null;
       }
-
-      this._parent = null;
     },
 
     _cleanup() {
       this._removeOverlay();
+      this._infoDismissed = false;
     },
   };
 
