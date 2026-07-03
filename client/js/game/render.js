@@ -282,8 +282,14 @@ function _renderActionContent(view, container) {
     container.innerHTML = tHtml + '<div id="tut-phase-inner"></div>';
     const inner = document.getElementById('tut-phase-inner');
     _renderPhaseContent(view, inner);
-    // 延迟高亮教程指引按钮（等待 DOM 渲染完成）
-    setTimeout(() => _highlightTutorialButton(view.phase), 150);
+    // TutorialGuide 聚光灯引导（若未激活则回退到旧高亮）
+    setTimeout(() => {
+      if (window.TutorialGuide && TutorialGuide.active) {
+        TutorialGuide.onPhaseRender(view, container);
+      } else {
+        _highlightTutorialButton(view.phase);
+      }
+    }, 150);
     return;
   }
   _renderPhaseContent(view, container);
@@ -1542,10 +1548,13 @@ function _renderFinished(view, container) {
   }
 
   if (GameState._tutorial && GameState._tutorial.active) {
-    const completeHtml = renderTutorialComplete();
-    if (completeHtml) {
-      container.innerHTML = completeHtml;
-      return;
+    // TutorialGuide 活跃且未完成 finished 步骤时，先渲染正常结算页让引导覆盖
+    if (!(window.TutorialGuide && TutorialGuide.active && !TutorialGuide.finishedStepsDone)) {
+      const completeHtml = renderTutorialComplete();
+      if (completeHtml) {
+        container.innerHTML = completeHtml;
+        return;
+      }
     }
   }
 

@@ -6553,3 +6553,68 @@ body {
   font-weight: 700;
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
+
+/* ============================================================
+   新手教程聚光灯引导 (TutorialGuide)
+   ============================================================ */
+
+/* 聚光灯目标高亮 */
+.tg-spotlight-target {
+  box-shadow: 0 0 0 3px #C9A96E, 0 0 24px rgba(201,169,110,0.6) !important;
+  border-radius: 8px !important;
+  animation: tgPulse 1.2s ease-in-out infinite !important;
+}
+
+@keyframes tgPulse {
+  0%, 100% { box-shadow: 0 0 0 3px #C9A96E, 0 0 20px rgba(201,169,110,0.5) !important; }
+  50%      { box-shadow: 0 0 0 4px #C9A96E, 0 0 36px rgba(201,169,110,0.8) !important; }
+}
+
+/* 目标提示气泡箭头 — 下方 */
+.tg-target-tooltip.tg-tip-below::after {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-bottom-color: rgba(30,20,10,0.95);
+}
+
+/* 目标提示气泡箭头 — 上方 */
+.tg-target-tooltip.tg-tip-above::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-top-color: rgba(30,20,10,0.95);
+}
+
+/* "下一步" 按钮悬停 */
+.tg-next-btn:hover {
+  background: #D4B87E !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(201,169,110,0.4);
+}
+
+.tg-next-btn:active {
+  transform: translateY(0);
+}
+
+/* 移动端适配 */
+@media (max-width: 768px) {
+  .tg-centered-tooltip {
+    max-width: 90% !important;
+    font-size: 13px !important;
+    padding: 14px 16px !important;
+  }
+
+  .tg-target-tooltip {
+    max-width: 200px !important;
+    font-size: 12px !important;
+    padding: 8px 12px !important;
+  }
+}
+

@@ -76,6 +76,9 @@ function startTutorial() {
   GameState._tutorial = { active: true, seenPhases: {}, completed: false };
   GameState.selectedMode = getModeById('speed');
 
+  // 初始化聚光灯引导引擎
+  if (window.TutorialGuide) TutorialGuide.init();
+
   if (typeof showLoading === 'function') showLoading('正在创建教程房间...');
 
   // 1. 创建房间（极速模式，2人）
@@ -190,6 +193,8 @@ function renderTutorialComplete() {
  */
 function finishTutorial() {
   GameState._tutorial = null;
+  // 清理聚光灯引导
+  if (window.TutorialGuide) TutorialGuide.reset();
   // 如果在游戏中，离开房间（room:left 事件会自动切到模式选择）
   if (GameState.roomId) {
     socket.emit('room:leave', GameState.roomId);
