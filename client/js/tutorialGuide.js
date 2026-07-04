@@ -134,7 +134,6 @@
 
     // DOM 引用
     _backdropEl: null,
-    _spotlightEl: null,
     _tooltipEl: null,
     _targetEl: null,
     _infoDismissed: false,
@@ -314,7 +313,7 @@
         return !!this._tooltipEl;
       }
       if (step.type === 'action') {
-        return !!this._spotlightEl && this._backdropEl.dataset.hasHole === 'true';
+        return !!this._targetEl && this._targetEl.classList.contains('tg-spotlight-active') && this._backdropEl.dataset.hasHole === 'true';
       }
       return false;
     },
@@ -451,6 +450,8 @@
       }
 
       this._targetEl = targetEl;
+      // 保存原始行内样式，清理时恢复
+      targetEl.dataset.tgOriginalStyle = targetEl.getAttribute('style') || '';
 
       // double rAF 确保布局稳定后计算位置
       requestAnimationFrame(() => {
@@ -459,29 +460,14 @@
           const rect = targetEl.getBoundingClientRect();
           if (!rect.width || !rect.height) return;
 
+          // 目标元素提升到遮罩之上，并添加发光边框
+          targetEl.classList.add('tg-spotlight-active');
           this._createHole(rect);
-          this._createSpotlight(rect);
           this._createTargetTooltip(step.text);
           this._positionTooltip(rect);
           this._addPositionHandlers();
         });
       });
-    },
-
-    _createSpotlight(rect) {
-      const el = document.createElement('div');
-      el.className = 'tg-spotlight-target';
-      el.style.cssText = [
-        'position:fixed',
-        'pointer-events:none',
-        'z-index:100000',
-        `left:${rect.left - 4}px`,
-        `top:${rect.top - 4}px`,
-        `width:${rect.width + 8}px`,
-        `height:${rect.height + 8}px`,
-      ].join(';');
-      document.body.appendChild(el);
-      this._spotlightEl = el;
     },
 
     _createTargetTooltip(text) {
@@ -575,14 +561,8 @@
         if (this._targetEl) {
           const rect = this._targetEl.getBoundingClientRect();
           if (rect.width && rect.height) {
-            // 保持 tooltip 文本，只更新位置和高亮
-            const tooltipText = this._tooltipEl ? this._tooltipEl.textContent : '';
             this._createHole(rect);
-            if (this._spotlightEl) { this._spotlightEl.remove(); this._spotlightEl = null; }
-            if (this._tooltipEl) { this._tooltipEl.remove(); this._tooltipEl = null; }
-            this._createSpotlight(rect);
-            if (tooltipText) {
-              this._createTargetTooltip(tooltipText);
+            if (this._tooltipEl) {
               this._positionTooltip(rect);
             }
           }
@@ -615,14 +595,18 @@
     },
 
     _removeSpotlight() {
-      if (this._spotlightEl) {
-        this._spotlightEl.remove();
-        this._spotlightEl = null;
-      }
       this._removeHole();
     },
 
     _cleanup() {
+      // 恢复目标元素原始样式
+      if (this._targetEl) {
+        this._targetEl.classList.remove('tg-spotlight-active');
+        if (this._targetEl.dataset.tgOriginalStyle !== undefined) {
+          this._targetEl.setAttribute('style', this._targetEl.dataset.tgOriginalStyle);
+          delete this._targetEl.dataset.tgOriginalStyle;
+        }
+      }
       this._removeTooltip();
       this._removeSpotlight();
       this._targetEl = null;
