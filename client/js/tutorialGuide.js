@@ -1,6 +1,6 @@
 // ============================================================
 // tutorialGuide.js — 新手教程全屏引导系统（回合制教学版）
-// 单层clip-path镂空遮罩 + 聚光灯高亮 + 交互驱动推进
+// 4块空心遮罩 + 聚光灯高亮 + 交互驱动推进
 // 依赖: showToast, _lastView, socket, GameState
 // ============================================================
 
@@ -140,6 +140,7 @@
     _targetEl: null,
     _infoDismissed: false,
     _renderedStepKey: null,
+    _creatingStep: false,
     _resizeHandler: null,
     _observer: null,
     _repositionTimer: null,
@@ -297,10 +298,17 @@
         case 'action':
           // action 阶段：移除 info 遮罩，由 _spotlightTarget 创建空心框遮罩
           this._removeInfoBackdrop();
+          this._creatingStep = true;
           requestAnimationFrame(() => {
-            if (!this.active || this.stepIndex >= this.steps.length) return;
+            if (!this.active || this.stepIndex >= this.steps.length) {
+              this._creatingStep = false;
+              return;
+            }
             const currentStep = this.steps[this.stepIndex];
-            if (currentStep !== step) return;
+            if (currentStep !== step) {
+              this._creatingStep = false;
+              return;
+            }
             this._spotlightTarget(step);
           });
           break;
@@ -308,6 +316,7 @@
     },
 
     _overlayAlive(step) {
+      if (this._creatingStep) return true;
       if (step.type === 'info') {
         // 已点"知道了"等待推进：视为存活
         if (this._infoDismissed) return true;
@@ -497,6 +506,7 @@
 
       if (!targetEl) {
         this._createCenteredTooltip(step.text, false);
+        this._creatingStep = false;
         return;
       }
 
@@ -507,9 +517,15 @@
       // double rAF 确保布局稳定后计算位置
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (!this.active || this._targetEl !== targetEl) return;
+          if (!this.active || this._targetEl !== targetEl) {
+            this._creatingStep = false;
+            return;
+          }
           const rect = targetEl.getBoundingClientRect();
-          if (!rect.width || !rect.height) return;
+          if (!rect.width || !rect.height) {
+            this._creatingStep = false;
+            return;
+          }
 
           // 目标元素提升到遮罩之上，并加金色发光边框
           targetEl.classList.add('tg-spotlight-active');
@@ -520,6 +536,7 @@
           this._createTargetTooltip(step.text);
           this._positionTooltip(rect);
           this._addPositionHandlers();
+          this._creatingStep = false;
         });
       });
     },
@@ -665,6 +682,7 @@
       this._removeInfoBackdrop();
       this._targetEl = null;
       this._infoDismissed = false;
+      this._creatingStep = false;
 
       if (this._resizeHandler) {
         window.removeEventListener('resize', this._resizeHandler);
