@@ -3540,37 +3540,17 @@ body {
   color: #999;
 }
 
-/* 教程目标替身：外层高亮环 + 柔光 */
-.tg-proxy-wrapper {
+/* 教程高亮环（action 步骤：金色脉动边框，独立 div） */
+.tg-highlight-ring {
   position: fixed;
   z-index: 100000;
   border-radius: 12px;
   pointer-events: none;
   box-shadow:
     inset 0 0 0 3px #D4AF37,
-    inset 0 0 0 6px rgba(255, 215, 0, 0.35),
-    0 0 0 2px rgba(255, 215, 0, 0.4),
-    0 0 32px rgba(255, 215, 0, 0.7);
+    inset 0 0 0 5px rgba(255, 215, 0, 0.25),
+    0 0 30px rgba(255, 215, 0, 0.65);
   animation: tgPulse 1.4s ease-in-out infinite;
-}
-
-.tg-proxy-wrapper::before {
-  content: '';
-  position: absolute;
-  inset: -12px;
-  z-index: -1;
-  border-radius: 18px;
-  background: radial-gradient(circle, rgba(255, 215, 0, 0.18) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-/* 教程目标替身：内部 clone 保持可点击 */
-.tg-proxy-target {
-  position: absolute;
-  margin: 0;
-  pointer-events: auto;
-  cursor: pointer;
-  box-sizing: border-box;
 }
 
 /* 教程目标提示：带箭头 */
@@ -3685,8 +3665,8 @@ body.tutorial-active .action-desc {
 }
 
 @keyframes tgPulse {
-  0%, 100% { box-shadow: inset 0 0 0 3px #D4AF37, 0 0 20px rgba(255, 215, 0, 0.5); }
-  50%      { box-shadow: inset 0 0 0 4px #FFD700, 0 0 36px rgba(255, 215, 0, 0.85); }
+  0%, 100% { box-shadow: inset 0 0 0 3px #D4AF37, inset 0 0 0 5px rgba(255,215,0,0.25), 0 0 20px rgba(255, 215, 0, 0.5); }
+  50%      { box-shadow: inset 0 0 0 4px #FFD700, inset 0 0 0 7px rgba(255,215,0,0.35), 0 0 36px rgba(255, 215, 0, 0.85); }
 }
 
 /* ==================== 观战功能 ==================== */
@@ -6608,55 +6588,4 @@ body.tutorial-active .action-desc {
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
-/* ============================================================
-   新手教程聚光灯引导 (TutorialGuide)
-   ============================================================ */
-
-/* 目标提示气泡箭头 — 下方 */
-.tg-target-tooltip.tg-tip-below::after {
-  content: '';
-  position: absolute;
-  top: -7px;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 7px solid transparent;
-  border-bottom-color: rgba(30,20,10,0.95);
-}
-
-/* 目标提示气泡箭头 — 上方 */
-.tg-target-tooltip.tg-tip-above::after {
-  content: '';
-  position: absolute;
-  bottom: -7px;
-  left: 50%;
-  transform: translateX(-50%);
-  border: 7px solid transparent;
-  border-top-color: rgba(30,20,10,0.95);
-}
-
-/* "下一步" 按钮悬停 */
-.tg-next-btn:hover {
-  background: #D4B87E !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(201,169,110,0.4);
-}
-
-.tg-next-btn:active {
-  transform: translateY(0);
-}
-
-/* 移动端适配 */
-@media (max-width: 768px) {
-  .tg-centered-tooltip {
-    max-width: 90% !important;
-    font-size: 13px !important;
-    padding: 14px 16px !important;
-  }
-
-  .tg-target-tooltip {
-    max-width: 200px !important;
-    font-size: 12px !important;
-    padding: 8px 12px !important;
-  }
-}
 

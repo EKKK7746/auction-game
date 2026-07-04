@@ -1,21 +1,20 @@
 // ============================================================
-// tutorialGuide.js — 新手教程全屏引导系统（回合制教学版）
-// 目标替身（Proxy Clone）+ 4块空心遮罩 + 聚光灯高亮 + 交互驱动推进
-// 依赖: showToast, _lastView, socket, GameState
+// tutorialGuide.js — 新手教程引导系统（简化重构版）
+// 方案：单层全屏遮罩 + 坐标检测转发点击
+// - info 步骤：全屏遮罩 + 居中提示框 + "知道了"按钮
+// - action 步骤：全屏遮罩（拦截所有点击）+ 高亮环 + 提示气泡
+//   点击落在目标区域内 → 转发给真实元素；落在区域外 → 提示
+// 依赖: showToast, socket, GameState
 // ============================================================
 
 (function() {
   'use strict';
 
   // ==================== 步骤定义 ====================
-  // type: 'info' (居中提示+"知道了"按钮) | 'action' (聚光灯目标+提示，等交互)
-  // advanceOn: 'bidSubmitted' | 'phaseChange' | 'diceSelected' | 'tradeAction' | null
 
   function getSteps(phase, isAuctioneer, round) {
-    // 后两个回合（4-5）完全自己玩
     if (round >= 4) return [];
 
-    // 第3回合：只在交易阶段教学，其余自己玩
     if (round === 3) {
       if (phase !== 'trade') return [];
       return [
@@ -24,7 +23,6 @@
       ];
     }
 
-    // 第1回合：当拍卖师（引导报最低价→选卡）
     if (round === 1) {
       switch (phase) {
         case 'auction':
@@ -36,11 +34,10 @@
         case 'selectCard':
           if (isAuctioneer) {
             return [
-              { type: 'info', text: '恭喜你当选拍卖师！\n拍卖师不掷骰，但可以从剩余卡牌中挑选一张进行拍卖。', advanceOn: 'phaseChange' },
+              { type: 'info', text: '恭喜你当选拍卖师！\n拍卖师不掷骰，但可以从剩余卡牌中挑选一张进行拍卖。' },
               { type: 'action', text: '点击一张文物卡牌，把它作为本轮拍品。', target: '.select-card-item', advanceOn: 'phaseChange' },
             ];
           }
-          // 小概率没当选：简单提示，不影响主流程
           return [
             { type: 'info', text: 'AI 当选了本轮拍卖师。\n先看它选卡，下一回合你再体验竞拍。', advanceOn: 'phaseChange' },
           ];
@@ -70,7 +67,6 @@
       }
     }
 
-    // 第2回合：当竞拍者（暗标→选骰→掷骰）
     if (round === 2) {
       switch (phase) {
         case 'auction':
@@ -82,7 +78,7 @@
         case 'selectCard':
           if (isAuctioneer) {
             return [
-              { type: 'info', text: '你又当选了拍卖师！\n再练习一次选卡，然后继续当竞拍者。', advanceOn: 'phaseChange' },
+              { type: 'info', text: '你又当选了拍卖师！\n再练习一次选卡，然后继续当竞拍者。' },
               { type: 'action', text: '点击一张卡牌作为拍品。', target: '.select-card-item', advanceOn: 'phaseChange' },
             ];
           }
@@ -119,7 +115,7 @@
     return [];
   }
 
-  // ==================== 引擎状态 ====================
+  // ==================== 引擎 ====================
 
   const Guide = {
     active: false,
@@ -127,24 +123,18 @@
     currentRound: 0,
     steps: null,
     stepIndex: 0,
-    seenPhases: {},
     finishedStepsDone: false,
     _lastView: null,
     _prevTradeQuota: -1,
 
-    // DOM 引用
-    _infoBackdropEl: null,   // info 步骤：全屏遮罩
-    _hoodEls: [],             // action 步骤：4 块遮罩 [top, right, bottom, left]
-    _highlightEl: null,        // 目标高亮环
-    _tooltipEl: null,
-    _targetEl: null,           // 真实目标元素（保留引用用于事件转发）
-    _proxyEl: null,            // 目标替身（clone）
-    _infoDismissed: false,
+    // DOM
+    _overlayEl: null,      // 全屏遮罩（info 和 action 共用）
+    _tooltipEl: null,       // 提示气泡
+    _highlightEl: null,     // 高亮环（action 步骤）
+    _targetEl: null,        // action 步骤的真实目标元素
+    _infoDismissed: false,  // info 步骤已点"知道了"
     _renderedStepKey: null,
-    _creatingStep: false,
     _resizeHandler: null,
-    _observer: null,
-    _repositionTimer: null,
 
     // ==================== 生命周期 ====================
 
@@ -154,7 +144,6 @@
       this.currentRound = 0;
       this.steps = null;
       this.stepIndex = 0;
-      this.seenPhases = {};
       this.finishedStepsDone = false;
       this._lastView = null;
       this._prevTradeQuota = -1;
@@ -193,7 +182,6 @@
       }
 
       if (!this.steps || this.steps.length === 0) {
-        // 自己玩的回合：关闭所有遮罩
         this._fullCleanup();
         return;
       }
@@ -204,7 +192,6 @@
         return;
       }
 
-      // 渲染当前步骤（同一步骤不重建，避免闪烁）
       this._renderCurrentStep();
     },
 
@@ -214,8 +201,6 @@
       if (!this.steps || this.stepIndex >= this.steps.length) return false;
       const step = this.steps[this.stepIndex];
       if (!step.advanceOn) return false;
-
-      // info 类型：必须先点"知道了"才能自动推进
       if (step.type === 'info' && !this._infoDismissed) return false;
 
       const myId = socket.id;
@@ -237,7 +222,7 @@
           return false;
         }
         case 'phaseChange':
-          return false; // 由 onPhaseRender 的阶段变化检测处理
+          return false;
         default:
           return false;
       }
@@ -252,7 +237,6 @@
       this._cleanup();
 
       if (this.stepIndex >= this.steps.length) {
-        // 该阶段所有步骤完成
         if (this.currentPhase === 'finished' && !this.finishedStepsDone) {
           this.finishedStepsDone = true;
           if (this._lastView) {
@@ -276,198 +260,226 @@
       }
 
       const step = this.steps[this.stepIndex];
-      const stepKey = `${this.currentRound}|${this.currentPhase}|${this.stepIndex}|${step.type}|${step.target || ''}`;
+      const stepKey = `${this.currentRound}|${this.currentPhase}|${this.stepIndex}|${step.type}`;
 
-      // 同一步骤已经渲染且覆盖层存在：不重建，避免闪烁
       if (this._renderedStepKey === stepKey && this._overlayAlive(step)) {
         return;
       }
       this._renderedStepKey = stepKey;
-
-      // 清理上一步的高亮/提示，但保留背景遮罩
       this._cleanup();
 
       switch (step.type) {
         case 'info':
-          // info 阶段：4 块遮罩和高亮环，创建全屏遮罩
-          this._removeHoods();
-          this._removeHighlight();
-          this._removeProxy();
-          this._createInfoBackdrop();
-          this._createCenteredTooltip(step.text, !!step.advanceOn);
+          this._renderInfoStep(step);
           break;
-
         case 'action':
-          // action 阶段：移除 info 遮罩，由 _spotlightTarget 创建空心框遮罩 + 目标替身
-          this._removeInfoBackdrop();
-          this._creatingStep = true;
-          requestAnimationFrame(() => {
-            if (!this.active || this.stepIndex >= this.steps.length) {
-              this._creatingStep = false;
-              return;
-            }
-            const currentStep = this.steps[this.stepIndex];
-            if (currentStep !== step) {
-              this._creatingStep = false;
-              return;
-            }
-            this._spotlightTarget(step);
-          });
+          this._renderActionStep(step);
           break;
       }
     },
 
     _overlayAlive(step) {
-      if (this._creatingStep) return true;
       if (step.type === 'info') {
-        // 已点"知道了"等待推进：视为存活
-        if (this._infoDismissed) return true;
-        return !!(this._infoBackdropEl && this._tooltipEl);
+        if (this._infoDismissed) return true; // 已关闭，等推进
+        return !!this._overlayEl && !!this._tooltipEl;
       }
       if (step.type === 'action') {
-        // 只要空心框遮罩和目标替身存在就视为存活
-        return this._hoodEls.length === 4 && !!this._proxyEl;
+        return !!this._overlayEl;
       }
       return false;
     },
 
-    // ==================== 遮罩系统 ====================
-    // info 步骤：全屏暗化遮罩（单层）
-    // action 步骤：4 块遮罩拼成空心框，目标区域物理上无遮罩
+    // ==================== info 步骤 ====================
 
-    _createInfoBackdrop() {
-      if (this._infoBackdropEl) return;
+    _renderInfoStep(step) {
+      // 创建全屏遮罩
+      this._createOverlay(true);
+
+      // 创建居中提示框
+      const tooltip = document.createElement('div');
+      tooltip.className = 'tg-centered-tooltip';
+      tooltip.style.cssText = [
+        'position:fixed',
+        'top:50%',
+        'left:50%',
+        'transform:translate(-50%,-50%)',
+        'z-index:100001',
+        'background:rgba(30,20,10,0.96)',
+        'color:#F0E0C0',
+        'padding:18px 24px',
+        'border-radius:14px',
+        'border:1px solid rgba(201,169,110,0.5)',
+        'max-width:340px',
+        'font-size:15px',
+        'line-height:1.7',
+        'text-align:center',
+        'box-shadow:0 12px 40px rgba(0,0,0,0.7)',
+        'pointer-events:auto',
+        'white-space:pre-line',
+      ].join(';');
+
+      const hasAdvanceOn = !!step.advanceOn;
+      const isLastStep = this.stepIndex >= this.steps.length - 1;
+
+      tooltip.innerHTML =
+        '<div class="tg-info-text">' + step.text + '</div>' +
+        '<button class="tg-next-btn">知道了</button>';
+
+      const btn = tooltip.querySelector('.tg-next-btn');
+      btn.style.cssText = [
+        'display:inline-block',
+        'margin-top:16px',
+        'padding:8px 32px',
+        'background:#C9A96E',
+        'color:#1a1a1a',
+        'border:none',
+        'border-radius:8px',
+        'font-size:15px',
+        'font-weight:600',
+        'cursor:pointer',
+        'transition:background 0.2s',
+      ].join(';');
+
+      btn.addEventListener('mouseenter', () => { btn.style.background = '#D4B97E'; });
+      btn.addEventListener('mouseleave', () => { btn.style.background = '#C9A96E'; });
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // 关键修复：无论是否有 advanceOn，点"知道了"后：
+        // 1. 如果有下一步 → 直接推进到下一步
+        // 2. 如果是最后一步 → 移除遮罩，等待阶段变化
+        if (!isLastStep) {
+          this._advanceStep();
+        } else {
+          // 最后一步：移除遮罩让用户看到游戏画面
+          this._infoDismissed = true;
+          this._removeOverlay();
+          this._removeTooltip();
+        }
+      });
+
+      document.body.appendChild(tooltip);
+      this._tooltipEl = tooltip;
+    },
+
+    // ==================== action 步骤 ====================
+
+    _renderActionStep(step) {
+      // 查找目标元素
+      let targetEl = null;
+      const selectors = (step.target || '').split(',').map(s => s.trim()).filter(Boolean);
+      for (const sel of selectors) {
+        targetEl = document.querySelector(sel);
+        if (targetEl) break;
+      }
+
+      if (!targetEl) {
+        // 目标不存在：当 info 处理
+        this._createOverlay(true);
+        this._createCenteredTooltip(step.text, false);
+        return;
+      }
+
+      this._targetEl = targetEl;
+
+      // 创建全屏遮罩（拦截所有点击，按坐标判断是否转发）
+      this._createOverlay(false, (e) => {
+        if (!this._targetEl) return;
+        const rect = this._targetEl.getBoundingClientRect();
+        // 点击落在目标区域内 → 转发给真实元素
+        if (e.clientX >= rect.left && e.clientX <= rect.right &&
+            e.clientY >= rect.top && e.clientY <= rect.bottom) {
+          // 临时移除遮罩，让真实元素接收点击
+          this._overlayEl.style.pointerEvents = 'none';
+          // 直接调用目标元素的 click
+          this._targetEl.click();
+          // 不恢复 pointer-events，因为点击后步骤会推进或阶段会变化
+        } else {
+          // 点击在目标外 → 提示
+          if (typeof showToast === 'function') {
+            showToast('请点击高亮区域完成指引', 'info');
+          }
+        }
+      });
+
+      // 用 rAF 等布局稳定后创建高亮和提示
+      requestAnimationFrame(() => {
+        if (!this.active || !this._targetEl) return;
+        const rect = this._targetEl.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+
+        this._createHighlight(rect);
+        this._createTargetTooltip(step.text);
+        this._positionTooltip(rect);
+        this._addResizeHandler();
+      });
+    },
+
+    _createCenteredTooltip(text) {
+      const tooltip = document.createElement('div');
+      tooltip.className = 'tg-centered-tooltip';
+      tooltip.style.cssText = [
+        'position:fixed',
+        'top:50%',
+        'left:50%',
+        'transform:translate(-50%,-50%)',
+        'z-index:100001',
+        'background:rgba(30,20,10,0.96)',
+        'color:#F0E0C0',
+        'padding:18px 24px',
+        'border-radius:14px',
+        'border:1px solid rgba(201,169,110,0.5)',
+        'max-width:340px',
+        'font-size:15px',
+        'line-height:1.7',
+        'text-align:center',
+        'box-shadow:0 12px 40px rgba(0,0,0,0.7)',
+        'pointer-events:auto',
+        'white-space:pre-line',
+      ].join(';');
+      tooltip.textContent = text;
+      document.body.appendChild(tooltip);
+      this._tooltipEl = tooltip;
+    },
+
+    // ==================== 全屏遮罩 ====================
+
+    _createOverlay(isInfo, clickHandler) {
       const el = document.createElement('div');
-      el.className = 'tg-info-backdrop';
+      el.className = isInfo ? 'tg-overlay tg-overlay-info' : 'tg-overlay tg-overlay-action';
       el.style.cssText = [
-        'position:fixed', 'inset:0', 'z-index:99998',
+        'position:fixed',
+        'inset:0',
+        'z-index:99998',
         'background:rgba(0,0,0,0.55)',
         'pointer-events:auto',
+        'cursor:default',
       ].join(';');
-      el.addEventListener('click', (e) => {
-        if (e.target === el && typeof showToast === 'function') {
-          showToast('请先完成当前指引步骤', 'info');
-        }
-      });
+
+      if (clickHandler) {
+        el.addEventListener('click', clickHandler);
+      } else {
+        // info 遮罩：点击非提示区域给提示
+        el.addEventListener('click', (e) => {
+          if (e.target === el && typeof showToast === 'function') {
+            showToast('请先点击"知道了"继续', 'info');
+          }
+        });
+      }
+
       document.body.appendChild(el);
-      this._infoBackdropEl = el;
+      this._overlayEl = el;
     },
 
-    _removeInfoBackdrop() {
-      if (this._infoBackdropEl) {
-        this._infoBackdropEl.remove();
-        this._infoBackdropEl = null;
+    _removeOverlay() {
+      if (this._overlayEl) {
+        this._overlayEl.remove();
+        this._overlayEl = null;
       }
     },
 
-    // 创建 4 块遮罩，覆盖目标区域以外的所有地方
-    // 目标区域物理上无遮罩，按钮天然可点击
-    _createHoods(rect) {
-      this._removeHoods();
-      const pad = 10;
-      const x1 = Math.max(0, Math.round(rect.left) - pad);
-      const y1 = Math.max(0, Math.round(rect.top) - pad);
-      const x2 = Math.min(window.innerWidth, Math.round(rect.right) + pad);
-      const y2 = Math.min(window.innerHeight, Math.round(rect.bottom) + pad);
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const ov = 'rgba(0,0,0,0.55)';
-      const z  = '99999';
-      const ptr = 'pointer-events:auto;';
-      const h  = y2 - y1;
+    // ==================== 高亮环 ====================
 
-      const parts = [
-        // top
-        `position:fixed;top:0;left:0;width:${vw}px;height:${y1}px;z-index:${z};background:${ov};${ptr}`,
-        // bottom
-        `position:fixed;bottom:0;left:0;width:${vw}px;height:${vh - y2}px;z-index:${z};background:${ov};${ptr}`,
-        // left
-        `position:fixed;top:${y1}px;left:0;width:${x1}px;height:${h}px;z-index:${z};background:${ov};${ptr}`,
-        // right
-        `position:fixed;top:${y1}px;left:${x2}px;width:${vw - x2}px;height:${h}px;z-index:${z};background:${ov};${ptr}`,
-      ];
-
-      const clickHandler = (e) => {
-        if (typeof showToast === 'function') {
-          showToast('请先完成当前指引步骤', 'info');
-        }
-      };
-
-      parts.forEach((css) => {
-        const d = document.createElement('div');
-        d.className = 'tg-hood';
-        d.style.cssText = css;
-        d.addEventListener('click', clickHandler);
-        document.body.appendChild(d);
-        this._hoodEls.push(d);
-      });
-    },
-
-    _removeHoods() {
-      this._hoodEls.forEach(d => d.remove());
-      this._hoodEls = [];
-    },
-
-    // ==================== 目标替身（Proxy Clone） ====================
-    // 把目标元素 clone 到 body 顶层，完全覆盖原位置，
-    // 从而绕过父级 stacking context 限制，保证在遮罩之上。
-
-    _createProxy(targetEl, rect) {
-      this._removeProxy();
-
-      // 外层容器：用于定位 + 金色高亮边框 + 柔光
-      const wrapper = document.createElement('div');
-      wrapper.className = 'tg-proxy-wrapper';
-      wrapper.style.cssText = [
-        'position:fixed',
-        `top:${Math.round(rect.top) - 6}px`,
-        `left:${Math.round(rect.left) - 6}px`,
-        `width:${Math.round(rect.width) + 12}px`,
-        `height:${Math.round(rect.height) + 12}px`,
-        'z-index:100000',
-        'border-radius:12px',
-        'pointer-events:none',
-        'box-sizing:border-box',
-      ].join(';');
-
-      // 克隆目标元素本身，保持可点击
-      const clone = targetEl.cloneNode(true);
-      clone.classList.add('tg-proxy-target');
-      clone.style.cssText = [
-        'position:absolute',
-        'top:6px',
-        'left:6px',
-        'width:calc(100% - 12px)',
-        'height:calc(100% - 12px)',
-        'margin:0',
-        'pointer-events:auto',
-        'cursor:pointer',
-        'box-sizing:border-box',
-      ].join(';');
-
-      // 点击/触摸代理元素时，转发给真实元素
-      clone.addEventListener('click', (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        targetEl.click();
-      });
-      clone.addEventListener('touchstart', (e) => {
-        e.stopPropagation();
-      }, { passive: true });
-
-      wrapper.appendChild(clone);
-      document.body.appendChild(wrapper);
-      this._proxyEl = wrapper;
-    },
-
-    _removeProxy() {
-      if (this._proxyEl) {
-        this._proxyEl.remove();
-        this._proxyEl = null;
-      }
-    },
-
-    // 在目标区域外缘绘制金色高亮环（用独立 div，不受 overflow:hidden 裁剪）
     _createHighlight(rect) {
       this._removeHighlight();
       const pad = 6;
@@ -496,109 +508,7 @@
       }
     },
 
-    // ==================== 居中提示（info） ====================
-
-    _createCenteredTooltip(text, hasAdvanceOn) {
-      const tooltip = document.createElement('div');
-      tooltip.className = 'tg-centered-tooltip';
-      tooltip.style.cssText = [
-        'position:fixed',
-        'top:50%',
-        'left:50%',
-        'transform:translate(-50%,-50%)',
-        'z-index:100001',
-        'background:rgba(30,20,10,0.96)',
-        'color:#F0E0C0',
-        'padding:18px 24px',
-        'border-radius:14px',
-        'border:1px solid rgba(201,169,110,0.5)',
-        'max-width:340px',
-        'font-size:15px',
-        'line-height:1.7',
-        'text-align:center',
-        'box-shadow:0 12px 40px rgba(0,0,0,0.7)',
-        'pointer-events:auto',
-        'white-space:pre-line',
-      ].join(';');
-
-      tooltip.innerHTML =
-        '<div class="tg-info-text">' + text + '</div>' +
-        '<button class="tg-next-btn" style="' + [
-          'display:inline-block',
-          'margin-top:16px',
-          'padding:8px 32px',
-          'background:#C9A96E',
-          'color:#1a1a1a',
-          'border:none',
-          'border-radius:8px',
-          'font-size:15px',
-          'font-weight:600',
-          'cursor:pointer',
-          'transition:background 0.2s',
-        ].join(';') + '">知道了</button>';
-
-      const btn = tooltip.querySelector('.tg-next-btn');
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (hasAdvanceOn) {
-          this._infoDismissed = true;
-          this._removeTooltip();
-        } else {
-          this._advanceStep();
-        }
-      });
-
-      btn.addEventListener('mouseenter', () => { btn.style.background = '#D4B97E'; });
-      btn.addEventListener('mouseleave', () => { btn.style.background = '#C9A96E'; });
-
-      document.body.appendChild(tooltip);
-      this._tooltipEl = tooltip;
-    },
-
-    // ==================== 聚光灯目标（action） ====================
-
-    _spotlightTarget(step) {
-      let targetEl = null;
-      const selectors = (step.target || '').split(',').map(s => s.trim()).filter(Boolean);
-      for (const sel of selectors) {
-        targetEl = document.querySelector(sel);
-        if (targetEl) break;
-      }
-
-      if (!targetEl) {
-        this._createCenteredTooltip(step.text, false);
-        this._creatingStep = false;
-        return;
-      }
-
-      this._targetEl = targetEl;
-
-      // double rAF 确保布局稳定后计算位置
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (!this.active || this._targetEl !== targetEl) {
-            this._creatingStep = false;
-            return;
-          }
-          const rect = targetEl.getBoundingClientRect();
-          if (!rect.width || !rect.height) {
-            this._creatingStep = false;
-            return;
-          }
-
-          // 4 块遮罩（空心框，目标区域无遮罩）
-          this._createHoods(rect);
-          // 目标替身：clone 到 body 顶层，可点击，带金色边框
-          this._createProxy(targetEl, rect);
-          // 额外高亮环
-          this._createHighlight(rect);
-          this._createTargetTooltip(step.text);
-          this._positionTooltip(rect);
-          this._addPositionHandlers();
-          this._creatingStep = false;
-        });
-      });
-    },
+    // ==================== 目标提示气泡 ====================
 
     _createTargetTooltip(text) {
       const tooltip = document.createElement('div');
@@ -615,7 +525,7 @@
         'font-size:13px',
         'line-height:1.6',
         'box-shadow:0 6px 24px rgba(0,0,0,0.6)',
-        'pointer-events:auto',
+        'pointer-events:none',
         'opacity:0',
         'transition:opacity 0.2s',
         'white-space:pre-line',
@@ -625,30 +535,32 @@
       this._tooltipEl = tooltip;
     },
 
-    // ==================== 精确定位（viewport 坐标） ====================
-    // 优先放在目标下方，其次上方，再次左右
+    // ==================== 定位 ====================
 
     _positionTooltip(rect) {
       const tooltip = this._tooltipEl;
       if (!tooltip || !rect) return;
+
+      // 先显示以获取尺寸
+      tooltip.style.visibility = 'hidden';
+      tooltip.style.opacity = '0';
+      tooltip.style.display = 'block';
 
       const tooltipRect = tooltip.getBoundingClientRect();
       const tooltipW = Math.round(tooltipRect.width);
       const tooltipH = Math.round(tooltipRect.height);
       const gap = 16;
       const pad = 12;
-
       const vw = window.innerWidth;
       const vh = window.innerHeight;
 
-      const spaceRight = vw - rect.right;
-      const spaceLeft = rect.left;
       const spaceBelow = vh - rect.bottom;
       const spaceAbove = rect.top;
+      const spaceRight = vw - rect.right;
+      const spaceLeft = rect.left;
 
       let left, top, place = 'below';
 
-      // 优先放目标下方（最不容易遮挡手部操作）
       if (spaceBelow >= tooltipH + gap + pad) {
         left = rect.left + rect.width / 2 - tooltipW / 2;
         top = rect.bottom + gap;
@@ -671,7 +583,6 @@
         place = 'below';
       }
 
-      // 边界修正
       if (left < pad) left = pad;
       if (left + tooltipW > vw - pad) left = vw - tooltipW - pad;
       if (top < pad) top = pad;
@@ -679,43 +590,35 @@
 
       tooltip.style.top = Math.round(top) + 'px';
       tooltip.style.left = Math.round(left) + 'px';
+      tooltip.style.visibility = '';
       tooltip.style.opacity = '1';
 
       tooltip.classList.remove('tg-tip-right', 'tg-tip-left', 'tg-tip-below', 'tg-tip-above');
       tooltip.classList.add('tg-tip-' + place);
     },
 
-    // ==================== 位置监听 ====================
+    // ==================== resize 监听 ====================
 
-    _addPositionHandlers() {
+    _addResizeHandler() {
       const handler = () => {
-        if (this._targetEl) {
-          const rect = this._targetEl.getBoundingClientRect();
-          if (rect.width && rect.height) {
-            this._createHoods(rect);
-            this._createProxy(this._targetEl, rect);
-            this._createHighlight(rect);
-            if (this._tooltipEl) {
-              this._positionTooltip(rect);
-            }
-          }
+        if (!this._targetEl || !this.active) return;
+        const rect = this._targetEl.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        this._createHighlight(rect);
+        if (this._tooltipEl) {
+          this._positionTooltip(rect);
         }
       };
 
+      let timer = null;
       const debounced = () => {
-        if (this._repositionTimer) cancelAnimationFrame(this._repositionTimer);
-        this._repositionTimer = requestAnimationFrame(handler);
+        if (timer) cancelAnimationFrame(timer);
+        timer = requestAnimationFrame(handler);
       };
 
       this._resizeHandler = debounced;
       window.addEventListener('resize', debounced);
       window.addEventListener('scroll', debounced, { passive: true, capture: true });
-
-      if (window.ResizeObserver) {
-        this._observer = new ResizeObserver(debounced);
-        this._observer.observe(document.body);
-        if (this._targetEl) this._observer.observe(this._targetEl);
-      }
     },
 
     // ==================== 清理 ====================
@@ -728,28 +631,16 @@
     },
 
     _cleanup() {
-      // 清理上一步的遮罩、高亮、提示、替身
       this._removeTooltip();
-      this._removeHoods();
       this._removeHighlight();
-      this._removeProxy();
-      this._removeInfoBackdrop();
+      this._removeOverlay();
       this._targetEl = null;
       this._infoDismissed = false;
-      this._creatingStep = false;
 
       if (this._resizeHandler) {
         window.removeEventListener('resize', this._resizeHandler);
         window.removeEventListener('scroll', this._resizeHandler, { capture: true });
         this._resizeHandler = null;
-      }
-      if (this._observer) {
-        this._observer.disconnect();
-        this._observer = null;
-      }
-      if (this._repositionTimer) {
-        cancelAnimationFrame(this._repositionTimer);
-        this._repositionTimer = null;
       }
     },
 
@@ -758,8 +649,6 @@
     },
   };
 
-  // 全局暴露
   window.TutorialGuide = Guide;
-
-  console.log('[TutorialGuide] 模块已加载');
+  console.log('[TutorialGuide] 模块已加载 v2.0');
 })();
