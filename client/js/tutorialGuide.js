@@ -1,6 +1,6 @@
 // ============================================================
 // tutorialGuide.js — 新手教程全屏引导系统（回合制教学版）
-// 全屏镂空遮罩 + 聚光灯高亮 + 交互驱动推进
+// 单层clip-path镂空遮罩 + 聚光灯高亮 + 交互驱动推进
 // 依赖: showToast, _lastView, socket, GameState
 // ============================================================
 
@@ -133,11 +133,10 @@
     _prevTradeQuota: -1,
 
     // DOM 引用
-    _maskEls: [],
-    _tooltipEl: null,
-    _spotlightEl: null,
-    _targetEl: null,
     _backdropEl: null,
+    _spotlightEl: null,
+    _tooltipEl: null,
+    _targetEl: null,
     _infoDismissed: false,
     _renderedStepKey: null,
     _resizeHandler: null,
@@ -158,7 +157,7 @@
       this._prevTradeQuota = -1;
       this._infoDismissed = false;
       this._renderedStepKey = null;
-      this._cleanup();
+      this._fullCleanup();
       this._createBackdrop();
       document.body.classList.add('tutorial-active');
     },
@@ -192,10 +191,13 @@
       }
 
       if (!this.steps || this.steps.length === 0) {
-        // 自己玩的回合：移除包括背景遮罩在内的所有覆盖层
+        // 自己玩的回合：关闭遮罩
         this._fullCleanup();
         return;
       }
+
+      // 没有背景遮罩时重建（比如自己玩回合后重新进入教学）
+      if (!this._backdropEl) this._createBackdrop();
 
       // 检测自动推进
       if (this._shouldAutoAdvance(view)) {
@@ -283,13 +285,12 @@
       }
       this._renderedStepKey = stepKey;
 
-      // 清理上一次覆盖层（保留背景遮罩，避免亮暗闪烁）
-      this._removeOverlay();
-      if (!this._backdropEl) this._createBackdrop();
+      // 清理上一步的高亮/提示，但保留背景遮罩
+      this._cleanup();
 
       switch (step.type) {
         case 'info':
-          this._createMask();
+          this._removeHole(); // info 阶段全屏暗化，无高亮
           this._createCenteredTooltip(step.text, !!step.advanceOn);
           break;
 
@@ -306,19 +307,20 @@
     },
 
     _overlayAlive(step) {
+      if (!this._backdropEl) return false;
       if (step.type === 'info') {
         // 已点"知道了"等待推进：视为存活，避免重建导致弹窗重新出现
         if (this._infoDismissed) return true;
-        return this._maskEls.length > 0 && this._tooltipEl;
+        return !!this._tooltipEl;
       }
       if (step.type === 'action') {
-        return this._spotlightEl && this._maskEls.length > 0;
+        return !!this._spotlightEl && this._backdropEl.dataset.hasHole === 'true';
       }
       return false;
     },
 
-    // ==================== 全屏背景遮罩 ====================
-    // 教程期间始终存在，避免步骤间隙屏幕忽亮忽暗
+    // ==================== 单层背景遮罩 ====================
+    // 教程期间始终存在，pointer-events:auto 阻止玩家点击非目标区域
 
     _createBackdrop() {
       if (this._backdropEl) return;
@@ -328,9 +330,11 @@
         'position:fixed',
         'inset:0',
         'z-index:99998',
-        'background:rgba(0,0,0,0.45)',
+        'background:rgba(0,0,0,0.55)',
         'pointer-events:auto',
+        'transition:background 0.25s',
       ].join(';');
+      el.dataset.hasHole = 'false';
       el.addEventListener('click', (e) => {
         if (e.target === el && typeof showToast === 'function') {
           showToast('请先完成当前指引步骤', 'info');
@@ -347,46 +351,29 @@
       }
     },
 
-    // ==================== 全屏镂空遮罩 ====================
-    // 用4个遮罩条包围目标区域，中间留空，确保目标可见且可点击
+    // ==================== 镂空高亮（action 步骤） ====================
+    // 在背景遮罩上切一个孔，孔内目标元素可点击，外加金色高亮边框
 
-    _clearMasks() {
-      this._maskEls.forEach(el => el.remove());
-      this._maskEls = [];
+    _createHole(rect) {
+      if (!this._backdropEl) return;
+      const pad = 8;
+      const x1 = Math.max(0, rect.left - pad);
+      const y1 = Math.max(0, rect.top - pad);
+      const x2 = Math.min(window.innerWidth, rect.right + pad);
+      const y2 = Math.min(window.innerHeight, rect.bottom + pad);
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      // 多边形：整个屏幕 减去 目标矩形
+      const clip = `polygon(0 0, 0 ${h}px, ${w}px ${h}px, ${w}px 0, ${x2}px 0, ${x2}px ${y1}px, ${x1}px ${y1}px, ${x1}px ${y2}px, ${x2}px ${y2}px, ${x2}px 0, 0 0)`;
+      this._backdropEl.style.clipPath = clip;
+      this._backdropEl.dataset.hasHole = 'true';
     },
 
-    _createMask(holeRect) {
-      this._clearMasks();
-
-      const z = 99999;
-      const bg = 'rgba(0,0,0,0.72)';
-      const common = `position:fixed; background:${bg}; z-index:${z}; pointer-events:auto;`;
-
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const r = holeRect || { left: 0, top: 0, width: 0, height: 0 };
-
-      const create = (style) => {
-        const el = document.createElement('div');
-        el.className = 'tg-mask';
-        el.style.cssText = common + style;
-        el.addEventListener('click', (e) => {
-          if (e.target === el) {
-            if (typeof showToast === 'function') showToast('请先完成当前指引步骤', 'info');
-          }
-        });
-        document.body.appendChild(el);
-        this._maskEls.push(el);
-      };
-
-      // 上
-      create(`top:0; left:0; width:100vw; height:${Math.max(0, r.top)}px;`);
-      // 下
-      create(`bottom:0; left:0; width:100vw; height:${Math.max(0, vh - r.bottom)}px;`);
-      // 左（中间区域）
-      create(`top:${r.top}px; left:0; width:${Math.max(0, r.left)}px; height:${Math.max(0, r.height)}px;`);
-      // 右（中间区域）
-      create(`top:${r.top}px; right:0; width:${Math.max(0, vw - r.right)}px; height:${Math.max(0, r.height)}px;`);
+    _removeHole() {
+      if (this._backdropEl) {
+        this._backdropEl.style.clipPath = '';
+        this._backdropEl.dataset.hasHole = 'false';
+      }
     },
 
     // ==================== 居中提示（info） ====================
@@ -435,7 +422,7 @@
         e.stopPropagation();
         if (hasAdvanceOn) {
           this._infoDismissed = true;
-          this._removeOverlay();
+          this._removeTooltip();
         } else {
           this._advanceStep();
         }
@@ -472,7 +459,7 @@
           const rect = targetEl.getBoundingClientRect();
           if (!rect.width || !rect.height) return;
 
-          this._createMask(rect);
+          this._createHole(rect);
           this._createSpotlight(rect);
           this._createTargetTooltip(step.text);
           this._positionTooltip(rect);
@@ -590,10 +577,9 @@
           if (rect.width && rect.height) {
             // 保持 tooltip 文本，只更新位置和高亮
             const tooltipText = this._tooltipEl ? this._tooltipEl.textContent : '';
-            this._clearMasks();
+            this._createHole(rect);
             if (this._spotlightEl) { this._spotlightEl.remove(); this._spotlightEl = null; }
             if (this._tooltipEl) { this._tooltipEl.remove(); this._tooltipEl = null; }
-            this._createMask(rect);
             this._createSpotlight(rect);
             if (tooltipText) {
               this._createTargetTooltip(tooltipText);
@@ -621,22 +607,27 @@
 
     // ==================== 清理 ====================
 
-    _removeOverlay(keepTarget) {
-      this._clearMasks();
-
+    _removeTooltip() {
       if (this._tooltipEl) {
         this._tooltipEl.remove();
         this._tooltipEl = null;
       }
+    },
 
+    _removeSpotlight() {
       if (this._spotlightEl) {
         this._spotlightEl.remove();
         this._spotlightEl = null;
       }
+      this._removeHole();
+    },
 
-      if (!keepTarget) {
-        this._targetEl = null;
-      }
+    _cleanup() {
+      this._removeTooltip();
+      this._removeSpotlight();
+      this._targetEl = null;
+      this._infoDismissed = false;
+      // 保留背景遮罩 _backdropEl，避免步骤间亮暗闪烁
 
       if (this._resizeHandler) {
         window.removeEventListener('resize', this._resizeHandler);
@@ -651,12 +642,6 @@
         cancelAnimationFrame(this._repositionTimer);
         this._repositionTimer = null;
       }
-    },
-
-    _cleanup() {
-      this._removeOverlay();
-      this._infoDismissed = false;
-      // 保留背景遮罩 _backdropEl，避免步骤间亮暗闪烁
     },
 
     _fullCleanup() {
