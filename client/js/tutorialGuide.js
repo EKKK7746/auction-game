@@ -133,7 +133,9 @@
     _prevTradeQuota: -1,
 
     // DOM 引用
-    _backdropEl: null,
+    _infoBackdropEl: null,   // info 步骤：全屏遮罩
+    _hoodEls: [],             // action 步骤：4 块遮罩 [top, right, bottom, left]
+    _highlightEl: null,        // 目标高亮环（不被 overflow:hidden 裁剪）
     _tooltipEl: null,
     _targetEl: null,
     _infoDismissed: false,
@@ -157,7 +159,6 @@
       this._infoDismissed = false;
       this._renderedStepKey = null;
       this._fullCleanup();
-      this._createBackdrop();
       document.body.classList.add('tutorial-active');
     },
 
@@ -190,13 +191,10 @@
       }
 
       if (!this.steps || this.steps.length === 0) {
-        // 自己玩的回合：关闭遮罩
+        // 自己玩的回合：关闭所有遮罩
         this._fullCleanup();
         return;
       }
-
-      // 没有背景遮罩时重建（比如自己玩回合后重新进入教学）
-      if (!this._backdropEl) this._createBackdrop();
 
       // 检测自动推进
       if (this._shouldAutoAdvance(view)) {
@@ -289,16 +287,20 @@
 
       switch (step.type) {
         case 'info':
-          this._removeHole(); // info 阶段全屏暗化，无高亮
+          // info 阶段：4 块遮罩和高亮环，创建全屏遮罩
+          this._removeHoods();
+          this._removeHighlight();
+          this._createInfoBackdrop();
           this._createCenteredTooltip(step.text, !!step.advanceOn);
           break;
 
         case 'action':
-          // 用 rAF 确保 DOM 已完成布局
+          // action 阶段：移除 info 遮罩，由 _spotlightTarget 创建空心框遮罩
+          this._removeInfoBackdrop();
           requestAnimationFrame(() => {
             if (!this.active || this.stepIndex >= this.steps.length) return;
             const currentStep = this.steps[this.stepIndex];
-            if (currentStep !== step) return; // 已切换
+            if (currentStep !== step) return;
             this._spotlightTarget(step);
           });
           break;
@@ -306,72 +308,120 @@
     },
 
     _overlayAlive(step) {
-      if (!this._backdropEl) return false;
       if (step.type === 'info') {
-        // 已点"知道了"等待推进：视为存活，避免重建导致弹窗重新出现
+        // 已点"知道了"等待推进：视为存活
         if (this._infoDismissed) return true;
-        return !!this._tooltipEl;
+        return !!(this._infoBackdropEl && this._tooltipEl);
       }
       if (step.type === 'action') {
-        return !!this._targetEl && this._targetEl.classList.contains('tg-spotlight-active') && this._backdropEl.dataset.hasHole === 'true';
+        // hood 遮罩和高亮环都存在才视为存活
+        return this._hoodEls.length === 4 && !!this._highlightEl && !!this._tooltipEl;
       }
       return false;
     },
 
-    // ==================== 单层背景遮罩 ====================
-    // 教程期间始终存在，pointer-events:auto 阻止玩家点击非目标区域
+    // ==================== 遮罩系统 ====================
+    // info 步骤：全屏暗化遮罩（单层）
+    // action 步骤：4 块遮罩拼成空心框，目标区域物理上无遮罩
 
-    _createBackdrop() {
-      if (this._backdropEl) return;
+    _createInfoBackdrop() {
+      if (this._infoBackdropEl) return;
       const el = document.createElement('div');
-      el.className = 'tg-backdrop';
+      el.className = 'tg-info-backdrop';
       el.style.cssText = [
-        'position:fixed',
-        'inset:0',
-        'z-index:99998',
+        'position:fixed', 'inset:0', 'z-index:99998',
         'background:rgba(0,0,0,0.55)',
         'pointer-events:auto',
-        'transition:background 0.25s',
       ].join(';');
-      el.dataset.hasHole = 'false';
       el.addEventListener('click', (e) => {
         if (e.target === el && typeof showToast === 'function') {
           showToast('请先完成当前指引步骤', 'info');
         }
       });
       document.body.appendChild(el);
-      this._backdropEl = el;
+      this._infoBackdropEl = el;
     },
 
-    _destroyBackdrop() {
-      if (this._backdropEl) {
-        this._backdropEl.remove();
-        this._backdropEl = null;
+    _removeInfoBackdrop() {
+      if (this._infoBackdropEl) {
+        this._infoBackdropEl.remove();
+        this._infoBackdropEl = null;
       }
     },
 
-    // ==================== 镂空高亮（action 步骤） ====================
-    // 在背景遮罩上切一个孔，孔内目标元素可点击，外加金色高亮边框
+    // 创建 4 块遮罩，覆盖目标区域以外的所有地方
+    // 目标区域物理上无遮罩，按钮天然可点击
+    _createHoods(rect) {
+      this._removeHoods();
+      const pad = 10;
+      const x1 = Math.max(0, Math.round(rect.left) - pad);
+      const y1 = Math.max(0, Math.round(rect.top) - pad);
+      const x2 = Math.min(window.innerWidth, Math.round(rect.right) + pad);
+      const y2 = Math.min(window.innerHeight, Math.round(rect.bottom) + pad);
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const ov = 'rgba(0,0,0,0.55)';
+      const z  = '99998';
+      const ptr = 'pointer-events:auto;';
 
-    _createHole(rect) {
-      if (!this._backdropEl) return;
-      const pad = 8;
-      const x1 = Math.max(0, rect.left - pad);
-      const y1 = Math.max(0, rect.top - pad);
-      const x2 = Math.min(window.innerWidth, rect.right + pad);
-      const y2 = Math.min(window.innerHeight, rect.bottom + pad);
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      // 多边形：整个屏幕 减去 目标矩形
-      const clip = `polygon(0 0, 0 ${h}px, ${w}px ${h}px, ${w}px 0, ${x2}px 0, ${x2}px ${y1}px, ${x1}px ${y1}px, ${x1}px ${y2}px, ${x2}px ${y2}px, ${x2}px 0, 0 0)`;
-      this._backdropEl.style.clipPath = clip;
-      this._backdropEl.dataset.hasHole = 'true';
+      const parts = [
+        // top
+        `position:fixed;top:0;left:0;right:0;height:${y1}px;z-index:${z};background:${ov};${ptr}`,
+        // bottom
+        `position:fixed;top:${y2}px;left:0;right:0;bottom:0;z-index:${z};background:${ov};${ptr}`,
+        // left
+        `position:fixed;top:${y1}px;bottom:calc(100vh - ${y2}px);left:0;width:${x1}px;z-index:${z};background:${ov};${ptr}`,
+        // right
+        `position:fixed;top:${y1}px;bottom:calc(100vh - ${y2}px);left:${x2}px;right:0;z-index:${z};background:${ov};${ptr}`,
+      ];
+
+      const clickHandler = (e) => {
+        if (typeof showToast === 'function') {
+          showToast('请先完成当前指引步骤', 'info');
+        }
+      };
+
+      parts.forEach((css, i) => {
+        const d = document.createElement('div');
+        d.className = 'tg-hood';
+        d.style.cssText = css;
+        d.addEventListener('click', clickHandler);
+        document.body.appendChild(d);
+        this._hoodEls.push(d);
+      });
     },
 
-    _removeHole() {
-      if (this._backdropEl) {
-        this._backdropEl.style.clipPath = '';
-        this._backdropEl.dataset.hasHole = 'false';
+    _removeHoods() {
+      this._hoodEls.forEach(d => d.remove());
+      this._hoodEls = [];
+    },
+
+    // 在目标区域外缘绘制金色高亮环（用独立 div，不受 overflow:hidden 裁剪）
+    _createHighlight(rect) {
+      this._removeHighlight();
+      const pad = 6;
+      const el = document.createElement('div');
+      el.className = 'tg-highlight-ring';
+      el.style.cssText = [
+        'position:fixed',
+        `top:${Math.round(rect.top) - pad}px`,
+        `left:${Math.round(rect.left) - pad}px`,
+        `width:${Math.round(rect.width) + pad * 2}px`,
+        `height:${Math.round(rect.height) + pad * 2}px`,
+        'z-index:99999',
+        'border-radius:10px',
+        'pointer-events:none',
+        'box-shadow:inset 0 0 0 3px #D4AF37, inset 0 0 0 5px rgba(255,215,0,0.3), 0 0 24px rgba(255,215,0,0.6)',
+        'animation:tgPulse 1.5s ease-in-out infinite',
+      ].join(';');
+      document.body.appendChild(el);
+      this._highlightEl = el;
+    },
+
+    _removeHighlight() {
+      if (this._highlightEl) {
+        this._highlightEl.remove();
+        this._highlightEl = null;
       }
     },
 
@@ -450,8 +500,6 @@
       }
 
       this._targetEl = targetEl;
-      // 保存原始行内样式，清理时恢复
-      targetEl.dataset.tgOriginalStyle = targetEl.getAttribute('style') || '';
 
       // double rAF 确保布局稳定后计算位置
       requestAnimationFrame(() => {
@@ -460,9 +508,10 @@
           const rect = targetEl.getBoundingClientRect();
           if (!rect.width || !rect.height) return;
 
-          // 目标元素提升到遮罩之上，并添加发光边框
-          targetEl.classList.add('tg-spotlight-active');
-          this._createHole(rect);
+          // 4 块遮罩（空心框，目标区域无遮罩，按钮天然可点击）
+          this._createHoods(rect);
+          // 金色高亮环（独立 div，不受 overflow:hidden 裁剪）
+          this._createHighlight(rect);
           this._createTargetTooltip(step.text);
           this._positionTooltip(rect);
           this._addPositionHandlers();
@@ -561,7 +610,8 @@
         if (this._targetEl) {
           const rect = this._targetEl.getBoundingClientRect();
           if (rect.width && rect.height) {
-            this._createHole(rect);
+            this._createHoods(rect);
+            this._createHighlight(rect);
             if (this._tooltipEl) {
               this._positionTooltip(rect);
             }
@@ -594,24 +644,14 @@
       }
     },
 
-    _removeSpotlight() {
-      this._removeHole();
-    },
-
     _cleanup() {
-      // 恢复目标元素原始样式
-      if (this._targetEl) {
-        this._targetEl.classList.remove('tg-spotlight-active');
-        if (this._targetEl.dataset.tgOriginalStyle !== undefined) {
-          this._targetEl.setAttribute('style', this._targetEl.dataset.tgOriginalStyle);
-          delete this._targetEl.dataset.tgOriginalStyle;
-        }
-      }
+      // 清理上一步的遮罩、高亮、提示
       this._removeTooltip();
-      this._removeSpotlight();
+      this._removeHoods();
+      this._removeHighlight();
+      this._removeInfoBackdrop();
       this._targetEl = null;
       this._infoDismissed = false;
-      // 保留背景遮罩 _backdropEl，避免步骤间亮暗闪烁
 
       if (this._resizeHandler) {
         window.removeEventListener('resize', this._resizeHandler);
@@ -630,7 +670,6 @@
 
     _fullCleanup() {
       this._cleanup();
-      this._destroyBackdrop();
     },
   };
 

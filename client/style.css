@@ -3540,35 +3540,6 @@ body {
   color: #999;
 }
 
-/* 教程高亮目标：提升到遮罩之上，可点击，带稳定发光边框 */
-.tg-spotlight-active {
-  position: relative !important;
-  z-index: 99999 !important;
-  pointer-events: auto !important;
-  box-shadow: 0 0 0 3px #D4AF37, 0 0 0 6px rgba(255, 215, 0, 0.35), 0 0 30px rgba(255, 215, 0, 0.7) !important;
-  border-radius: 8px !important;
-  transition: box-shadow 0.2s ease !important;
-}
-
-.tg-spotlight-active::after {
-  content: '';
-  position: absolute;
-  inset: -6px;
-  z-index: -1;
-  border-radius: 12px;
-  background: radial-gradient(circle, rgba(255, 215, 0, 0.15) 0%, transparent 70%);
-  pointer-events: none;
-}
-
-/* 教程背景遮罩：始终存在，避免亮暗闪烁 */
-.tg-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 99998;
-  background: rgba(0, 0, 0, 0.45);
-  pointer-events: auto;
-}
-
 /* 教程目标提示：缩小、不遮挡 */
 .tg-target-tooltip {
   max-width: 220px;
@@ -3642,6 +3613,11 @@ body.tutorial-active .action-desc {
   color: #666;
   margin-bottom: 16px;
   line-height: 1.6;
+}
+
+@keyframes tgPulse {
+  0%, 100% { box-shadow: inset 0 0 0 3px #D4AF37, 0 0 20px rgba(255, 215, 0, 0.5); }
+  50%      { box-shadow: inset 0 0 0 4px #FFD700, 0 0 36px rgba(255, 215, 0, 0.85); }
 }
 
 /* ==================== 观战功能 ==================== */
@@ -6566,12 +6542,6 @@ body.tutorial-active .action-desc {
 /* ============================================================
    新手教程聚光灯引导 (TutorialGuide)
    ============================================================ */
-
-/* 聚光灯目标高亮：实际使用 .tg-spotlight-active（定义见 3543 行），此处保留类名以兼容旧代码 */
-.tg-spotlight-target {
-  box-shadow: 0 0 0 3px #D4AF37, 0 0 0 6px rgba(255, 215, 0, 0.35), 0 0 30px rgba(255, 215, 0, 0.7) !important;
-  border-radius: 8px !important;
-}
 
 /* 目标提示气泡箭头 — 下方 */
 .tg-target-tooltip.tg-tip-below::after {
