@@ -3553,6 +3553,61 @@ body {
   50% { box-shadow: inset 0 0 0 4px #FFD700, 0 0 0 5px #FFD700, 0 0 40px rgba(255, 215, 0, 0.9); }
 }
 
+/* 教程背景遮罩：始终存在，避免亮暗闪烁 */
+.tg-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 99998;
+  background: rgba(0, 0, 0, 0.45);
+  pointer-events: auto;
+}
+
+/* 教程目标提示：缩小、不遮挡 */
+.tg-target-tooltip {
+  max-width: 220px;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  background: rgba(30, 20, 10, 0.96);
+  color: #F0E0C0;
+  border: 1px solid rgba(201, 169, 110, 0.5);
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  white-space: pre-line;
+  pointer-events: auto;
+}
+
+.tg-centered-tooltip {
+  max-width: 320px;
+  padding: 16px 20px;
+  font-size: 14px;
+  line-height: 1.7;
+  background: rgba(30, 20, 10, 0.96);
+  color: #F0E0C0;
+  border: 1px solid rgba(201, 169, 110, 0.5);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  white-space: pre-line;
+  pointer-events: auto;
+}
+
+.tg-next-btn {
+  display: inline-block;
+  margin-top: 14px;
+  padding: 7px 28px;
+  background: #C9A96E;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.tg-next-btn:hover {
+  background: #D4B97E;
+}
+
 /* 教程模式下隐藏阶段操作说明，避免与引导提示重复 */
 body.tutorial-active .action-title,
 body.tutorial-active .action-desc {

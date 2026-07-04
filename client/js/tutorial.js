@@ -40,17 +40,17 @@ function startTutorial() {
   GameState.nickname = nickname;
   if (nicknameInput) nicknameInput.value = nickname;
 
-  // 设置教程模式和极速模式
+  // 设置教程模式：使用经典模式但缩短为5轮，保留交易阶段
   GameState._tutorial = { active: true, seenPhases: {}, completed: false };
-  GameState.selectedMode = getModeById('speed');
+  GameState.selectedMode = getModeById('classic');
 
   // 初始化聚光灯引导引擎
   if (window.TutorialGuide) TutorialGuide.init();
 
   if (typeof showLoading === 'function') showLoading('正在创建教程房间...');
 
-  // 1. 创建房间（极速模式，2人）
-  socket.emit('room:create', nickname, false, { mode: 'speed', maxPlayers: 2, skin: typeof getSkinBundle === 'function' ? getSkinBundle() : {} }, (res) => {
+  // 1. 创建房间（经典模式5轮，2人，保留交易阶段）
+  socket.emit('room:create', nickname, false, { mode: 'classic', rounds: 5, maxPlayers: 2, skin: typeof getSkinBundle === 'function' ? getSkinBundle() : {} }, (res) => {
     if (!res || !res.success) {
       if (typeof hideLoading === 'function') hideLoading();
       if (typeof showToast === 'function') showToast('创建教程房间失败: ' + (res?.error || '未知错误'), 'error');
