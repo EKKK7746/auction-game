@@ -314,8 +314,8 @@
         return !!(this._infoBackdropEl && this._tooltipEl);
       }
       if (step.type === 'action') {
-        // hood 遮罩和高亮环都存在才视为存活
-        return this._hoodEls.length === 4 && !!this._highlightEl && !!this._tooltipEl;
+        // 只要空心框遮罩存在就视为存活，避免高亮/tooltip 创建中途被清理
+        return this._hoodEls.length === 4;
       }
       return false;
     },
@@ -363,16 +363,17 @@
       const ov = 'rgba(0,0,0,0.55)';
       const z  = '99998';
       const ptr = 'pointer-events:auto;';
+      const h  = y2 - y1;
 
       const parts = [
         // top
-        `position:fixed;top:0;left:0;right:0;height:${y1}px;z-index:${z};background:${ov};${ptr}`,
+        `position:fixed;top:0;left:0;width:${vw}px;height:${y1}px;z-index:${z};background:${ov};${ptr}`,
         // bottom
-        `position:fixed;top:${y2}px;left:0;right:0;bottom:0;z-index:${z};background:${ov};${ptr}`,
+        `position:fixed;bottom:0;left:0;width:${vw}px;height:${vh - y2}px;z-index:${z};background:${ov};${ptr}`,
         // left
-        `position:fixed;top:${y1}px;bottom:calc(100vh - ${y2}px);left:0;width:${x1}px;z-index:${z};background:${ov};${ptr}`,
+        `position:fixed;top:${y1}px;left:0;width:${x1}px;height:${h}px;z-index:${z};background:${ov};${ptr}`,
         // right
-        `position:fixed;top:${y1}px;bottom:calc(100vh - ${y2}px);left:${x2}px;right:0;z-index:${z};background:${ov};${ptr}`,
+        `position:fixed;top:${y1}px;left:${x2}px;width:${vw - x2}px;height:${h}px;z-index:${z};background:${ov};${ptr}`,
       ];
 
       const clickHandler = (e) => {
@@ -381,7 +382,7 @@
         }
       };
 
-      parts.forEach((css, i) => {
+      parts.forEach((css) => {
         const d = document.createElement('div');
         d.className = 'tg-hood';
         d.style.cssText = css;
@@ -500,6 +501,8 @@
       }
 
       this._targetEl = targetEl;
+      // 保存目标元素原始行内样式，清理时恢复
+      targetEl.dataset.tgOriginalStyle = targetEl.getAttribute('style') || '';
 
       // double rAF 确保布局稳定后计算位置
       requestAnimationFrame(() => {
@@ -508,6 +511,8 @@
           const rect = targetEl.getBoundingClientRect();
           if (!rect.width || !rect.height) return;
 
+          // 目标元素提升到遮罩之上，并加金色发光边框
+          targetEl.classList.add('tg-spotlight-active');
           // 4 块遮罩（空心框，目标区域无遮罩，按钮天然可点击）
           this._createHoods(rect);
           // 金色高亮环（独立 div，不受 overflow:hidden 裁剪）
@@ -645,6 +650,14 @@
     },
 
     _cleanup() {
+      // 恢复目标元素原始样式
+      if (this._targetEl) {
+        this._targetEl.classList.remove('tg-spotlight-active');
+        if (this._targetEl.dataset.tgOriginalStyle !== undefined) {
+          this._targetEl.setAttribute('style', this._targetEl.dataset.tgOriginalStyle);
+          delete this._targetEl.dataset.tgOriginalStyle;
+        }
+      }
       // 清理上一步的遮罩、高亮、提示
       this._removeTooltip();
       this._removeHoods();
