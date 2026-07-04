@@ -1,6 +1,6 @@
 // ============================================================
 // tutorialGuide.js — 新手教程全屏引导系统（回合制教学版）
-// 4块空心遮罩 + 聚光灯高亮 + 交互驱动推进
+// 目标替身（Proxy Clone）+ 4块空心遮罩 + 聚光灯高亮 + 交互驱动推进
 // 依赖: showToast, _lastView, socket, GameState
 // ============================================================
 
@@ -12,7 +12,7 @@
   // advanceOn: 'bidSubmitted' | 'phaseChange' | 'diceSelected' | 'tradeAction' | null
 
   function getSteps(phase, isAuctioneer, round) {
-    // 后三个回合（4-5）完全自己玩
+    // 后两个回合（4-5）完全自己玩
     if (round >= 4) return [];
 
     // 第3回合：只在交易阶段教学，其余自己玩
@@ -135,9 +135,10 @@
     // DOM 引用
     _infoBackdropEl: null,   // info 步骤：全屏遮罩
     _hoodEls: [],             // action 步骤：4 块遮罩 [top, right, bottom, left]
-    _highlightEl: null,        // 目标高亮环（不被 overflow:hidden 裁剪）
+    _highlightEl: null,        // 目标高亮环
     _tooltipEl: null,
-    _targetEl: null,
+    _targetEl: null,           // 真实目标元素（保留引用用于事件转发）
+    _proxyEl: null,            // 目标替身（clone）
     _infoDismissed: false,
     _renderedStepKey: null,
     _creatingStep: false,
@@ -291,12 +292,13 @@
           // info 阶段：4 块遮罩和高亮环，创建全屏遮罩
           this._removeHoods();
           this._removeHighlight();
+          this._removeProxy();
           this._createInfoBackdrop();
           this._createCenteredTooltip(step.text, !!step.advanceOn);
           break;
 
         case 'action':
-          // action 阶段：移除 info 遮罩，由 _spotlightTarget 创建空心框遮罩
+          // action 阶段：移除 info 遮罩，由 _spotlightTarget 创建空心框遮罩 + 目标替身
           this._removeInfoBackdrop();
           this._creatingStep = true;
           requestAnimationFrame(() => {
@@ -323,8 +325,8 @@
         return !!(this._infoBackdropEl && this._tooltipEl);
       }
       if (step.type === 'action') {
-        // 只要空心框遮罩存在就视为存活，避免高亮/tooltip 创建中途被清理
-        return this._hoodEls.length === 4;
+        // 只要空心框遮罩和目标替身存在就视为存活
+        return this._hoodEls.length === 4 && !!this._proxyEl;
       }
       return false;
     },
@@ -370,7 +372,7 @@
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const ov = 'rgba(0,0,0,0.55)';
-      const z  = '99998';
+      const z  = '99999';
       const ptr = 'pointer-events:auto;';
       const h  = y2 - y1;
 
@@ -406,6 +408,65 @@
       this._hoodEls = [];
     },
 
+    // ==================== 目标替身（Proxy Clone） ====================
+    // 把目标元素 clone 到 body 顶层，完全覆盖原位置，
+    // 从而绕过父级 stacking context 限制，保证在遮罩之上。
+
+    _createProxy(targetEl, rect) {
+      this._removeProxy();
+
+      // 外层容器：用于定位 + 金色高亮边框 + 柔光
+      const wrapper = document.createElement('div');
+      wrapper.className = 'tg-proxy-wrapper';
+      wrapper.style.cssText = [
+        'position:fixed',
+        `top:${Math.round(rect.top) - 6}px`,
+        `left:${Math.round(rect.left) - 6}px`,
+        `width:${Math.round(rect.width) + 12}px`,
+        `height:${Math.round(rect.height) + 12}px`,
+        'z-index:100000',
+        'border-radius:12px',
+        'pointer-events:none',
+        'box-sizing:border-box',
+      ].join(';');
+
+      // 克隆目标元素本身，保持可点击
+      const clone = targetEl.cloneNode(true);
+      clone.classList.add('tg-proxy-target');
+      clone.style.cssText = [
+        'position:absolute',
+        'top:6px',
+        'left:6px',
+        'width:calc(100% - 12px)',
+        'height:calc(100% - 12px)',
+        'margin:0',
+        'pointer-events:auto',
+        'cursor:pointer',
+        'box-sizing:border-box',
+      ].join(';');
+
+      // 点击/触摸代理元素时，转发给真实元素
+      clone.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        targetEl.click();
+      });
+      clone.addEventListener('touchstart', (e) => {
+        e.stopPropagation();
+      }, { passive: true });
+
+      wrapper.appendChild(clone);
+      document.body.appendChild(wrapper);
+      this._proxyEl = wrapper;
+    },
+
+    _removeProxy() {
+      if (this._proxyEl) {
+        this._proxyEl.remove();
+        this._proxyEl = null;
+      }
+    },
+
     // 在目标区域外缘绘制金色高亮环（用独立 div，不受 overflow:hidden 裁剪）
     _createHighlight(rect) {
       this._removeHighlight();
@@ -418,11 +479,11 @@
         `left:${Math.round(rect.left) - pad}px`,
         `width:${Math.round(rect.width) + pad * 2}px`,
         `height:${Math.round(rect.height) + pad * 2}px`,
-        'z-index:99999',
-        'border-radius:10px',
+        'z-index:100000',
+        'border-radius:12px',
         'pointer-events:none',
-        'box-shadow:inset 0 0 0 3px #D4AF37, inset 0 0 0 5px rgba(255,215,0,0.3), 0 0 24px rgba(255,215,0,0.6)',
-        'animation:tgPulse 1.5s ease-in-out infinite',
+        'box-shadow:inset 0 0 0 3px #D4AF37, inset 0 0 0 5px rgba(255,215,0,0.25), 0 0 30px rgba(255,215,0,0.65)',
+        'animation:tgPulse 1.4s ease-in-out infinite',
       ].join(';');
       document.body.appendChild(el);
       this._highlightEl = el;
@@ -448,14 +509,14 @@
         'z-index:100001',
         'background:rgba(30,20,10,0.96)',
         'color:#F0E0C0',
-        'padding:16px 20px',
-        'border-radius:12px',
+        'padding:18px 24px',
+        'border-radius:14px',
         'border:1px solid rgba(201,169,110,0.5)',
-        'max-width:320px',
-        'font-size:14px',
+        'max-width:340px',
+        'font-size:15px',
         'line-height:1.7',
         'text-align:center',
-        'box-shadow:0 8px 32px rgba(0,0,0,0.6)',
+        'box-shadow:0 12px 40px rgba(0,0,0,0.7)',
         'pointer-events:auto',
         'white-space:pre-line',
       ].join(';');
@@ -464,13 +525,13 @@
         '<div class="tg-info-text">' + text + '</div>' +
         '<button class="tg-next-btn" style="' + [
           'display:inline-block',
-          'margin-top:14px',
-          'padding:7px 28px',
+          'margin-top:16px',
+          'padding:8px 32px',
           'background:#C9A96E',
           'color:#1a1a1a',
           'border:none',
           'border-radius:8px',
-          'font-size:14px',
+          'font-size:15px',
           'font-weight:600',
           'cursor:pointer',
           'transition:background 0.2s',
@@ -511,8 +572,6 @@
       }
 
       this._targetEl = targetEl;
-      // 保存目标元素原始行内样式，清理时恢复
-      targetEl.dataset.tgOriginalStyle = targetEl.getAttribute('style') || '';
 
       // double rAF 确保布局稳定后计算位置
       requestAnimationFrame(() => {
@@ -527,11 +586,11 @@
             return;
           }
 
-          // 目标元素提升到遮罩之上，并加金色发光边框
-          targetEl.classList.add('tg-spotlight-active');
-          // 4 块遮罩（空心框，目标区域无遮罩，按钮天然可点击）
+          // 4 块遮罩（空心框，目标区域无遮罩）
           this._createHoods(rect);
-          // 金色高亮环（独立 div，不受 overflow:hidden 裁剪）
+          // 目标替身：clone 到 body 顶层，可点击，带金色边框
+          this._createProxy(targetEl, rect);
+          // 额外高亮环
           this._createHighlight(rect);
           this._createTargetTooltip(step.text);
           this._positionTooltip(rect);
@@ -549,13 +608,13 @@
         'z-index:100001',
         'background:rgba(30,20,10,0.96)',
         'color:#F0E0C0',
-        'padding:8px 12px',
-        'border-radius:10px',
+        'padding:10px 14px',
+        'border-radius:12px',
         'border:1px solid rgba(201,169,110,0.5)',
-        'max-width:220px',
-        'font-size:12px',
-        'line-height:1.5',
-        'box-shadow:0 4px 16px rgba(0,0,0,0.5)',
+        'max-width:240px',
+        'font-size:13px',
+        'line-height:1.6',
+        'box-shadow:0 6px 24px rgba(0,0,0,0.6)',
         'pointer-events:auto',
         'opacity:0',
         'transition:opacity 0.2s',
@@ -567,7 +626,7 @@
     },
 
     // ==================== 精确定位（viewport 坐标） ====================
-    // 优先放在目标左右两侧，不遮挡目标本身
+    // 优先放在目标下方，其次上方，再次左右
 
     _positionTooltip(rect) {
       const tooltip = this._tooltipEl;
@@ -576,36 +635,40 @@
       const tooltipRect = tooltip.getBoundingClientRect();
       const tooltipW = Math.round(tooltipRect.width);
       const tooltipH = Math.round(tooltipRect.height);
-      const gap = 12;
-      const pad = 8;
+      const gap = 16;
+      const pad = 12;
 
       const vw = window.innerWidth;
       const vh = window.innerHeight;
 
-      // 优先右侧
       const spaceRight = vw - rect.right;
       const spaceLeft = rect.left;
       const spaceBelow = vh - rect.bottom;
       const spaceAbove = rect.top;
 
-      let left, top, placeRight;
+      let left, top, place = 'below';
 
-      if (spaceRight >= tooltipW + gap + pad) {
+      // 优先放目标下方（最不容易遮挡手部操作）
+      if (spaceBelow >= tooltipH + gap + pad) {
+        left = rect.left + rect.width / 2 - tooltipW / 2;
+        top = rect.bottom + gap;
+        place = 'below';
+      } else if (spaceAbove >= tooltipH + gap + pad) {
+        left = rect.left + rect.width / 2 - tooltipW / 2;
+        top = rect.top - tooltipH - gap;
+        place = 'above';
+      } else if (spaceRight >= tooltipW + gap + pad) {
         left = rect.right + gap;
         top = rect.top + rect.height / 2 - tooltipH / 2;
-        placeRight = true;
+        place = 'right';
       } else if (spaceLeft >= tooltipW + gap + pad) {
         left = rect.left - tooltipW - gap;
         top = rect.top + rect.height / 2 - tooltipH / 2;
-        placeRight = false;
-      } else if (spaceBelow >= tooltipH + gap + pad) {
-        left = rect.left + rect.width / 2 - tooltipW / 2;
-        top = rect.bottom + gap;
-        placeRight = null;
+        place = 'left';
       } else {
         left = rect.left + rect.width / 2 - tooltipW / 2;
-        top = rect.top - tooltipH - gap;
-        placeRight = null;
+        top = rect.bottom + gap;
+        place = 'below';
       }
 
       // 边界修正
@@ -619,10 +682,7 @@
       tooltip.style.opacity = '1';
 
       tooltip.classList.remove('tg-tip-right', 'tg-tip-left', 'tg-tip-below', 'tg-tip-above');
-      if (placeRight === true) tooltip.classList.add('tg-tip-right');
-      else if (placeRight === false) tooltip.classList.add('tg-tip-left');
-      else if (top > rect.bottom) tooltip.classList.add('tg-tip-below');
-      else tooltip.classList.add('tg-tip-above');
+      tooltip.classList.add('tg-tip-' + place);
     },
 
     // ==================== 位置监听 ====================
@@ -633,6 +693,7 @@
           const rect = this._targetEl.getBoundingClientRect();
           if (rect.width && rect.height) {
             this._createHoods(rect);
+            this._createProxy(this._targetEl, rect);
             this._createHighlight(rect);
             if (this._tooltipEl) {
               this._positionTooltip(rect);
@@ -667,18 +728,11 @@
     },
 
     _cleanup() {
-      // 恢复目标元素原始样式
-      if (this._targetEl) {
-        this._targetEl.classList.remove('tg-spotlight-active');
-        if (this._targetEl.dataset.tgOriginalStyle !== undefined) {
-          this._targetEl.setAttribute('style', this._targetEl.dataset.tgOriginalStyle);
-          delete this._targetEl.dataset.tgOriginalStyle;
-        }
-      }
-      // 清理上一步的遮罩、高亮、提示
+      // 清理上一步的遮罩、高亮、提示、替身
       this._removeTooltip();
       this._removeHoods();
       this._removeHighlight();
+      this._removeProxy();
       this._removeInfoBackdrop();
       this._targetEl = null;
       this._infoDismissed = false;

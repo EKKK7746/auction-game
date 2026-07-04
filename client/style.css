@@ -3540,55 +3540,113 @@ body {
   color: #999;
 }
 
-/* 教程目标高亮：提升到遮罩之上，带金色发光边框 */
-.tg-spotlight-active {
-  position: relative !important;
-  z-index: 99999 !important;
-  pointer-events: auto !important;
-  box-shadow: 0 0 0 3px #D4AF37, 0 0 0 6px rgba(255, 215, 0, 0.35), 0 0 30px rgba(255, 215, 0, 0.7) !important;
-  border-radius: 8px !important;
-  animation: tgPulse 1.5s ease-in-out infinite !important;
-  transition: box-shadow 0.2s ease !important;
+/* 教程目标替身：外层高亮环 + 柔光 */
+.tg-proxy-wrapper {
+  position: fixed;
+  z-index: 100000;
+  border-radius: 12px;
+  pointer-events: none;
+  box-shadow:
+    inset 0 0 0 3px #D4AF37,
+    inset 0 0 0 6px rgba(255, 215, 0, 0.35),
+    0 0 0 2px rgba(255, 215, 0, 0.4),
+    0 0 32px rgba(255, 215, 0, 0.7);
+  animation: tgPulse 1.4s ease-in-out infinite;
 }
 
-/* 教程目标提示：缩小、不遮挡 */
-.tg-target-tooltip {
-  max-width: 220px;
-  padding: 8px 12px;
-  font-size: 12px;
-  line-height: 1.5;
-  background: rgba(30, 20, 10, 0.96);
-  color: #F0E0C0;
-  border: 1px solid rgba(201, 169, 110, 0.5);
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
-  white-space: pre-line;
+.tg-proxy-wrapper::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  z-index: -1;
+  border-radius: 18px;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.18) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* 教程目标替身：内部 clone 保持可点击 */
+.tg-proxy-target {
+  position: absolute;
+  margin: 0;
   pointer-events: auto;
+  cursor: pointer;
+  box-sizing: border-box;
 }
 
-.tg-centered-tooltip {
-  max-width: 320px;
-  padding: 16px 20px;
-  font-size: 14px;
-  line-height: 1.7;
+/* 教程目标提示：带箭头 */
+.tg-target-tooltip {
+  max-width: 240px;
+  padding: 10px 14px;
+  font-size: 13px;
+  line-height: 1.6;
   background: rgba(30, 20, 10, 0.96);
   color: #F0E0C0;
   border: 1px solid rgba(201, 169, 110, 0.5);
   border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  box-shadow: 0 6px 24px rgba(0,0,0,0.6);
+  white-space: pre-line;
+  pointer-events: auto;
+}
+
+.tg-target-tooltip::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 8px solid transparent;
+}
+
+.tg-target-tooltip.tg-tip-below::after {
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-bottom-color: rgba(30, 20, 10, 0.96);
+}
+
+.tg-target-tooltip.tg-tip-above::after {
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-top-color: rgba(30, 20, 10, 0.96);
+}
+
+.tg-target-tooltip.tg-tip-right::after {
+  left: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-right-color: rgba(30, 20, 10, 0.96);
+}
+
+.tg-target-tooltip.tg-tip-left::after {
+  right: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  border-left-color: rgba(30, 20, 10, 0.96);
+}
+
+.tg-centered-tooltip {
+  max-width: 340px;
+  padding: 18px 24px;
+  font-size: 15px;
+  line-height: 1.7;
+  background: rgba(30, 20, 10, 0.96);
+  color: #F0E0C0;
+  border: 1px solid rgba(201, 169, 110, 0.5);
+  border-radius: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.7);
   white-space: pre-line;
   pointer-events: auto;
 }
 
 .tg-next-btn {
   display: inline-block;
-  margin-top: 14px;
-  padding: 7px 28px;
+  margin-top: 16px;
+  padding: 8px 32px;
   background: #C9A96E;
   color: #1a1a1a;
   border: none;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
