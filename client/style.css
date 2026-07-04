@@ -3542,17 +3542,22 @@ body {
 
 /* 教程聚光灯高亮目标 */
 .tg-spotlight-target {
-  box-shadow: 0 0 0 3px #D4AF37, 0 0 20px rgba(212, 175, 55, 0.6) !important;
-  border-radius: 8px !important;
+  box-shadow: inset 0 0 0 3px #D4AF37, 0 0 0 4px #D4AF37, 0 0 28px rgba(255, 215, 0, 0.7);
+  border-radius: 10px;
   animation: tgPulse 1.5s ease-in-out infinite;
+  pointer-events: none;
 }
 
 @keyframes tgPulse {
-  0%, 100% { box-shadow: 0 0 0 3px #D4AF37, 0 0 20px rgba(212, 175, 55, 0.6); }
-  50% { box-shadow: 0 0 0 4px #FFD700, 0 0 32px rgba(255, 215, 0, 0.8); }
+  0%, 100% { box-shadow: inset 0 0 0 3px #D4AF37, 0 0 0 4px #D4AF37, 0 0 28px rgba(255, 215, 0, 0.7); }
+  50% { box-shadow: inset 0 0 0 4px #FFD700, 0 0 0 5px #FFD700, 0 0 40px rgba(255, 215, 0, 0.9); }
 }
 
-/* 教程完成页 */
+/* 教程模式下隐藏阶段操作说明，避免与引导提示重复 */
+body.tutorial-active .action-title,
+body.tutorial-active .action-desc {
+  display: none !important;
+}
 .tutorial-complete {
   text-align: center;
   padding: 20px;

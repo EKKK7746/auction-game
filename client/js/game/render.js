@@ -444,7 +444,7 @@ function _renderAuction(view, container) {
 
   container.innerHTML = `
     <div class="action-title">💰 暗标竞拍 — 秘密报价佣金比例</div>
-    <p style="text-align:center;font-size:13px;color:#8B7B6B;margin-bottom:10px;">所有玩家同时秘密报价，佣金最低者当选拍卖师</p>
+    <p class="action-desc" style="text-align:center;font-size:13px;color:#8B7B6B;margin-bottom:10px;">所有玩家同时秘密报价，佣金最低者当选拍卖师</p>
     <div class="bid-grid">
       <button class="bid-btn" onclick="doBid(10)"><span>10%</span></button>
       <button class="bid-btn" onclick="doBid(20)"><span>20%</span></button>
