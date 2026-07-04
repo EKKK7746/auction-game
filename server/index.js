@@ -598,5 +598,5 @@ io.on('connection', (socket) => {
 // ==================== 启动 ====================
 
 server.listen(PORT, () => {
-  console.log(`[服务器] 马王堆拍卖游戏服务器已启动，端口: ${PORT}`);
+  console.log(`[服务器] 琳琅·华夏文物拍卖服务器已启动，端口: ${PORT}`);
 });
