@@ -209,6 +209,7 @@ function _renderActionArea(view) {
   const newPhase = view.phase;
   const thisVersion = ++_renderVersion;
 
+  _renderPhaseHint(view);
   _stopTurnCountdown();
   _clearSettleTimer();
 
@@ -272,6 +273,54 @@ function _renderActionArea(view) {
   } else {
     _renderActionContent(view, container);
   }
+}
+
+// ==================== 阶段提示文字 ====================
+
+function _renderPhaseHint(view) {
+  const el = document.getElementById('phaseHint');
+  if (!el) return;
+
+  const me = view.players?.find(p => p.id === socket?.id);
+  const isAuctioneer = view.auctioneerId === socket?.id;
+  const phase = view.phase;
+
+  let hint = '';
+  switch (phase) {
+    case 'auction':
+      hint = '选择你的佣金比例，最低者当选拍卖师';
+      break;
+    case 'selectCard':
+      hint = isAuctioneer ? '从牌堆中选择一张文物卡作为本轮拍品' : '等待拍卖师选择本轮拍品…';
+      break;
+    case 'rentDice':
+      hint = isAuctioneer ? '等待其他玩家租骰，你将获得佣金收入' : '租用骰子参与竞拍，点数最高者获得文物';
+      break;
+    case 'rollDice':
+      hint = '掷骰对决中，点数最高者获得文物';
+      break;
+    case 'settle':
+      hint = '本回合结算中…';
+      break;
+    case 'trade':
+      hint = '可与拥有你所需文物的玩家发起交易';
+      break;
+    case 'duel':
+      hint = '镜中决斗！双方各押一宝，胜者夺得对方珍品';
+      break;
+    case 'finished':
+      hint = '游戏结束，查看最终排名';
+      break;
+    default:
+      hint = '';
+  }
+
+  if (view.isSpectator && hint) {
+    hint = '👁️ 观战中 — ' + hint;
+  }
+
+  el.textContent = hint;
+  el.style.display = hint ? 'block' : 'none';
 }
 
 function _renderActionContent(view, container) {
