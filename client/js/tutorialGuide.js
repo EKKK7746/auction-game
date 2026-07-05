@@ -192,8 +192,9 @@
 
       switch (step.advanceOn) {
         case 'bidSubmitted': {
+          // 暗标制：检查 bids 数组里是否有我的报价
           const myBid = (view.bids || []).find(b => b.playerId === myId);
-          return !!(myBid && myBid.submitted);
+          return !!myBid;
         }
         case 'diceSelected': {
           const sel = view.diceSelections && view.diceSelections[myId];
@@ -404,6 +405,21 @@
         els.forEach(el => {
           el.classList.add('tg-clickable');
           this._clickableSet.add(el);
+
+          // 点击目标后直接推进步骤（不依赖服务器 view）
+          const handler = (e) => {
+            // 让原始 onclick 先执行（下一帧再推进）
+            requestAnimationFrame(() => {
+              if (this.active && this.steps && this.stepIndex < this.steps.length) {
+                const step = this.steps[this.stepIndex];
+                if (step.type === 'action') {
+                  this._advanceStep();
+                }
+              }
+            });
+          };
+          el.addEventListener('click', handler, { once: true });
+          el._tgClickHandler = handler;
         });
         if (els.length > 0) {
           this._targetEl = els[0];
@@ -413,7 +429,13 @@
 
     _cleanupClickable() {
       if (this._clickableSet) {
-        this._clickableSet.forEach(el => el.classList.remove('tg-clickable'));
+        this._clickableSet.forEach(el => {
+          el.classList.remove('tg-clickable');
+          if (el._tgClickHandler) {
+            el.removeEventListener('click', el._tgClickHandler);
+            delete el._tgClickHandler;
+          }
+        });
         this._clickableSet.clear();
       }
     },
