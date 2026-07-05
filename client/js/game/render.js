@@ -1450,6 +1450,17 @@ function _renderSettle(view, container) {
   const card = view.revealedCard;
   const auctioneer = view.players.find(p => p.id === view.auctioneerId);
 
+  // 归属原因
+  let winReason = '';
+  if (view.tieInfo && view.tieInfo.hadTie) {
+    winReason = `经 ${view.tieInfo.depth} 次重掷对决后赢得此文物`;
+  } else if (winnerId === view.auctioneerId) {
+    const allPassed = Object.values(results).every(v => v === null);
+    winReason = allPassed ? '无人竞拍，拍卖师获得此文物' : '拍卖师获得此文物';
+  } else if (maxVal > 0) {
+    winReason = `以最高点数 ${maxVal} 点赢得此文物`;
+  }
+
   const tieBanner = (view.tieInfo && view.tieInfo.hadTie)
     ? `<div class="settle-tie-banner">⚔️ 平局！经过 ${view.tieInfo.depth} 次重掷决出胜负</div>`
     : '';
@@ -1517,6 +1528,7 @@ function _renderSettle(view, container) {
           </div>` : ''}
           ${card ? `<div class="settle-card-name">${card.hidden ? '？？？' : card.name}</div>` : ''}
           ${card ? `<div class="settle-card-score">★ ${card.hidden ? '?' : card.score} 分</div>` : ''}
+          ${winReason ? `<div class="settle-win-reason">${winReason}</div>` : ''}
         </div>
         <div class="settle-col settle-col-dice">
           <div class="settle-col-title">📊 骰子对比</div>

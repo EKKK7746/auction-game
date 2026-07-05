@@ -3978,6 +3978,12 @@ body.tutorial-lock #app .tg-clickable * {
   font-size: 12px;
   color: #D4AF37;
 }
+.settle-win-reason {
+  font-size: 11px;
+  color: #888;
+  margin-top: 4px;
+  line-height: 1.4;
+}
 
 .settle-dice-list {
   display: flex;
