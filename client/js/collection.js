@@ -270,6 +270,11 @@ function updateAfterGame(view, myPlayerId) {
     }
   }
 
+  // 填充会话统计中的 cardsObtained（用于"一眼千年"成就）
+  if (data._sessionStats && me.cards) {
+    data._sessionStats.cardsObtained = me.cards.map(c => c.id || c);
+  }
+
   // 成就检查
   const newAchievements = _checkAchievements(data, me, view);
 
@@ -620,6 +625,10 @@ function checkAchievementsRealtime(view, myPlayerId) {
     ach.auctioneer_5 = { unlockedAt: Date.now() };
     newAch.push('auctioneer_5');
   }
+
+  // 检查会话统计成就（12 个新增成就）
+  const sessionAch = _checkSessionAchievements(data, me, view);
+  newAch.push(...sessionAch);
 
   if (newAch.length > 0) {
     _saveCollection(data);

@@ -55,6 +55,57 @@ function renderGame(view) {
         }
       }
     }
+    // ===== 成就会话统计 hook =====
+    // 1. 拍卖师竞选结果（auction → selectCard 转换时）
+    if (view.phase === 'selectCard' && _lastView.phase === 'auction' && view.lastBidResults) {
+      const myBid = view.lastBidResults.bids?.find(b => b.playerId === socket.id);
+      if (myBid && myBid.percentage !== null && typeof recordAuctioneerBid === 'function') {
+        recordAuctioneerBid(!!myBid.isWinner);
+      }
+    }
+    // 2. 租骰记录（rentDice → rollDice 或 rentDice → settle）
+    if (_lastView.phase === 'rentDice' && (view.phase === 'rollDice' || view.phase === 'settle')) {
+      const myDice = view.diceSelections?.[socket.id];
+      if (myDice && myDice !== 'pass' && myDice !== 'auctioneer' && typeof recordDiceRented === 'function') {
+        const costs = view.diceCosts || { d4: 1, d6: 2, d12: 4, d20: 6 };
+        const me = view.players.find(p => p.id === socket.id);
+        const fundsAfter = me ? me.funds : 0;
+        recordDiceRented(myDice, costs[myDice] || 0, fundsAfter);
+      }
+    }
+    // 3. 掷骰结果 + 佣金 + 回合汇总（→ settle 转换时）
+    if (view.phase === 'settle' && _lastView.phase !== 'settle') {
+      const myDice = view.diceSelections?.[socket.id];
+      const myResult = view.diceResults?.[socket.id];
+      // 掷骰结果记录
+      if (myResult != null && myDice && myDice !== 'pass' && myDice !== 'auctioneer') {
+        const val = typeof myResult === 'object' ? myResult.value : myResult;
+        const maxValues = { d4: 4, d6: 6, d12: 12, d20: 20 };
+        const isMax = val === maxValues[myDice];
+        if (typeof recordDiceRoll === 'function') recordDiceRoll(myDice, val, isMax);
+        if (typeof updateSessionStats === 'function') updateSessionStats({ finalRollValue: val });
+      }
+      // 佣金记录（仅拍卖师本人）
+      if (view.auctioneerId === socket.id && view.commissionRate != null) {
+        const auctioneer = view.players.find(p => p.id === socket.id);
+        const hasShiQuan = auctioneer?.cards?.some(c => c.id === 'sq');
+        const DICE_COSTS = { d4: 1, d6: 2, d12: 4, d20: 6, pass: 0 };
+        let totalDiceCost = 0;
+        for (const [pid, sel] of Object.entries(view.diceSelections || {})) {
+          if (pid !== view.auctioneerId && sel !== 'pass' && sel !== 'auctioneer') {
+            totalDiceCost += DICE_COSTS[sel] || 0;
+          }
+        }
+        let commission = Math.ceil(totalDiceCost * view.commissionRate / 100);
+        if (hasShiQuan) commission *= 2;
+        if (typeof recordCommission === 'function') recordCommission(view.commissionRate, commission, hasShiQuan);
+      }
+      // 回合掷骰汇总（鹬蚌相争成就）
+      const nonAuctioneerDice = Object.entries(view.diceSelections || {})
+        .filter(([pid]) => pid !== view.auctioneerId);
+      const allD20 = nonAuctioneerDice.length > 0 && nonAuctioneerDice.every(([, sel]) => sel === 'd20');
+      if (typeof recordRoundDiceSummary === 'function') recordRoundDiceSummary(allD20, view.auctioneerId === socket.id);
+    }
     // 每阶段结束后检查局内成就
     if (typeof checkAchievementsRealtime === 'function') {
       const newAch = checkAchievementsRealtime(view, socket.id);
@@ -1044,6 +1095,7 @@ function submitTradeProposal(toId) {
       showToast(result.error, 'error');
     } else {
       closeTradeProposal();
+      if (typeof recordTradeInitiated === 'function') recordTradeInitiated();
     }
   });
 }
@@ -1109,6 +1161,10 @@ if (typeof socket !== 'undefined') {
       const reason = (data && data.reason) || '交易未完成';
       const msg = reason === 'rejected' ? '❌ 对方拒绝了交易' : `❌ ${reason}`;
       showToast(msg, 'error');
+      // 交易被拒时，如果是发起方则记录
+      if (reason === 'rejected' && data && data.fromId === socket.id) {
+        if (typeof recordTradeRejected === 'function') recordTradeRejected();
+      }
     }
     _pendingTradeProposal = null;  // 清除提案缓存
   });
