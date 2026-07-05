@@ -72,6 +72,7 @@ function createRoom(socket, nickname, isPublic, opts = {}) {
     maxPlayers,
     rounds: opts.rounds || undefined,
     initialCash: opts.initialCash || undefined,
+    isTutorial: !!opts.isTutorial,
   });
 
   socket.join(roomId);

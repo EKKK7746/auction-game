@@ -288,23 +288,7 @@
       const tooltip = document.createElement('div');
       tooltip.className = 'tg-centered-tooltip';
       tooltip.style.cssText = [
-        'position:fixed',
-        'top:50%',
-        'left:50%',
-        'transform:translate(-50%,-50%)',
-        'z-index:100001',
-        'background:rgba(30,20,10,0.96)',
-        'color:#F0E0C0',
-        'padding:18px 24px',
-        'border-radius:14px',
-        'border:1px solid rgba(201,169,110,0.5)',
-        'max-width:340px',
-        'font-size:15px',
-        'line-height:1.7',
         'text-align:center',
-        'box-shadow:0 12px 40px rgba(0,0,0,0.7)',
-        'pointer-events:auto',
-        'white-space:pre-line',
       ].join(';');
 
       tooltip.innerHTML =

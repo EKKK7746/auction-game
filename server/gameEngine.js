@@ -205,6 +205,7 @@ function initGame(roomId, players, modeOpts) {
     _startingFunds: startingFunds,  // ★ 保存用于重开
     _mode: modeId,                  // ★ 模式标识（极速/speed 跳过竞标）
     phase: 'auction',
+    isTutorial: !!modeOpts.isTutorial,
     deck,
     originalDeck: [...deck],  // ★ 记录本局初始牌堆，用于牌堆总览
     dealtCardIds: new Set(),  // ★ 记录已翻开的卡牌 id

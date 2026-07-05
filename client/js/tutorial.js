@@ -49,8 +49,8 @@ function startTutorial() {
 
   if (typeof showLoading === 'function') showLoading('正在创建教程房间...');
 
-  // 1. 创建房间（经典模式5轮，2人，保留交易阶段）
-  socket.emit('room:create', nickname, false, { mode: 'classic', rounds: 5, maxPlayers: 2, skin: typeof getSkinBundle === 'function' ? getSkinBundle() : {} }, (res) => {
+  // 1. 创建房间（经典模式5轮，2人，保留交易阶段，标记为教程房间）
+  socket.emit('room:create', nickname, false, { mode: 'classic', rounds: 5, maxPlayers: 2, isTutorial: true, skin: typeof getSkinBundle === 'function' ? getSkinBundle() : {} }, (res) => {
     if (!res || !res.success) {
       if (typeof hideLoading === 'function') hideLoading();
       if (typeof showToast === 'function') showToast('创建教程房间失败: ' + (res?.error || '未知错误'), 'error');

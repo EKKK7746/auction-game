@@ -3605,17 +3605,24 @@ body {
 }
 
 .tg-centered-tooltip {
-  max-width: 340px;
-  padding: 18px 24px;
+  position: fixed;
+  top: 15%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100001;
+  max-width: min(340px, 86vw);
+  padding: 16px 20px;
   font-size: 15px;
   line-height: 1.7;
-  background: rgba(30, 20, 10, 0.96);
+  background: rgba(30, 20, 10, 0.82);
   color: #F0E0C0;
-  border: 1px solid rgba(201, 169, 110, 0.5);
+  border: 1px solid rgba(201, 169, 110, 0.55);
   border-radius: 14px;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
   white-space: pre-line;
   pointer-events: auto;
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .tg-next-btn {

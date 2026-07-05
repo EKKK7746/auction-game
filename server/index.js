@@ -345,6 +345,7 @@ io.on('connection', (socket) => {
       const modeConfig = { ...gameEngine.getModeConfig(modeId) };
       if (roomData && roomData.rounds) modeConfig.rounds = roomData.rounds;
       if (roomData && roomData.initialCash) modeConfig.initialCash = roomData.initialCash;
+      if (roomData && roomData.isTutorial) modeConfig.isTutorial = true;
       gameEngine.initGame(roomId, room, modeConfig);
 
       console.log(`[服务器] 房间 ${roomId} 游戏开始！（模式: ${modeId}），玩家: ${room.map(p => p.nickname).join(', ')}`);

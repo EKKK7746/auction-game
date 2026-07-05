@@ -137,6 +137,14 @@ class BotManager {
       case 'auction': {
         // 暗标制：所有 Bot 同时报价，无需等待顺序
         if (hasActed) return null;
+
+        // ★ 新手教程第二轮：强制人机跳过竞标，确保玩家当选拍卖师
+        if (state.isTutorial && state.round === 2) {
+          const me = state.players.find(p => p.id === playerId);
+          console.log(`[Bot] ${me?.nickname || playerId} 教程第二轮跳过竞标`);
+          return { label: '教程跳过竞标', fn: (rid, pid) => this._engine.submitBid(rid, pid, null) };
+        }
+
         return { label: '暗标竞标', fn: (rid, pid, s) => {
           const bid = bidStrategy(pid, s);
           return this._engine.submitBid(rid, pid, bid);
