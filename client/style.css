@@ -3565,7 +3565,7 @@ body {
   border-radius: 12px;
   box-shadow: 0 6px 24px rgba(0,0,0,0.6);
   white-space: pre-line;
-  pointer-events: auto;
+  pointer-events: none;
 }
 
 .tg-target-tooltip::after {
@@ -3667,6 +3667,20 @@ body.tutorial-active .action-desc {
 @keyframes tgPulse {
   0%, 100% { box-shadow: inset 0 0 0 3px #D4AF37, inset 0 0 0 5px rgba(255,215,0,0.25), 0 0 20px rgba(255, 215, 0, 0.5); }
   50%      { box-shadow: inset 0 0 0 4px #FFD700, inset 0 0 0 7px rgba(255,215,0,0.35), 0 0 36px rgba(255, 215, 0, 0.85); }
+}
+
+/* ==================== 教程交互锁定（pointer-events 方案） ==================== */
+
+/* 锁定 #app 内所有交互 */
+body.tutorial-lock #app,
+body.tutorial-lock #app * {
+  pointer-events: none !important;
+}
+
+/* 恢复高亮目标的交互 */
+body.tutorial-lock #app .tg-clickable,
+body.tutorial-lock #app .tg-clickable * {
+  pointer-events: auto !important;
 }
 
 /* ==================== 观战功能 ==================== */
