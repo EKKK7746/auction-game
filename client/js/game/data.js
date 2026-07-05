@@ -33,27 +33,149 @@ const CARD_NAMES = {
 };
 
 const CARD_LORE = {
-  sxqts: '青铜神树，商代古蜀文明遗珍，1986年出土于四川广汉三星堆遗址。树高396cm，分三层九枝，枝头立神鸟，树干盘游龙。是古蜀人"沟通天地"的精神图腾。',
-  qsbmy: '兵马俑，秦代陶塑艺术巅峰，1974年发现于陕西临潼秦始皇陵。八千真人大小陶俑组成地下军团，千人千面无一雷同。被誉为"世界第八大奇迹"。',
-  qmht: '清明上河图，北宋张择端绘。纵24.8cm、横528.7cm，描摹汴京清明时节的繁华景象。人物逾八百、舟车数十，是中国古代风俗画的巅峰之作。持有此画者终局额外加2分。',
-  syfz: '四羊方尊，商代晚期青铜礼器，1938年出土于湖南宁乡。器身四角各铸一羊，寓"吉祥四方"。造型雄奇、铸造精绝，是商代青铜艺术的最高成就之一。',
-  slj: '双鸾双兽镜，汉代铜镜精品。镜背铸有双鸾双兽纹饰，造型灵动。镜中世界暗藏玄机——持有此镜者，终局时可发起"镜中决斗"，与对手各押一宝，出价高者夺得对方珍品。',
-  jlyy: '金缕玉衣，汉代帝王丧葬殓服。以金丝连缀两千余片和田玉片，耗时十年方成。古人相信玉石可保尸身不朽、灵魂永生。现存最完整的一件出土于河北满城汉墓。',
-  ltsx: '兰亭序，东晋王羲之书，永和九年（公元353年）作于会稽山阴。通篇324字，笔法"飘若浮云，矫若惊龙"，被誉为"天下第一行书"。与快雪时晴帖并藏，所有1分文物各加1分。',
-  zhybz: '曾侯乙编钟，战国早期青铜礼乐器，1978年出土于湖北随州。全套65件，总重逾2500公斤，音域跨越五个半八度。是世界音乐史上最伟大的考古发现之一。',
-  yqz: '影青盏，宋代景德镇窑青白瓷精品。釉色介于青白之间，薄如纸、明如镜、声如磬。宋人崇尚简约之美，影青瓷正是这种审美理想的化身。',
-  yqh: '元青花，元代景德镇创烧的釉下彩瓷。以进口"苏麻离青"钴料绘制，蓝白相间、浓淡相宜。开创了中国瓷器彩绘的新纪元。持有者可独立掷骰重取高值。',
-  dhmh: '敦煌壁画，莫高窟是世界上规模最大、保存最完整的佛教艺术宝库。现存洞窟735个、壁画4.5万平方米。持有壁画者担任拍卖师时，连任惩罚减半——大漠千年，佛光护佑。',
-  rytqy: '汝窑天青釉，宋代五大名窑之首。釉色"雨过天青云破处"，传世不足百件、件件国宝。与甲骨卜辞同时持有，掷骰可窥天机、重掷取高值。',
-  kxqt: '快雪时晴帖，东晋王羲之致友人短札，全文仅三行二十八字："羲之顿首，快雪时晴，佳想安善……"是现存最可靠的王羲之真迹摹本。与兰亭序并藏触发联动。',
-  jgpx: '甲骨卜辞，商代王室占卜记录。刻于龟甲兽骨之上，是汉字最早的成熟形态。殷墟出土甲骨逾十五万片，为研究商代历史提供了第一手资料。与汝窑天青釉联动掷骰。',
-  dhft: '敦煌飞天，莫高窟壁画中最为灵动的形象。飞天手持乐器或花篮，衣带当风、翩翩起舞，融合了印度佛教天人形象与中国道教羽人传统。持有时可升级骰子一级。',
-  sq: '市券，汉代商业凭证。汉代"市"为官方指定的交易场所，入市交易须持有市券，相当于古代的市场许可证。持券者担任拍卖师时可获双倍佣金。',
-  sxtc: '三彩驼，唐代三彩釉陶精品。骆驼昂首嘶鸣，背上驮着丝绸、瓷器与西域香料。它是丝绸之路最鲜活的缩影。持有此驼者每轮可获1💰商旅补给。',
-  cjgb: '鸡缸杯，明成化斗彩瓷器的巅峰之作。杯身绘子母鸡图，胎薄釉润，万历时已"值钱十万"。2014年一件成化鸡缸杯以2.8亿港元成交，轰动全球。',
-  jofjg: '金瓯永固杯，清乾隆年间御制金器。以黄金打造，镶嵌珍珠宝石，杯身刻"金瓯永固"四字，寓江山永固之意。是清代宫廷工艺的集大成之作。',
-  dhcxb: '沉香雕笔，明代文房珍宝。以沉香木雕刻而成，笔杆饰以山水人物纹。明代士大夫崇尚雅致生活，文房用具极尽工巧。此笔承载着千年文人的书斋清梦。'
+  // --- 3分·国之重器 ---
+  sxqts: {
+    skillName: '无', skillType: '无', skillDesc: '此件文物无特殊技能',
+    dynasty: '商代', excavatedYear: '1986年', museum: '三星堆博物馆',
+    brief: '古蜀文明遗珍，树高396cm，分三层九枝，枝头立神鸟，树干盘游龙。是古蜀人"沟通天地"的精神图腾。'
+  },
+  qsbmy: {
+    skillName: '无', skillType: '无', skillDesc: '此件文物无特殊技能',
+    dynasty: '秦代', excavatedYear: '1974年', museum: '秦始皇帝陵博物院',
+    brief: '八千真人大小陶俑组成地下军团，千人千面无一雷同。被誉为"世界第八大奇迹"。'
+  },
+  qmht: {
+    skillName: '传世', skillType: '被动', skillDesc: '持有此画者终局额外加2分',
+    dynasty: '北宋', excavatedYear: '传世品', museum: '故宫博物院',
+    brief: '张择端绘，纵24.8cm、横528.7cm，描摹汴京清明时节的繁华景象。人物逾八百、舟车数十，是中国古代风俗画的巅峰之作。'
+  },
+  syfz: {
+    skillName: '无', skillType: '无', skillDesc: '此件文物无特殊技能',
+    dynasty: '商代', excavatedYear: '1938年', museum: '中国国家博物馆',
+    brief: '商代晚期青铜礼器，器身四角各铸一羊，寓"吉祥四方"。造型雄奇、铸造精绝，是商代青铜艺术的最高成就之一。'
+  },
+  // --- 2分·珍品雅器 ---
+  slj: {
+    skillName: '镜中决斗', skillType: '主动', skillDesc: '终局时可发起决斗，与对手各押一宝，出价高者夺得对方珍品',
+    dynasty: '汉代', excavatedYear: '传世品', museum: '湖南博物院',
+    brief: '汉代铜镜精品，镜背铸有双鸾双兽纹饰，造型灵动。镜中世界暗藏玄机。'
+  },
+  jlyy: {
+    skillName: '无', skillType: '无', skillDesc: '此件文物无特殊技能',
+    dynasty: '西汉', excavatedYear: '1968年', museum: '河北博物院',
+    brief: '汉代帝王丧葬殓服，以金丝连缀两千余片和田玉片。古人相信玉石可保尸身不朽、灵魂永生。'
+  },
+  ltsx: {
+    skillName: '龙凤联动', skillType: '联动', skillDesc: '与快雪时晴帖同时持有，所有1分文物各加1分',
+    dynasty: '东晋', excavatedYear: '传世品', museum: '故宫博物院',
+    brief: '王羲之书，永和九年作于会稽山阴。通篇324字，笔法"飘若浮云，矫若惊龙"，被誉为"天下第一行书"。'
+  },
+  zhybz: {
+    skillName: '无', skillType: '无', skillDesc: '此件文物无特殊技能',
+    dynasty: '战国早期', excavatedYear: '1978年', museum: '湖北省博物馆',
+    brief: '全套65件，总重逾2500公斤，音域跨越五个半八度。是世界音乐史上最伟大的考古发现之一。'
+  },
+  yqz: {
+    skillName: '无', skillType: '无', skillDesc: '此件文物无特殊技能',
+    dynasty: '宋代', excavatedYear: '传世品', museum: '故宫博物院',
+    brief: '景德镇窑青白瓷精品，釉色介于青白之间，薄如纸、明如镜、声如磬。宋人崇尚简约之美的化身。'
+  },
+  yqh: {
+    skillName: '独立重掷', skillType: '主动', skillDesc: '持有者可独立掷骰重取高值',
+    dynasty: '元代', excavatedYear: '传世品', museum: '故宫博物院',
+    brief: '景德镇创烧的釉下彩瓷，以进口"苏麻离青"钴料绘制，蓝白相间、浓淡相宜。开创了中国瓷器彩绘的新纪元。'
+  },
+  dhmh: {
+    skillName: '护佑', skillType: '被动', skillDesc: '担任拍卖师时连任惩罚减半',
+    dynasty: '唐代', excavatedYear: '传世品', museum: '敦煌研究院',
+    brief: '莫高窟是世界上规模最大、保存最完整的佛教艺术宝库。现存洞窟735个、壁画4.5万平方米。'
+  },
+  rytqy: {
+    skillName: '天机重掷', skillType: '联动', skillDesc: '与甲骨卜辞同时持有，掷骰可重掷取高值',
+    dynasty: '宋代', excavatedYear: '传世品', museum: '台北故宫博物院',
+    brief: '宋代五大名窑之首，釉色"雨过天青云破处"，传世不足百件、件件国宝。'
+  },
+  // --- 1分·文明遗珍 ---
+  kxqt: {
+    skillName: '龙凤联动', skillType: '联动', skillDesc: '与兰亭序同时持有，所有1分文物各加1分',
+    dynasty: '东晋', excavatedYear: '传世品', museum: '台北故宫博物院',
+    brief: '王羲之致友人短札，全文仅三行二十八字。是现存最可靠的王羲之真迹摹本。'
+  },
+  jgpx: {
+    skillName: '天机重掷', skillType: '联动', skillDesc: '与汝窑天青釉同时持有，掷骰可重掷取高值',
+    dynasty: '商代', excavatedYear: '1928年', museum: '中国国家博物馆',
+    brief: '商代王室占卜记录，刻于龟甲兽骨之上，是汉字最早的成熟形态。殷墟出土甲骨逾十五万片。'
+  },
+  dhft: {
+    skillName: '飞升', skillType: '主动', skillDesc: '掷骰前可免费升级骰子一级（d20不可升级），限一次',
+    dynasty: '唐代', excavatedYear: '传世品', museum: '敦煌研究院',
+    brief: '莫高窟壁画中最为灵动的形象，衣带当风、翩翩起舞，融合了印度佛教天人形象与中国道教羽人传统。'
+  },
+  sq: {
+    skillName: '特权', skillType: '被动', skillDesc: '持券者担任拍卖师时可获双倍佣金',
+    dynasty: '汉代', excavatedYear: '传世品', museum: '湖南博物院',
+    brief: '汉代商业凭证，汉代"市"为官方指定的交易场所，入市交易须持有市券，相当于古代的市场许可证。'
+  },
+  sxtc: {
+    skillName: '通商', skillType: '被动', skillDesc: '持有此驼者每轮可获1💰商旅补给',
+    dynasty: '唐代', excavatedYear: '传世品', museum: '陕西历史博物馆',
+    brief: '唐代三彩釉陶精品，骆驼昂首嘶鸣，背上驮着丝绸、瓷器与西域香料。是丝绸之路最鲜活的缩影。'
+  },
+  cjgb: {
+    skillName: '无', skillType: '无', skillDesc: '此件文物无特殊技能',
+    dynasty: '明代', excavatedYear: '传世品', museum: '台北故宫博物院',
+    brief: '明成化斗彩瓷器的巅峰之作，杯身绘子母鸡图，胎薄釉润。2014年一件以2.8亿港元成交，轰动全球。'
+  },
+  jofjg: {
+    skillName: '无', skillType: '无', skillDesc: '此件文物无特殊技能',
+    dynasty: '清代', excavatedYear: '传世品', museum: '故宫博物院',
+    brief: '清乾隆年间御制金器，以黄金打造，镶嵌珍珠宝石，杯身刻"金瓯永固"四字，寓江山永固之意。'
+  },
+  dhcxb: {
+    skillName: '无', skillType: '无', skillDesc: '此件文物无特殊技能',
+    dynasty: '明代', excavatedYear: '传世品', museum: '故宫博物院',
+    brief: '明代文房珍宝，以沉香木雕刻而成，笔杆饰以山水人物纹。承载着千年文人的书斋清梦。'
+  },
 };
+
+// 技能种类标签颜色
+const SKILL_TYPE_COLORS = {
+  '主动': '#E67E22',
+  '被动': '#3498DB',
+  '联动': '#9B59B6',
+  '无':   '#7F8C8D',
+};
+
+/** 获取卡牌简介纯文本（向后兼容） */
+function getCardLoreText(cardId) {
+  const lore = CARD_LORE[cardId];
+  if (!lore) return '';
+  if (typeof lore === 'string') return lore;
+  return lore.brief || '';
+}
+
+/** 生成完整卡牌信息卡片 HTML（技能区 + 分割线 + 文物区） */
+function getCardInfoPanelHtml(cardId) {
+  const lore = CARD_LORE[cardId];
+  if (!lore || typeof lore === 'string') return '';
+  const color = SKILL_TYPE_COLORS[lore.skillType] || '#7F8C8D';
+  return `<div class="card-info-panel">
+    <div class="card-info-skill">
+      <div class="skill-row">
+        <span class="skill-name">${lore.skillName}</span>
+        <span class="skill-tag" style="background:${color}">${lore.skillType}</span>
+      </div>
+      <div class="skill-desc">${lore.skillDesc}</div>
+    </div>
+    <div class="card-info-divider"></div>
+    <div class="card-info-lore">
+      <div class="lore-meta-row"><span class="lore-label">朝代</span><span class="lore-value">${lore.dynasty}</span></div>
+      <div class="lore-meta-row"><span class="lore-label">出土</span><span class="lore-value">${lore.excavatedYear}</span></div>
+      <div class="lore-meta-row"><span class="lore-label">馆藏</span><span class="lore-value">${lore.museum}</span></div>
+      <div class="lore-brief">${lore.brief}</div>
+    </div>
+  </div>`;
+}
 
 const CARD_COLORS = { 1: '#2E5C8A', 2: '#8B6914', 3: '#C43A31' };
 

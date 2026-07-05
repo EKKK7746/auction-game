@@ -36,8 +36,8 @@ function _renderArtifactsTab(container) {
   for (const cardId of ARTIFACT_IDS) {
     const card = collected[cardId];
     const name = (typeof CARD_NAMES !== 'undefined' && CARD_NAMES[cardId]) ? CARD_NAMES[cardId] : cardId;
-    const lore = (typeof CARD_LORE !== 'undefined' && CARD_LORE[cardId])
-      ? CARD_LORE[cardId].substring(0, 60) + '...'
+    const lore = (typeof getCardLoreText === 'function')
+      ? getCardLoreText(cardId).substring(0, 60) + '...'
       : '神秘的古代文物...';
     const collectedClass = card ? 'collected' : 'uncollected';
     const countBadge = card ? `<span class="artifact-count">x${card.count}</span>` : '';
@@ -83,7 +83,7 @@ function openArtifactDetail(cardId) {
   const data = getCollection();
   const card = data.artifacts[cardId];
   const name = (typeof CARD_NAMES !== 'undefined' && CARD_NAMES[cardId]) ? CARD_NAMES[cardId] : cardId;
-  const lore = (typeof CARD_LORE !== 'undefined' && CARD_LORE[cardId]) ? CARD_LORE[cardId] : '神秘的古代文物...';
+  const lore = (typeof getCardLoreText === 'function') ? getCardLoreText(cardId) : '神秘的古代文物...';
   const modal = document.getElementById('artifactDetailModal');
   const img = document.getElementById('artifactModalImg');
   const title = document.getElementById('artifactModalName');

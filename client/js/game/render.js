@@ -494,15 +494,20 @@ function _renderSelectCard(view, container) {
 
   container.className = 'game-action-area my-turn';
   const deck = view.deck || [];
-  const cards = deck.map((c, i) => `
-    <div class="select-card-item" onclick="doSelectCard(${c.index !== undefined ? c.index : i})">
+  const cards = deck.map((c, i) => {
+    const lore = CARD_LORE[c.id];
+    const skillInfo = (lore && typeof lore === 'object')
+      ? `<div class="sc-skill"><span class="sc-skill-name">${lore.skillName}</span><span class="sc-skill-type" style="background:${SKILL_TYPE_COLORS[lore.skillType]||'#7F8C8D'}">${lore.skillType}</span></div><div class="sc-skill-desc">${lore.skillDesc}</div>`
+      : '';
+    return `<div class="select-card-item" onclick="doSelectCard(${c.index !== undefined ? c.index : i})">
       <span class="sc-emoji">${getCardImageHtml(c.id || c.name, 'card-img-md')}</span>
       <div class="sc-info">
         <div class="sc-name">${c.name}</div>
         <div class="sc-meta">★ ${c.score}分 ${getEffectLabel(c.effect)}</div>
+        ${skillInfo}
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 
   container.innerHTML = `
     <div class="action-title">🃏 选择本轮拍卖卡牌</div>
@@ -538,28 +543,44 @@ function _renderRentDice(view, container) {
   const UPGRADE_MAP = { d4: 'd6', d6: 'd12', d12: 'd20' };
 
   const diceTypes = [
-    { type: 'd4', sides: 4, ev: 2.5, cost: costs.d4, free: d4Free },
-    { type: 'd6', sides: 6, ev: 3.5, cost: costs.d6, free: false },
-    { type: 'd12', sides: 12, ev: 6.5, cost: costs.d12, free: false },
-    { type: 'd20', sides: 20, ev: 10.5, cost: costs.d20, free: false },
+    { type: 'd4', sides: 4, cost: costs.d4, free: d4Free },
+    { type: 'd6', sides: 6, cost: costs.d6, free: false },
+    { type: 'd12', sides: 12, cost: costs.d12, free: false },
+    { type: 'd20', sides: 20, cost: costs.d20, free: false },
   ];
+
+  const diceLabels = { d4: '4面骰', d6: '6面骰', d12: '12面骰', d20: '20面骰' };
+  const diceRanges = { d4: '1-4', d6: '1-6', d12: '1-12', d20: '1-20' };
 
   const buttons = diceTypes.map(d => {
     const canAfford = d.free || myFunds >= d.cost;
     const costLabel = d.free ? '<span class="dice-free-tag">免费</span>' : `${d.cost}💰`;
-    const upgraded = UPGRADE_MAP[d.type];
     return `<button class="dice-btn${!canAfford ? ' disabled' : ''}${d.free ? ' dice-free' : ''}"
+      data-dice-type="${d.type}"
       onclick="doSelectDiceWithUpgrade('${d.type}')">
-      <span class="dice-name">${d.type}<span class="dice-upgrade-preview"></span></span>
-      <span class="dice-cost">${costLabel}</span>
-      <span class="dice-ev">EV ${d.ev}</span>
+      <span class="dice-btn-name">${diceLabels[d.type]}<span class="dice-upgrade-preview"></span></span>
+      <span class="dice-btn-range">${diceRanges[d.type]}</span>
+      <span class="dice-btn-cost">${costLabel}</span>
     </button>`;
   }).join('');
 
   const upgradeCheckbox = hasUpgrade ? _buildUpgradeCheckbox() : '';
 
+  // 拍品信息卡片
+  const currentCard = view.revealedCard;
+  const cardInfoHtml = (currentCard && !currentCard.hidden)
+    ? `<div class="rent-card-info">
+        <div class="rent-card-img">${getCardFramedImageHtml(currentCard.id || currentCard.name, 'frame-md')}</div>
+        <div class="rent-card-detail">
+          <div class="rent-card-name">${currentCard.name || ''} <span class="rent-card-score">★ ${currentCard.score}分</span></div>
+          ${getCardInfoPanelHtml(currentCard.id || currentCard.name)}
+        </div>
+      </div>`
+    : '';
+
   container.innerHTML = `
     <div class="action-title">${isSpeedMode ? '⚡ 极速模式 — 选择骰子' : '🎲 选择你的骰子'}</div>
+    ${cardInfoHtml}
     <div class="dice-grid">
       ${buttons}
       <button class="dice-btn pass-btn-full"
@@ -1161,19 +1182,22 @@ function _renderDuelRentDice(view, container) {
   const hasUpgrade = me?.hasUpgrade || false;
 
   const diceTypes = [
-    { type: 'd4', sides: 4, ev: 2.5, cost: costs.d4 },
-    { type: 'd6', sides: 6, ev: 3.5, cost: costs.d6 },
-    { type: 'd12', sides: 12, ev: 6.5, cost: costs.d12 },
-    { type: 'd20', sides: 20, ev: 10.5, cost: costs.d20 },
+    { type: 'd4', sides: 4, cost: costs.d4 },
+    { type: 'd6', sides: 6, cost: costs.d6 },
+    { type: 'd12', sides: 12, cost: costs.d12 },
+    { type: 'd20', sides: 20, cost: costs.d20 },
   ];
+
+  const diceLabels = { d4: '4面骰', d6: '6面骰', d12: '12面骰', d20: '20面骰' };
+  const diceRanges = { d4: '1-4', d6: '1-6', d12: '1-12', d20: '1-20' };
 
   const buttons = diceTypes.map(d => {
     const canAfford = myFunds >= d.cost;
     return `<button class="dice-btn${!canAfford ? ' disabled' : ''}"
       onclick="doDuelRentDice('${d.type}')">
-      <span class="dice-name">${d.type}<span class="dice-upgrade-preview"></span></span>
-      <span class="dice-cost">${d.cost}💰</span>
-      <span class="dice-ev">EV ${d.ev}</span>
+      <span class="dice-btn-name">${diceLabels[d.type]}</span>
+      <span class="dice-btn-range">${diceRanges[d.type]}</span>
+      <span class="dice-btn-cost">${d.cost}💰</span>
     </button>`;
   }).join('');
 
@@ -1604,7 +1628,7 @@ function _renderFinished(view, container) {
           <summary><span class="lore-icon">📜</span> 文物图鉴 <span class="lore-hint">点击展开</span></summary>
           <div class="finish-lore-grid">
             ${[...allCardIds].map(id => {
-              const lore = CARD_LORE[id];
+              const lore = getCardLoreText(id);
               if (!lore) return '';
               return `<div class="finish-lore-item">
                 <span class="lore-name">${CARD_NAMES[id] || id}</span>
@@ -1787,7 +1811,7 @@ function showCardPopup(cardId, cardName, isHidden, optScore, optEffect) {
       <div class="card-popup-name">${cardName}</div>
       <div class="card-popup-score">★ ${_ps} 分</div>
       <div class="card-popup-effect">${getEffectLabel(_pe)}</div>
-      <div class="card-popup-lore">${CARD_LORE[cardId] || ''}</div>
+      ${getCardInfoPanelHtml(cardId)}
     </div>`;
   }
 

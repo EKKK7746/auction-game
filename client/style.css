@@ -1080,7 +1080,7 @@ body {
 }
 
 .dice-btn {
-  min-height: 60px;
+  min-height: 70px;
   border: 2px solid #D4CFC4;
   border-radius: 12px;
   background: #FFFFFF;
@@ -1097,10 +1097,10 @@ body {
 .dice-btn:active { transform: scale(0.95); background: #F5F0E8; }
 .dice-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; background: #F5F0E8; }
 
-.dice-btn .dice-name { font-size: 20px; font-weight: 700; color: #2C2C2C; }
-.dice-btn .dice-cost { font-size: 12px; color: #B0B0B0; }
-.dice-btn .dice-free-tag { font-size: 12px; color: #4CAF50; font-weight: 700; }
-.dice-btn .dice-ev { font-size: 11px; color: #5B7B5E; }
+.dice-btn .dice-btn-name { font-size: 18px; font-weight: 700; color: #2C2C2C; }
+.dice-btn .dice-btn-range { font-size: 13px; color: var(--text-tertiary, #B0B0B0); }
+.dice-btn .dice-btn-cost { font-size: 14px; color: #B0B0B0; }
+.dice-btn .dice-free-tag { font-size: 14px; color: #4CAF50; font-weight: 700; }
 
 .dice-btn.dice-free { border-color: #4CAF50; background: #F0FFF0; }
 .dice-btn.dice-free:hover { background: #E0FFE0; }
@@ -1119,7 +1119,7 @@ body {
   background: #FFF5F5;
 }
 
-.dice-btn.upgrade .dice-name { color: #8B2252; }
+.dice-btn.upgrade .dice-btn-name { color: #8B2252; }
 
 /* --- 掷骰结果 --- */
 
@@ -2840,6 +2840,49 @@ body {
 .card-popup-effect { font-size: 12px; color: #666666; margin-bottom: 10px; }
 .card-popup-lore { font-size: 11px; color: #999999; line-height: 1.4; }
 .card-popup-desc { font-size: 13px; color: #666666; }
+
+/* ========== 卡牌信息卡片面板（P0/1） ========== */
+.card-info-panel {
+  margin-top: 8px;
+  text-align: left;
+  border-radius: 8px;
+  background: #FAFAF8;
+  overflow: hidden;
+}
+.card-info-skill { padding: 8px 10px; }
+.skill-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.skill-name { font-size: 14px; font-weight: 700; color: #333; }
+.skill-tag {
+  font-size: 10px; color: #FFF; padding: 2px 6px; border-radius: 4px;
+  white-space: nowrap;
+}
+.skill-desc { font-size: 12px; color: #666; line-height: 1.4; }
+.card-info-divider { height: 1px; background: linear-gradient(90deg, transparent, #D4CFC4, transparent); margin: 0 4px; }
+.card-info-lore { padding: 8px 10px; }
+.lore-meta-row { display: flex; gap: 6px; margin-bottom: 3px; font-size: 11px; }
+.lore-label { color: #B0B0B0; min-width: 28px; }
+.lore-value { color: #666; }
+.lore-brief { font-size: 11px; color: #888; line-height: 1.5; margin-top: 4px; }
+
+/* 选卡阶段技能信息 */
+.select-card-item .sc-skill { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.select-card-item .sc-skill-name { font-size: 11px; font-weight: 600; color: #555; }
+.select-card-item .sc-skill-type {
+  font-size: 9px; color: #FFF; padding: 1px 4px; border-radius: 3px; white-space: nowrap;
+}
+.select-card-item .sc-skill-desc { font-size: 10px; color: #888; margin-top: 1px; }
+
+/* 租骰阶段拍品信息卡片 */
+.rent-card-info {
+  display: flex; gap: 10px; align-items: flex-start;
+  background: #FAFAF8; border-radius: 10px; padding: 10px;
+  margin-bottom: 8px; border: 1px solid #E8E4D9;
+}
+.rent-card-img { flex-shrink: 0; }
+.rent-card-detail { flex: 1; min-width: 0; }
+.rent-card-name { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 4px; }
+.rent-card-score { font-size: 12px; color: #B8860B; }
+.rent-card-info .card-info-panel { margin-top: 2px; }
 
 /* ========== 卡牌图片统一样式 ========== */
 .card-image {
@@ -5474,10 +5517,10 @@ body.tutorial-lock #app .tg-clickable * {
   .bid-btn .bid-hint { font-size: 10px; }
   .bid-btn.pass-btn { font-size: 14px; }
   .dice-grid { gap: 6px; }
-  .dice-btn { min-height: 50px; padding: 6px 8px; }
-  .dice-btn .dice-name { font-size: 16px; }
-  .dice-btn .dice-cost { font-size: 11px; }
-  .dice-btn .dice-ev { font-size: 10px; }
+  .dice-btn { min-height: 56px; padding: 6px 8px; }
+  .dice-btn .dice-btn-name { font-size: 15px; }
+  .dice-btn .dice-btn-range { font-size: 12px; }
+  .dice-btn .dice-btn-cost { font-size: 12px; }
   .dice-btn.pass-btn-full { min-height: 42px; font-size: 14px; }
 
   /* 设置浮动按钮 */

@@ -166,8 +166,7 @@ function onUpgradeCheckChange() {
   const buttons = document.querySelectorAll('.dice-btn');
 
   previews.forEach((preview, i) => {
-    const btnText = buttons[i]?.querySelector('.dice-name')?.textContent || '';
-    const diceType = btnText.replace(/[^a-z0-9]/gi, '');
+    const diceType = buttons[i]?.dataset.diceType || '';
     const target = UPGRADE_MAP[diceType];
     if (checked && target) {
       preview.textContent = ` → ${target}`;
