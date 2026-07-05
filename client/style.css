@@ -3635,9 +3635,9 @@ body {
   background: #D4B97E;
 }
 
-/* 教程模式下隐藏阶段操作说明，避免与引导提示重复 */
-body.tutorial-active .action-title,
-body.tutorial-active .action-desc {
+/* 教程引导步骤进行时隐藏阶段操作说明，避免与引导提示重复 */
+body.tutorial-lock .action-title,
+body.tutorial-lock .action-desc {
   display: none !important;
 }
 .tutorial-complete {
