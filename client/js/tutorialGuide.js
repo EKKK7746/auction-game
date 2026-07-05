@@ -28,13 +28,13 @@
 
         case 'selectCard':
           return [
-            { type: 'info', text: 'AI 当选拍卖师，正在选卡…\n等待它选择本轮拍品。', advanceOn: 'phaseChange' },
+            { type: 'info', text: 'AI 当选拍卖师，正在选卡…\n每张文物卡都有独特技能：\n被动技能自动生效，主动技能在特定时机触发，\n联动技能需同时持有配对文物才能激活。\n等待拍卖师选择本轮拍品。', advanceOn: 'phaseChange' },
           ];
 
         case 'rentDice':
           return [
-            { type: 'info', text: '选骰子争夺卡牌！\nd4=1💰(1-4点)  d6=2💰(1-6点)\nd12=4💰(1-12点)  d20=6💰(1-20点)\n越贵点数越高，但金币有限。' },
-            { type: 'action', text: '点击 d6 租骰——性价比最高。', target: '.dice-btn[onclick*="d6"]', advanceOn: 'diceSelected' },
+            { type: 'info', text: '选骰子争夺卡牌！\n骰子面数=点数范围：\n4面骰(1-4)  6面骰(1-6)\n12面骰(1-12)  20面骰(1-20)\n面数越多赢面越大，但费用也越高。\n上方卡片展示了当前拍品的完整信息。' },
+            { type: 'action', text: '点击 6面骰租骰——性价比最高。', target: '.dice-btn[data-dice-type="d6"]', advanceOn: 'diceSelected' },
           ];
 
         case 'rollDice':
@@ -57,7 +57,7 @@
       switch (phase) {
         case 'auction':
           return [
-            { type: 'info', text: '第二轮，你来当拍卖师！\n报最低佣金比例即可当选。' },
+            { type: 'info', text: '第二轮，你来当拍卖师！\n报最低佣金比例即可当选。\n注意：连续当选拍卖师会有惩罚，\n每连任一次佣金收入减少1💰。' },
             { type: 'action', text: '点击「10%」——最低佣金最容易当选。', target: '.bid-btn:first-child', advanceOn: 'bidSubmitted' },
           ];
 
@@ -90,6 +90,11 @@
         case 'settle':
           return [
             { type: 'info', text: '结算完成！\n拍卖师获得佣金收入。', advanceOn: 'phaseChange' },
+          ];
+
+        case 'trade':
+          return [
+            { type: 'info', text: '交易阶段！\n你可以与其他玩家交换文物卡。\n发起交易需指定对方和交换条件，\n对方可以接受或拒绝。每人每局可发起有限次交易。\n点击玩家头像可查看其卡牌详情。', advanceOn: 'phaseChange' },
           ];
 
         default:
