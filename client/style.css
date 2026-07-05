@@ -6671,4 +6671,142 @@ body.tutorial-lock #app .tg-clickable * {
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
+/* ========== 每日文物问答 ========== */
+.daily-quiz-modal {
+  max-width: 480px;
+  width: 90%;
+}
+
+.quiz-progress {
+  font-size: 12px;
+  color: #B0B0B0;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.quiz-question {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.quiz-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.quiz-option-btn {
+  padding: 12px 16px;
+  border: 2px solid #E0DCD0;
+  border-radius: 10px;
+  background: #FAFAF8;
+  font-size: 15px;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+
+.quiz-option-btn:hover {
+  border-color: #C9A96E;
+  background: #F5F0E8;
+}
+
+.quiz-option-btn:active {
+  transform: scale(0.97);
+}
+
+.quiz-result {
+  text-align: center;
+  padding: 16px;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.quiz-result.correct {
+  background: #F0FFF0;
+  border: 1px solid #4CAF50;
+  color: #2E7D32;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.quiz-result.wrong {
+  background: #FFF0F0;
+  border: 1px solid #C43A31;
+  color: #C62828;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.quiz-correct-answer {
+  margin-top: 8px;
+  font-size: 14px;
+  color: #666;
+  font-weight: 400;
+}
+
+.quiz-next-btn {
+  display: block;
+  margin: 12px auto 0;
+  padding: 8px 32px;
+  background: #C9A96E;
+  color: #1a1a1a;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.quiz-next-btn:hover { background: #D4B97E; }
+
+.quiz-result-summary {
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.quiz-result-grade {
+  font-size: 24px;
+  font-weight: 700;
+  color: #C9A96E;
+  margin-bottom: 12px;
+}
+
+.quiz-result-score {
+  font-size: 32px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.quiz-result-pct {
+  font-size: 16px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.quiz-result-date {
+  font-size: 13px;
+  color: #B0B0B0;
+  margin-bottom: 16px;
+}
+
+.quiz-restart-btn {
+  padding: 8px 24px;
+  background: #F5F0E8;
+  border: 1px solid #D4CFC4;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+}
+
+.quiz-restart-btn:hover { background: #EDE5DA; }
 

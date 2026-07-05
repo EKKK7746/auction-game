@@ -16,7 +16,9 @@ const ARTIFACT_IDS = [
 ];
 
 // ==================== 成就定义 ====================
+// hidden: true → 达成前不可见；hidden: false（常驻）→ 始终可见
 const ACHIEVEMENTS = {
+  // --- 原有成就（常驻） ---
   first_win:       { id:'first_win',       name:'初出茅庐',   desc:'赢得第1局游戏',             icon:'🏆', reward:{ type:'avatarFrame', id:'frame_bronze' } },
   collector_5:     { id:'collector_5',     name:'小有收藏',   desc:'收集5种不同文物',           icon:'📦', reward:{ type:'avatarFrame', id:'frame_silver' } },
   collector_10:    { id:'collector_10',    name:'收藏大家',   desc:'收集10种不同文物',          icon:'🏛️', reward:{ type:'avatarFrame', id:'frame_gold' } },
@@ -27,6 +29,26 @@ const ACHIEVEMENTS = {
   play_10_games:   { id:'play_10_games',   name:'身经百战',   desc:'参与10局游戏',              icon:'⚔️', reward:{ type:'avatar',     id:'avatar_veteran' } },
   d4_winner:       { id:'d4_winner',       name:'以小博大',   desc:'在镜中决斗中用d4骰子获胜',  icon:'🎲', reward:{ type:'diceEffect', id:'dice_lucky' } },
   high_score_20:   { id:'high_score_20',   name:'高分猎手',   desc:'单局最终分达到20分',         icon:'⭐', reward:{ type:'avatar',     id:'avatar_star' } },
+
+  // --- 新增：运气类 ---
+  chosen_one:      { id:'chosen_one',      name:'天选之子',   desc:'单局内掷出3次以上最大点数',   icon:'🌟', hidden: false, reward:null },
+  bad_luck:        { id:'bad_luck',        name:'霉运连连',   desc:'连续4局，每局最终点数为1',   icon:'🌚', hidden: true,  reward:null },
+  narrow_win:      { id:'narrow_win',      name:'一线生机',   desc:'在镜中决斗中用d4获胜',       icon:'⚡', hidden: true,  reward:null },
+
+  // --- 新增：拍卖师类 ---
+  always_runner:   { id:'always_runner',   name:'万年老二',   desc:'单局竞选拍卖师3次以上全部落选', icon:'🥈', hidden: true,  reward:null },
+  monopoly:        { id:'monopoly',        name:'垄断巨头',   desc:'连续当选拍卖师8次',          icon:'🏦', hidden: false, reward:null },
+  fisherman:       { id:'fisherman',       name:'鹬蚌相争',   desc:'作为拍卖师，某回合所有其他玩家都租了d20', icon:'🎣', hidden: true, reward:null },
+
+  // --- 新增：策略类 ---
+  miser:           { id:'miser',           name:'守财奴',     desc:'全程不租骰，最终得分第一',   icon:'🤑', hidden: false, reward:null },
+  business_mind:   { id:'business_mind',   name:'商业头脑',   desc:'单局至少一次获得100%工资率（持有市券时叫到50%），且该次总收入≥18', icon:'📈', hidden: false, reward:null },
+  millennium_eye:  { id:'millennium_eye',  name:'一眼千年',   desc:'单局收集到3件以上同朝代文物', icon:'👁️', hidden: false, reward:null },
+
+  // --- 新增：交互类 ---
+  social_butterfly: { id:'social_butterfly', name:'社交达人',   desc:'累计发起交易30次以上',       icon:'🤝', hidden: true,  reward:null },
+  three_visits:    { id:'three_visits',    name:'三顾茅庐',   desc:'单局交易被拒3次以上',        icon:'📜', hidden: true,  reward:null },
+  all_in:          { id:'all_in',          name:'破釜沉舟',   desc:'某回合将所有金币花光租骰',   icon:'🔥', hidden: true,  reward:null },
 };
 
 // ==================== 皮肤定义 ====================
@@ -66,6 +88,9 @@ function _defaultCollection() {
       winStreak: 0,
       bestWinStreak: 0,
       totalAuctioneerRounds: 0,
+      // 新增追踪字段
+      totalTradesInitiated: 0,  // 累计发起交易次数
+      consecutiveLastPlaceRolls: 0,  // 连续最终点数1的局数
     },
     achievements: {},   // { achievementId: { unlockedAt: timestamp } }
     equippedSkin: {
@@ -73,6 +98,8 @@ function _defaultCollection() {
       avatarFrame: 'default',
       diceEffect: 'default',
     },
+    // 每局临时追踪（游戏开始时重置）
+    _sessionStats: null,
   };
 }
 
@@ -155,7 +182,7 @@ function _getFullCollection() {
   for (const id of ARTIFACT_IDS) {
     data.artifacts[id] = { count: 99, firstWon: Date.now() };
   }
-  // 解锁全部成就
+  // 解锁全部成就（含隐藏成就）
   for (const achId of Object.keys(ACHIEVEMENTS)) {
     data.achievements[achId] = { unlockedAt: Date.now() };
   }
@@ -168,6 +195,8 @@ function _getFullCollection() {
   data.stats.winStreak = 99;
   data.stats.bestWinStreak = 99;
   data.stats.totalAuctioneerRounds = 999;
+  data.stats.totalTradesInitiated = 999;
+  data.stats.consecutiveLastPlaceRolls = 4;
   return data;
 }
 
@@ -244,8 +273,112 @@ function updateAfterGame(view, myPlayerId) {
   // 成就检查
   const newAchievements = _checkAchievements(data, me, view);
 
+  // 新增成就检查（基于会话统计）
+  const sessionAch = _checkSessionAchievements(data, me, view);
+  newAchievements.push(...sessionAch);
+
   _saveCollection(data);
   return newAchievements.length > 0 ? newAchievements : null;
+}
+
+/** 检查基于会话统计的成就 */
+function _checkSessionAchievements(data, me, view) {
+  const newAch = [];
+  const ach = data.achievements;
+  const ss = data._sessionStats;
+  if (!ss) return newAch;
+
+  // 天选之子：单局内掷出3次以上最大点数
+  if (!ach.chosen_one && (ss.maxRolls || 0) >= 3) {
+    ach.chosen_one = { unlockedAt: Date.now() };
+    newAch.push('chosen_one');
+  }
+
+  // 霉运连连：连续4局，每局最终点数为1
+  if (!ach.bad_luck) {
+    if (ss.finalRollValue === 1) {
+      data.stats.consecutiveLastPlaceRolls = (data.stats.consecutiveLastPlaceRolls || 0) + 1;
+    } else {
+      data.stats.consecutiveLastPlaceRolls = 0;
+    }
+    if ((data.stats.consecutiveLastPlaceRolls || 0) >= 4) {
+      ach.bad_luck = { unlockedAt: Date.now() };
+      newAch.push('bad_luck');
+    }
+  }
+
+  // 一线生机：在镜中决斗中用d4获胜（与 d4_winner 相同条件）
+  if (!ach.narrow_win && data.stats._lastDuelWinType === 'd4') {
+    ach.narrow_win = { unlockedAt: Date.now() };
+    newAch.push('narrow_win');
+  }
+
+  // 万年老二：单局竞选拍卖师3次以上全部落选
+  if (!ach.always_runner && (ss.auctioneerBidCount || 0) >= 3 && (ss.auctioneerWonCount || 0) === 0) {
+    ach.always_runner = { unlockedAt: Date.now() };
+    newAch.push('always_runner');
+  }
+
+  // 垄断巨头：连续当选拍卖师8次
+  if (!ach.monopoly && (ss.consecutiveAuctioneer || 0) >= 8) {
+    ach.monopoly = { unlockedAt: Date.now() };
+    newAch.push('monopoly');
+  }
+
+  // 鹬蚌相争：作为拍卖师，某回合所有其他玩家都租了d20
+  if (!ach.fisherman && ss.allD20Round && ss.wasAuctioneerForAllD20) {
+    ach.fisherman = { unlockedAt: Date.now() };
+    newAch.push('fisherman');
+  }
+
+  // 守财奴：全程不租骰，最终得分第一
+  if (!ach.miser && !ss.diceRented && me.rank === 1) {
+    ach.miser = { unlockedAt: Date.now() };
+    newAch.push('miser');
+  }
+
+  // 商业头脑：100%工资率且收入≥18
+  if (!ach.business_mind && ss.had100PercentComm) {
+    ach.business_mind = { unlockedAt: Date.now() };
+    newAch.push('business_mind');
+  }
+
+  // 一眼千年：单局收集到3件以上同朝代文物
+  if (!ach.millennium_eye && ss.cardsObtained && ss.cardsObtained.length >= 3) {
+    const dynastyCount = {};
+    for (const cardId of ss.cardsObtained) {
+      const lore = CARD_LORE[cardId];
+      if (lore && typeof lore === 'object') {
+        const d = lore.dynasty;
+        dynastyCount[d] = (dynastyCount[d] || 0) + 1;
+        if (dynastyCount[d] >= 3) {
+          ach.millennium_eye = { unlockedAt: Date.now() };
+          newAch.push('millennium_eye');
+          break;
+        }
+      }
+    }
+  }
+
+  // 社交达人：累计发起交易30次以上
+  if (!ach.social_butterfly && (data.stats.totalTradesInitiated || 0) >= 30) {
+    ach.social_butterfly = { unlockedAt: Date.now() };
+    newAch.push('social_butterfly');
+  }
+
+  // 三顾茅庐：单局交易被拒3次以上
+  if (!ach.three_visits && (ss.tradeRejected || 0) >= 3) {
+    ach.three_visits = { unlockedAt: Date.now() };
+    newAch.push('three_visits');
+  }
+
+  // 破釜沉舟：某回合将所有金币花光租骰
+  if (!ach.all_in && ss.allInRound) {
+    ach.all_in = { unlockedAt: Date.now() };
+    newAch.push('all_in');
+  }
+
+  return newAch;
 }
 
 function _checkAchievements(data, me, view) {
@@ -324,6 +457,124 @@ function recordDuelDice(diceType, won) {
 function recordAuctioneerRound() {
   const data = _loadCollection();
   data.stats.totalAuctioneerRounds = (data.stats.totalAuctioneerRounds || 0) + 1;
+  _saveCollection(data);
+}
+
+// ==================== 每局会话追踪 ====================
+
+/** 初始化一局的会话统计（游戏开始时调用） */
+function initSessionStats() {
+  const data = _loadCollection();
+  data._sessionStats = {
+    maxRolls: 0,           // 本局掷出最大点数的次数
+    auctioneerBidCount: 0, // 本局竞选拍卖师次数
+    auctioneerWonCount: 0, // 本局当选拍卖师次数
+    consecutiveAuctioneer: 0, // 连续当选计数
+    diceRented: false,     // 本局是否租过骰
+    tradeInitiated: 0,     // 本局发起交易次数
+    tradeRejected: 0,      // 本局交易被拒次数
+    allInRound: false,     // 是否有回合花光所有金币租骰
+    maxCommissionRate: 0,  // 本局最高佣金率
+    maxCommissionIncome: 0, // 本局最高单次佣金收入
+    had100PercentComm: false, // 是否有100%工资率
+    finalRollValue: 0,     // 本局最终掷骰点数
+    allD20Round: false,    // 是否有回合所有非拍卖师玩家都租d20
+    wasAuctioneerForAllD20: false, // allD20Round时是否为拍卖师
+    cardsObtained: [],     // 本局获得的卡牌ID列表
+  };
+  _saveCollection(data);
+}
+
+/** 更新会话统计（局内调用） */
+function updateSessionStats(updates) {
+  const data = _loadCollection();
+  if (!data._sessionStats) return;
+  Object.assign(data._sessionStats, updates);
+  _saveCollection(data);
+}
+
+/** 获取会话统计 */
+function getSessionStats() {
+  const data = _loadCollection();
+  return data._sessionStats || null;
+}
+
+/** 记录掷骰结果（用于天选之子成就） */
+function recordDiceRoll(diceType, value, isMaxValue) {
+  if (!isMaxValue) return;
+  const data = _loadCollection();
+  if (!data._sessionStats) return;
+  data._sessionStats.maxRolls = (data._sessionStats.maxRolls || 0) + 1;
+  _saveCollection(data);
+}
+
+/** 记录拍卖师竞选结果 */
+function recordAuctioneerBid(won) {
+  const data = _loadCollection();
+  if (!data._sessionStats) return;
+  data._sessionStats.auctioneerBidCount = (data._sessionStats.auctioneerBidCount || 0) + 1;
+  if (won) {
+    data._sessionStats.auctioneerWonCount = (data._sessionStats.auctioneerWonCount || 0) + 1;
+    data._sessionStats.consecutiveAuctioneer = (data._sessionStats.consecutiveAuctioneer || 0) + 1;
+  } else {
+    data._sessionStats.consecutiveAuctioneer = 0;
+  }
+  _saveCollection(data);
+}
+
+/** 记录租骰 */
+function recordDiceRented(diceType, cost, fundsAfter) {
+  const data = _loadCollection();
+  if (!data._sessionStats) return;
+  data._sessionStats.diceRented = true;
+  if (fundsAfter === 0) {
+    data._sessionStats.allInRound = true;
+  }
+  _saveCollection(data);
+}
+
+/** 记录发起交易 */
+function recordTradeInitiated() {
+  const data = _loadCollection();
+  if (!data._sessionStats) return;
+  data._sessionStats.tradeInitiated = (data._sessionStats.tradeInitiated || 0) + 1;
+  data.stats.totalTradesInitiated = (data.stats.totalTradesInitiated || 0) + 1;
+  _saveCollection(data);
+}
+
+/** 记录交易被拒 */
+function recordTradeRejected() {
+  const data = _loadCollection();
+  if (!data._sessionStats) return;
+  data._sessionStats.tradeRejected = (data._sessionStats.tradeRejected || 0) + 1;
+  _saveCollection(data);
+}
+
+/** 记录佣金收入 */
+function recordCommission(rate, income, hasShiQuan) {
+  const data = _loadCollection();
+  if (!data._sessionStats) return;
+  if (rate > data._sessionStats.maxCommissionRate) {
+    data._sessionStats.maxCommissionRate = rate;
+  }
+  if (income > data._sessionStats.maxCommissionIncome) {
+    data._sessionStats.maxCommissionIncome = income;
+  }
+  // 100%工资率 = 持有市券时叫到50%（佣金翻倍后实际100%）
+  if (hasShiQuan && rate === 50 && income >= 18) {
+    data._sessionStats.had100PercentComm = true;
+  }
+  _saveCollection(data);
+}
+
+/** 记录回合掷骰情况（所有非拍卖师玩家都租d20） */
+function recordRoundDiceSummary(allD20, isAuctioneer) {
+  const data = _loadCollection();
+  if (!data._sessionStats) return;
+  if (allD20) {
+    data._sessionStats.allD20Round = true;
+    data._sessionStats.wasAuctioneerForAllD20 = isAuctioneer;
+  }
   _saveCollection(data);
 }
 

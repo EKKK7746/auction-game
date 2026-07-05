@@ -204,6 +204,10 @@ const ACHIEVEMENT_CATEGORIES = [
   { id: 'beginner',  label: '🌱 新手', desc: '入门即达', ids: ['first_win', 'play_10_games', 'collector_5'] },
   { id: 'challenge', label: '⚔️ 挑战', desc: '需要实力',  ids: ['collector_10', 'auctioneer_5', 'win_3_streak', 'high_score_20'] },
   { id: 'master',    label: '👑 大师', desc: '极限目标',  ids: ['collector_all', 'rich_50', 'd4_winner'] },
+  { id: 'luck',      label: '🎲 运气', desc: '看天意',    ids: ['chosen_one', 'bad_luck', 'narrow_win'] },
+  { id: 'auctioneer',label: '🔨 拍卖师', desc: '佣金之路', ids: ['always_runner', 'monopoly', 'fisherman'] },
+  { id: 'strategy',  label: '🧠 策略', desc: '运筹帷幄',  ids: ['miser', 'business_mind', 'millennium_eye'] },
+  { id: 'social',    label: '🤝 交互', desc: '你来我往',  ids: ['social_butterfly', 'three_visits', 'all_in'] },
 ];
 
 function _renderAchievementsTab(container) {
@@ -228,6 +232,9 @@ function _renderAchievementsTab(container) {
       const def = ACHIEVEMENTS[id];
       if (!def) continue;
       const unlocked = !!ach[id];
+      // 隐藏成就：未解锁时不显示（不显示"?"占位）
+      if (def.hidden && !unlocked) continue;
+
       const progress = _getAchievementProgress(id, data);
       const pct = Math.min(100, progress.pct);
 
@@ -237,7 +244,7 @@ function _renderAchievementsTab(container) {
           <div class="ach-info">
             <div class="ach-name">${def.name}</div>
             <div class="ach-desc">${def.desc}</div>
-            <div class="ach-reward">🎁 解锁：${_getRewardName(def.reward)}</div>
+            ${def.reward ? `<div class="ach-reward">🎁 解锁：${_getRewardName(def.reward)}</div>` : ''}
           </div>
           <div class="ach-status">
             ${unlocked
@@ -269,6 +276,19 @@ function _getAchievementProgress(achId, data) {
     case 'play_10_games':   return { current: Math.min(10, s.totalGames), total: 10, pct: (s.totalGames / 10) * 100 };
     case 'd4_winner':       return { current: 0, total: 1, pct: 0 };
     case 'high_score_20':   return { current: Math.min(20, s.bestScore), total: 20, pct: (s.bestScore / 20) * 100 };
+    // 新增成就进度
+    case 'chosen_one':      return { current: 0, total: 1, pct: 0 };
+    case 'bad_luck':        return { current: Math.min(4, s.consecutiveLastPlaceRolls || 0), total: 4, pct: ((s.consecutiveLastPlaceRolls || 0) / 4) * 100 };
+    case 'narrow_win':      return { current: 0, total: 1, pct: 0 };
+    case 'always_runner':   return { current: 0, total: 1, pct: 0 };
+    case 'monopoly':        return { current: 0, total: 1, pct: 0 };
+    case 'fisherman':       return { current: 0, total: 1, pct: 0 };
+    case 'miser':           return { current: 0, total: 1, pct: 0 };
+    case 'business_mind':   return { current: 0, total: 1, pct: 0 };
+    case 'millennium_eye':  return { current: 0, total: 1, pct: 0 };
+    case 'social_butterfly':return { current: Math.min(30, s.totalTradesInitiated || 0), total: 30, pct: ((s.totalTradesInitiated || 0) / 30) * 100 };
+    case 'three_visits':    return { current: 0, total: 1, pct: 0 };
+    case 'all_in':          return { current: 0, total: 1, pct: 0 };
     default:                return { current: 0, total: 1, pct: 0 };
   }
 }

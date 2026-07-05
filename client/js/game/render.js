@@ -254,6 +254,7 @@ function _renderActionArea(view) {
   if (newPhase === 'auction') {
     _auctionResultShown = false;
     _collectionSaved = false;  // 新游戏开始，重置收集保存标记
+    if (typeof initSessionStats === 'function') initSessionStats();
   }
 
   if (prevPhase && prevPhase !== newPhase) {

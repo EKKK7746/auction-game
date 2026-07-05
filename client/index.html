@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>琳琅 · 华夏文物拍卖</title>
-  <link rel="stylesheet" href="style.css?v=20260705d">
+  <link rel="stylesheet" href="style.css?v=20260705e">
 </head>
 <body>
 
@@ -75,6 +75,10 @@
         <div class="mode-cards" id="modeCards">
           <!-- 由 mode.js 动态生成 -->
         </div>
+
+        <button class="btn btn-outline btn-card-guide" onclick="openDailyQuiz()">
+          📝 每日文物问答
+        </button>
 
         <button class="btn btn-outline btn-card-guide" onclick="openIntro()">
           📜 卡牌图鉴 — 文物介绍与效果
@@ -341,6 +345,17 @@
         <div class="collection-content" id="collectionContent"></div>
       </div>
     </section>
+
+<!-- ========== 每日文物问答模态框 ========== -->
+<div id="dailyQuizModal" class="modal-overlay" style="display:none;">
+  <div class="modal-box daily-quiz-modal">
+    <div class="modal-titlebar">
+      <h2 class="modal-titlebar-title">📝 每日文物问答</h2>
+      <button class="modal-titlebar-close" onclick="closeDailyQuiz()">✕</button>
+    </div>
+    <div id="dailyQuizContent"></div>
+  </div>
+</div>
 
 <!-- ========== 本局牌堆模态框 ========== -->
 <div id="cardPoolModal" class="modal-overlay" style="display:none;">
@@ -708,6 +723,7 @@
   <script src="js/router.js"></script>
   <script src="js/collection.js"></script>
   <script src="js/collection-ui.js"></script>
+  <script src="js/dailyQuiz.js"></script>
   <script src="js/mode.js"></script>
   <script src="js/room.js"></script>
   <script src="js/lobby.js"></script>
@@ -717,8 +733,8 @@
   <script src="js/roomlist.js"></script>
   <script src="js/diceParticles.js"></script>
   <script src="js/intro.js"></script>
-  <script src="js/tutorial.js?v=20260705d"></script>
-  <script src="js/tutorialGuide.js?v=20260705d"></script>
+  <script src="js/tutorial.js?v=20260705e"></script>
+  <script src="js/tutorialGuide.js?v=20260705e"></script>
   <script src="js/game/data.js"></script>
   <script src="js/game/animation.js"></script>
   <script src="js/game/actions.js"></script>
