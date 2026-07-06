@@ -60,7 +60,7 @@ function joinPublicRoom(roomId) {
   // 同步到 GameState（防止后续操作读不到）
   GameState.nickname = nickname;
   if (typeof showLoading === 'function') showLoading('加入房间中…');
-  socket.emit('room:join', roomId, nickname, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (response) => {
+  socket.emit('room:join', roomId, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (response) => {
     if (typeof hideLoading === 'function') hideLoading();
     if (!response.success) {
       if (response.gameInProgress) {

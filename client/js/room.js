@@ -306,12 +306,20 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginError = document.getElementById('loginError');
   const btnBrowseRooms = document.getElementById('btnBrowseRooms');
 
-  // 恢复上次保存的昵称
-  const saved = JSON.parse(localStorage.getItem('mwPlayer') || '{}');
-  if (saved.nickname && nicknameInput) {
-    nicknameInput.value = saved.nickname;
-    GameState.nickname = saved.nickname;
+  // 从 auth 恢复昵称
+  const authUser = typeof getAuthUser === 'function' ? getAuthUser() : null;
+  if (authUser && nicknameInput) {
+    nicknameInput.value = authUser.nickname;
+    GameState.nickname = authUser.nickname;
     updateLoginButtons();
+  } else {
+    // 兼容旧流程：从 localStorage 恢复
+    const saved = JSON.parse(localStorage.getItem('mwPlayer') || '{}');
+    if (saved.nickname && nicknameInput) {
+      nicknameInput.value = saved.nickname;
+      GameState.nickname = saved.nickname;
+      updateLoginButtons();
+    }
   }
 
   // 更新房间界面玩家信息
@@ -346,6 +354,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const nickname = nicknameInput.value.trim();
       if (nickname.length < 2) return;
 
+      if (!socket || !socket.connected) {
+        if (loginError) loginError.textContent = '未连接到服务器，请刷新页面';
+        return;
+      }
+
       GameState.nickname = nickname;
       localStorage.setItem('mwPlayer', JSON.stringify({ nickname, roomId: '' }));
       if (loginError) loginError.textContent = '';
@@ -355,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const maxPlayers = parseInt(document.getElementById('maxPlayersSelect')?.value || '6');
       const mode = GameState.selectedMode?.id || 'classic';
 
-      socket.emit('room:create', nickname, isPublic, { mode, maxPlayers, skin: typeof getSkinBundle === 'function' ? getSkinBundle() : {} }, (response) => {
+      socket.emit('room:create', isPublic, { mode, maxPlayers, skin: typeof getSkinBundle === 'function' ? getSkinBundle() : {} }, (response) => {
         if (typeof hideLoading === 'function') hideLoading();
         if (!response.success) {
           if (loginError) loginError.textContent = response.error || '创建房间失败';
@@ -372,12 +385,17 @@ document.addEventListener('DOMContentLoaded', () => {
       const nickname = nicknameInput.value.trim();
       if (roomId.length !== 6 || nickname.length < 2) return;
 
+      if (!socket || !socket.connected) {
+        if (loginError) loginError.textContent = '未连接到服务器，请刷新页面';
+        return;
+      }
+
       GameState.nickname = nickname;
       localStorage.setItem('mwPlayer', JSON.stringify({ nickname, roomId: '' }));
       if (loginError) loginError.textContent = '';
       if (typeof showLoading === 'function') showLoading('加入房间中…');
 
-      socket.emit('room:join', roomId, nickname, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (response) => {
+      socket.emit('room:join', roomId, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (response) => {
         if (typeof hideLoading === 'function') hideLoading();
         if (!response.success) {
           if (response.gameInProgress) {
@@ -417,7 +435,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnSpectate.addEventListener('click', () => {
       if (!GameState.roomId || !GameState.nickname) return;
       if (typeof showLoading === 'function') showLoading('进入观战…');
-      socket.emit('spectator:enter', GameState.roomId, GameState.nickname, (res) => {
+      socket.emit('spectator:enter', GameState.roomId, (res) => {
         if (typeof hideLoading === 'function') hideLoading();
         if (!res.success) {
           if (typeof showToast === 'function') showToast(res.error || '观战失败', 'error');

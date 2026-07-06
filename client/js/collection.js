@@ -158,8 +158,17 @@ function _saveCollection(data) {
   }
 }
 
+/** 直接写入原始数据（用于从服务端同步后覆盖本地） */
+function _saveCollectionRaw(data) {
+  _saveCollection(data);
+}
+
 /** 获取当前玩家昵称 */
 function _getNickname() {
+  // 优先从 auth 系统获取
+  if (typeof GameState !== 'undefined' && GameState.authUser && GameState.nickname) {
+    return GameState.nickname;
+  }
   try {
     const raw = localStorage.getItem('mwPlayer');
     if (!raw) return '';

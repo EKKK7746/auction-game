@@ -4,6 +4,7 @@
 
 const Views = {
   START: 'start',
+  AUTH: 'auth',
   MODE: 'mode',
   LOGIN: 'login',
   LOBBY: 'lobby',

@@ -58,7 +58,7 @@ function rejoinGame() {
   const btn = document.getElementById('btnRejoinGame');
   if (btn) btn.remove();
 
-  socket.emit('room:join', GameState.roomId, GameState.nickname, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (res) => {
+  socket.emit('room:join', GameState.roomId, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (res) => {
     if (res && res.success) {
       if (typeof showToast === 'function') showToast('✅ 已恢复身份，欢迎回来！', 'info');
     } else {

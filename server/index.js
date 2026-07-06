@@ -10,11 +10,18 @@ const roomManager = require('./roomManager');
 const gameEngine = require('./gameEngine');
 const { BotManager, createBotPlayer, resolveAutoStrategies } = require('./bot');
 const SecurityMiddleware = require('./security');
+const authRouter = require('./auth');
+const syncRouter = require('./sync');
 
 const PORT = process.env.PORT || 3000;
 
 const app = express();
+app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'client')));
+
+// ==================== HTTP API 路由 ====================
+app.use('/api/auth', authRouter);
+app.use('/api/sync', syncRouter);
 
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -32,6 +39,23 @@ const botManager = new BotManager(io, gameEngine);
 gameEngine.setOnBroadcast((roomId) => botManager.processBots(roomId));
 
 const security = new SecurityMiddleware(io);
+
+// ==================== JWT 鉴权中间件 ====================
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth && socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error('未登录'));
+  }
+  const decoded = authRouter.verifyToken(token);
+  if (!decoded) {
+    return next(new Error('登录已过期'));
+  }
+  socket.userId = decoded.userId;
+  socket.username = decoded.username;
+  socket.nickname = decoded.nickname;
+  next();
+});
 
 // ==================== 连接管理 ====================
 
@@ -57,7 +81,7 @@ io.on('connection', (socket) => {
   // ------ 房间操作 ------
 
   // --- 创建房间 ---
-  socket.on('room:create', (nickname, isPublic, opts, callback) => {
+  socket.on('room:create', (isPublic, opts, callback) => {
     // 兼容旧调用方式（opts 可能直接是 callback）
     if (typeof opts === 'function') {
       callback = opts;
@@ -68,7 +92,7 @@ io.on('connection', (socket) => {
       return;
     }
     try {
-      const { roomId, players } = roomManager.createRoom(socket, nickname, isPublic, opts);
+      const { roomId, players } = roomManager.createRoom(socket, socket.nickname, isPublic, opts);
       socket.emit('room:created', { roomId, players, mode: opts.mode || 'classic' });
       callback({ success: true, roomId });
     } catch (err) {
@@ -78,7 +102,7 @@ io.on('connection', (socket) => {
   });
 
   // --- 加入房间 ---
-  socket.on('room:join', (roomId, nickname, skin, callback) => {
+  socket.on('room:join', (roomId, skin, callback) => {
     // 兼容旧客户端：skin 参数可省略
     if (typeof skin === 'function') {
       callback = skin;
@@ -88,6 +112,7 @@ io.on('connection', (socket) => {
       console.warn('[警告] room:join 缺少回调函数');
       return;
     }
+    const nickname = socket.nickname;
     try {
       // 检查游戏是否正在进行
       const game = gameEngine.getGame(roomId);
@@ -175,7 +200,7 @@ io.on('connection', (socket) => {
     }
     callback({ success: ok });
   });
-  socket.on('spectator:enter', (roomId, nickname, callback) => {
+  socket.on('spectator:enter', (roomId, callback) => {
     if (typeof callback !== 'function') callback = () => {};
 
     const game = gameEngine.getGame(roomId);
@@ -184,7 +209,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const result = roomManager.joinAsSpectator(socket, roomId, nickname);
+    const result = roomManager.joinAsSpectator(socket, roomId, socket.nickname);
     if (!result.success) {
       callback(result);
       return;
@@ -287,6 +312,19 @@ io.on('connection', (socket) => {
     // 通知房间其他人
     io.to(roomId).emit('room:player_left', { player: result.kickedPlayer, players: result.players, kicked: true });
     callback({ success: true });
+  });
+
+  // --- 修改昵称（游戏中修改显示名） ---
+  socket.on('set:nickname', (newNickname, callback) => {
+    if (typeof callback !== 'function') callback = () => {};
+    if (!newNickname || newNickname.length < 2 || newNickname.length > 8) {
+      callback({ success: false, error: '昵称需 2-8 字符' });
+      return;
+    }
+    const db = require('./db').getDb();
+    db.prepare('UPDATE users SET nickname = ? WHERE id = ?').run(newNickname, socket.userId);
+    socket.nickname = newNickname;
+    callback({ success: true, nickname: newNickname });
   });
 
   // --- 公开房间列表 ---

@@ -1,1 +1,6 @@
-node_modules/ 
+node_modules/
+server/node_modules/
+server/data/*.db
+server/data/*.db-wal
+server/data/*.db-shm
+.env

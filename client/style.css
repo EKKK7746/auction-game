@@ -4918,6 +4918,135 @@ body.tutorial-lock #app .tg-clickable * {
   font-size: 18px;
 }
 
+/* Start 页面：登录/注册 + 继续游戏 */
+.start-form-hint {
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  margin-top: 4px;
+}
+.start-form-hint a {
+  color: #8B2252;
+  text-decoration: none;
+}
+.start-form-greeting {
+  text-align: center;
+  color: #555;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+.start-form-greeting span {
+  font-weight: 700;
+  color: #8B2252;
+}
+
+/* ============================================================
+   Auth 页面 (#view-auth) — 登录/注册
+   ============================================================ */
+
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  padding: 24px 16px;
+}
+.auth-card {
+  background: #fff;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(139, 34, 82, 0.12), 0 2px 8px rgba(139, 34, 82, 0.06);
+  width: 100%;
+  max-width: 380px;
+  padding: 32px 28px 28px;
+}
+.auth-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.auth-logo {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+.auth-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2C2C2C;
+  letter-spacing: 8px;
+}
+.auth-subtitle {
+  font-size: 13px;
+  color: #999;
+  margin-top: 4px;
+}
+.auth-tabs {
+  display: flex;
+  border-bottom: 2px solid #f0e0e8;
+  margin-bottom: 20px;
+}
+.auth-tab {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  background: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: #999;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.2s, border-color 0.2s;
+}
+.auth-tab.active {
+  color: #8B2252;
+  border-bottom-color: #8B2252;
+  font-weight: 600;
+}
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.auth-field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 6px;
+}
+.auth-label-hint {
+  font-weight: 400;
+  color: #999;
+  font-size: 11px;
+}
+.auth-field .input-primary {
+  width: 100%;
+  box-sizing: border-box;
+}
+.btn-auth-submit {
+  width: 100%;
+  padding: 12px;
+  font-size: 16px;
+  margin-top: 4px;
+}
+.auth-hint {
+  text-align: center;
+  font-size: 13px;
+  color: #999;
+  margin-top: 8px;
+}
+.auth-hint a {
+  color: #8B2252;
+  text-decoration: none;
+  font-weight: 500;
+}
+.auth-error {
+  text-align: center;
+  color: #E74C3C;
+  font-size: 13px;
+  margin-top: 12px;
+  min-height: 18px;
+}
+
 /* ============================================================
    模式选择界面 (#view-mode)
    ============================================================ */

@@ -1,58 +1,91 @@
 // ============================================================
-// socket.js — Socket.IO 连接管理（断线重连自动恢复）
+// socket.js — Socket.IO 连接管理（JWT 鉴权 + 断线重连）
 // ============================================================
 
 const SERVER_URL = window.location.origin;
 
-const socket = io(SERVER_URL, {
-  reconnection: true,
-  reconnectionAttempts: 10,
-  reconnectionDelay: 1000,
-  reconnectionDelayMax: 5000,
-  timeout: 20000,
-});
+let socket = null;
 
-// -------------------- 连接事件 --------------------
+/** 建立/恢复 Socket.IO 连接 */
+function connectSocket() {
+  if (socket && socket.connected) return socket;
 
-socket.on('connect', () => {
-  console.log('[Socket] 已连接:', socket.id);
-  hideToast();
-  hideLoading();
-  showToast('已连接到服务器', 'info');
-});
-
-socket.on('disconnect', (reason) => {
-  console.log('[Socket] 断开连接:', reason);
-  showLoading('连接中断，重连中…');
-  showToast('与服务器断开连接，正在重连…', 'error');
-});
-
-socket.on('reconnect_attempt', (attempt) => {
-  console.log('[Socket] 重连尝试 #' + attempt);
-});
-
-socket.on('reconnect', () => {
-  console.log('[Socket] 重连成功');
-  showToast('已重新连接', 'info');
-  // 重连后重新进入房间
-  const saved = JSON.parse(localStorage.getItem('mwPlayer') || '{}');
-  if (saved.nickname && saved.roomId) {
-    socket.emit('room:join', saved.roomId, saved.nickname, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (res) => {
-      if (res && res.success) {
-        console.log('[Socket] 重连后已重新加入房间:', saved.roomId);
-      }
-    });
+  const token = typeof getAuthToken === 'function' ? getAuthToken() : null;
+  if (!token) {
+    console.warn('[Socket] 无 JWT token，延迟连接');
+    return null;
   }
-});
 
-socket.on('reconnect_error', (error) => {
-  console.error('[Socket] 重连失败:', error);
-});
+  socket = io(SERVER_URL, {
+    auth: { token },
+    reconnection: true,
+    reconnectionAttempts: 10,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    timeout: 20000,
+  });
 
-socket.on('reconnect_failed', () => {
-  console.error('[Socket] 重连次数用尽');
-  showToast('无法连接到服务器，请刷新页面', 'error');
-});
+  // -------------------- 连接事件 --------------------
+
+  socket.on('connect', () => {
+    console.log('[Socket] 已连接:', socket.id);
+    hideToast();
+    hideLoading();
+    showToast('已连接到服务器', 'info');
+  });
+
+  socket.on('disconnect', (reason) => {
+    console.log('[Socket] 断开连接:', reason);
+    showLoading('连接中断，重连中…');
+    showToast('与服务器断开连接，正在重连…', 'error');
+  });
+
+  socket.on('reconnect_attempt', (attempt) => {
+    console.log('[Socket] 重连尝试 #' + attempt);
+  });
+
+  socket.on('reconnect', () => {
+    console.log('[Socket] 重连成功');
+    showToast('已重新连接', 'info');
+    // 重连后重新加入房间（如果之前在房间中）
+    if (GameState.roomId) {
+      const skin = typeof getSkinBundle === 'function' ? getSkinBundle() : {};
+      socket.emit('room:join', GameState.roomId, skin, (res) => {
+        if (res && res.success) {
+          console.log('[Socket] 重连后已重新加入房间:', GameState.roomId);
+        }
+      });
+    }
+  });
+
+  socket.on('reconnect_error', (error) => {
+    console.error('[Socket] 重连失败:', error);
+  });
+
+  socket.on('reconnect_failed', () => {
+    console.error('[Socket] 重连次数用尽');
+    showToast('无法连接到服务器，请刷新页面', 'error');
+  });
+
+  // 连接错误：token 过期等
+  socket.on('connect_error', (err) => {
+    console.error('[Socket] 连接错误:', err.message);
+    if (err.message === '登录已过期' || err.message === '未登录') {
+      if (typeof clearAuthToken === 'function') clearAuthToken();
+      showView('start');
+    }
+  });
+
+  return socket;
+}
+
+/** 断开 Socket 连接 */
+function disconnectSocket() {
+  if (socket) {
+    socket.disconnect();
+    socket = null;
+  }
+}
 
 // -------------------- Toast 工具函数 --------------------
 

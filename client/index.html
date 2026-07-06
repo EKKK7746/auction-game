@@ -7,7 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>琳琅 · 华夏文物拍卖</title>
-  <link rel="stylesheet" href="style.css?v=20260705f">
+  <link rel="stylesheet" href="style.css?v=20260706a">
 </head>
 <body>
 
@@ -48,12 +48,18 @@
           </div>
         </div>
 
-        <div class="start-form">
-          <input type="text" id="startNickname" class="input-primary start-input"
-            placeholder="输入你的名字 (2-8字)" maxlength="8" autocomplete="off">
-          <button id="btnStartGame" class="btn btn-primary btn-start" disabled>
-            开始游戏 →
+        <div class="start-form" id="startFormGuest">
+          <button id="btnGoLogin" class="btn btn-primary btn-start" onclick="showView('auth'); renderAuthPage();">
+            登录 / 注册
           </button>
+          <p class="start-form-hint">登录后跨设备同步收藏和成就</p>
+        </div>
+        <div class="start-form" id="startFormLoggedIn" style="display:none;">
+          <p class="start-form-greeting">👋 欢迎回来，<span id="startGreetingName"></span></p>
+          <button id="btnContinueGame" class="btn btn-primary btn-start" onclick="onContinueFromStart()">
+            继续游戏 →
+          </button>
+          <p class="start-form-hint"><a href="#" onclick="doLogout(); return false;">退出登录</a></p>
         </div>
 
         <div class="start-guide">
@@ -61,6 +67,11 @@
           <button id="btnCollection" class="btn btn-guide" onclick="showView('collection'); renderCollection();">🏛️ 收藏馆</button>
         </div>
       </div>
+    </section>
+
+    <!-- ========== 视图 A2：登录/注册 ========== -->
+    <section id="view-auth" class="view">
+      <!-- 由 auth.js renderAuthPage() 动态渲染 -->
     </section>
 
     <!-- ========== 视图 B：选择游戏模式 ========== -->
@@ -719,9 +730,10 @@
 
   <!-- 客户端模块（按依赖顺序） -->
   <script src="js/state.js"></script>
-  <script src="js/socket.js"></script>
+  <script src="js/auth.js?v=20260706a"></script>
+  <script src="js/socket.js?v=20260706a"></script>
   <script src="js/router.js"></script>
-  <script src="js/collection.js?v=20260705f"></script>
+  <script src="js/collection.js?v=20260706a"></script>
   <script src="js/collection-ui.js"></script>
   <script src="js/dailyQuiz.js"></script>
   <script src="js/mode.js"></script>
@@ -738,7 +750,7 @@
   <script src="js/game/data.js"></script>
   <script src="js/game/animation.js"></script>
   <script src="js/game/actions.js"></script>
-  <script src="js/game/render.js?v=20260705f"></script>
+  <script src="js/game/render.js?v=20260706a"></script>
   <script src="js/game.js"></script>
 </body>
 </html>

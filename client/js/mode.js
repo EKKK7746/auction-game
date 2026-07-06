@@ -179,41 +179,38 @@ function goToMode() {
 // ==================== DOM 初始化 ====================
 
 document.addEventListener('DOMContentLoaded', () => {
-  // --- 开始界面 ---
-  const startNickname = document.getElementById('startNickname');
-  const btnStartGame = document.getElementById('btnStartGame');
+  // --- 开始界面：auth 适配 ---
+  const user = typeof getAuthUser === 'function' ? getAuthUser() : null;
 
-  // 恢复昵称
-  const saved = JSON.parse(localStorage.getItem('mwPlayer') || '{}');
-  if (saved.nickname && startNickname) {
-    startNickname.value = saved.nickname;
-    GameState.nickname = saved.nickname;
-    updateStartButton();
+  if (user) {
+    // 已登录：显示"继续游戏"
+    GameState.nickname = user.nickname;
+    GameState.authUser = { userId: user.userId, username: user.username, nickname: user.nickname };
+    document.getElementById('startFormGuest').style.display = 'none';
+    document.getElementById('startFormLoggedIn').style.display = '';
+    document.getElementById('startGreetingName').textContent = user.nickname;
+
+    // 尝试自动连接
+    if (typeof connectSocket === 'function') connectSocket();
+  } else {
+    // 未登录：显示"登录/注册"
+    document.getElementById('startFormGuest').style.display = '';
+    document.getElementById('startFormLoggedIn').style.display = 'none';
   }
 
-  if (startNickname) {
-    startNickname.addEventListener('input', updateStartButton);
-    startNickname.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && startNickname.value.trim().length >= 2) {
-        btnStartGame?.click();
+  // "继续游戏" 点击 → 连 socket，然后跳模式选择
+  window.onContinueFromStart = function() {
+    if (typeof connectSocket === 'function') {
+      const s = connectSocket();
+      if (!s) {
+        showToast('连接失败，请重新登录', 'error');
+        return;
       }
-    });
-  }
-
-  if (btnStartGame) {
-    btnStartGame.addEventListener('click', () => {
-      const nick = startNickname.value.trim();
-      if (nick.length < 2) return;
-
-      GameState.nickname = nick;
-      localStorage.setItem('mwPlayer', JSON.stringify({ nickname: nick, roomId: '' }));
-
-      // 进入模式选择
-      renderModeCards();
-      showView(Views.MODE);
-      if (typeof playSound === 'function') playSound('confirm');
-    });
-  }
+    }
+    renderModeCards();
+    showView(Views.MODE);
+    if (typeof playSound === 'function') playSound('confirm');
+  };
 
   // --- 模式选择界面：加入房间面板 ---
   const modeRoomInput = document.getElementById('modeRoomInput');
@@ -261,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (typeof showLoading === 'function') showLoading('加入房间中…');
 
       // 直接走加入房间流程
-      socket.emit('room:join', roomId, GameState.nickname, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (response) => {
+      socket.emit('room:join', roomId, typeof getSkinBundle === 'function' ? getSkinBundle() : {}, (response) => {
         if (typeof hideLoading === 'function') hideLoading();
         if (!response.success) {
           if (response.gameInProgress) {
