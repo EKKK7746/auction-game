@@ -3197,6 +3197,27 @@ body {
   padding: 24px 20px;
   position: relative;
 }
+.modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-hint {
+  margin: 0;
+  font-size: 13px;
+  color: #999;
+  text-align: center;
+}
+.modal-error {
+  margin: 0;
+  font-size: 13px;
+  color: #C43A31;
+  text-align: center;
+  min-height: 18px;
+}
+.btn-block {
+  width: 100%;
+}
 
 /* --- 确认弹窗 --- */
 .confirm-modal-box {
@@ -4918,6 +4939,132 @@ body.tutorial-lock #app .tg-clickable * {
   font-size: 18px;
 }
 
+/* ============================================================
+   Home 页面（#view-home）— 二级首页
+   ============================================================ */
+.home-container {
+  min-height: 100%;
+  padding: 32px 20px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(180deg, #fdfbf7 0%, #f7f0e8 100%);
+}
+.home-hero {
+  text-align: center;
+  margin-bottom: 28px;
+}
+.home-avatar {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8B2252, #A0527C);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  box-shadow: 0 4px 16px rgba(139, 34, 82, 0.2);
+}
+.home-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #5c1a35;
+  margin: 0 0 10px;
+  letter-spacing: 8px;
+}
+.home-nickname {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #8B2252;
+  margin-bottom: 4px;
+}
+.home-edit-nick {
+  background: none;
+  border: none;
+  font-size: 16px;
+  padding: 4px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.home-edit-nick:hover {
+  opacity: 1;
+}
+.home-username {
+  font-size: 13px;
+  color: #999;
+}
+.home-actions {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.btn-home-start {
+  width: 100%;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: 700;
+}
+.home-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.home-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px 8px;
+  background: #fff;
+  border: 1px solid #e8ddd3;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(139, 34, 82, 0.06);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.home-action-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(139, 34, 82, 0.12);
+}
+.home-action-icon {
+  font-size: 28px;
+}
+.home-action-label {
+  font-size: 14px;
+  color: #5c1a35;
+  font-weight: 600;
+}
+.btn-home-quiz {
+  width: 100%;
+  padding: 14px;
+  font-size: 15px;
+}
+.home-footer {
+  margin-top: auto;
+  padding-top: 24px;
+}
+.home-logout {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 14px;
+  padding: 8px 16px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.home-logout:hover {
+  color: #8B2252;
+}
+
 /* Start 页面：登录/注册 + 继续游戏 */
 .start-form-hint {
   text-align: center;
@@ -4952,12 +5099,28 @@ body.tutorial-lock #app .tg-clickable * {
   padding: 24px 16px;
 }
 .auth-card {
+  position: relative;
   background: #fff;
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(139, 34, 82, 0.12), 0 2px 8px rgba(139, 34, 82, 0.06);
   width: 100%;
   max-width: 380px;
   padding: 32px 28px 28px;
+}
+.auth-back {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #999;
+  cursor: pointer;
+  padding: 8px;
+  line-height: 1;
+}
+.auth-back:hover {
+  color: #8B2252;
 }
 .auth-header {
   text-align: center;

@@ -49,7 +49,7 @@ function extractToken(req) {
 // ==================== 输入校验 ====================
 
 const USERNAME_RE = /^[\w\u4e00-\u9fff]{2,20}$/;  // 2-20字符，字母数字下划线中文
-const NICKNAME_RE = /^.{2,8}$/;                     // 2-8任意字符
+const NICKNAME_RE = /^.{0,8}$/;                     // 0-8任意字符（可选）
 const PASSWORD_MIN = 6;
 
 /** 校验并返回错误消息，无错误返回 null */
@@ -60,7 +60,7 @@ function validateInput(username, password, nickname) {
   if (!password || password.length < PASSWORD_MIN) {
     return `密码长度至少 ${PASSWORD_MIN} 位`;
   }
-  if (nickname !== undefined && !NICKNAME_RE.test(nickname)) {
+  if (nickname !== undefined && nickname !== null && nickname !== '' && !NICKNAME_RE.test(nickname)) {
     return '昵称需 2-8 字符';
   }
   return null;

@@ -13,7 +13,13 @@ function switchCollectionTab(tab) {
   renderCollection();
 }
 
-function renderCollection() {
+function renderCollection(tab) {
+  if (tab) _currentTab = tab;
+  // 同步标签页激活状态
+  document.querySelectorAll('.collection-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === _currentTab);
+  });
+
   const container = document.getElementById('collectionContent');
   if (!container) return;
 

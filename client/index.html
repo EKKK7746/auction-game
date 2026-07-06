@@ -7,45 +7,19 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <title>琳琅 · 华夏文物拍卖</title>
-  <link rel="stylesheet" href="style.css?v=20260706a">
+  <link rel="stylesheet" href="style.css?v=20260706b">
 </head>
 <body>
 
   <div id="app">
 
-    <!-- ========== 视图 A：开始界面 ========== -->
+    <!-- ========== 视图 A：开始界面（一级首页） ========== -->
     <section id="view-start" class="view active">
       <div class="start-container">
         <div class="start-hero">
           <div class="start-logo">🏺</div>
           <h1 class="start-title">琳 琅</h1>
           <p class="start-subtitle">华夏千年 · 珍宝博弈</p>
-        </div>
-
-        <div class="start-flow">
-          <div class="start-flow-title">游戏流程</div>
-          <div class="start-flow-cards">
-            <div class="flow-card">
-              <div class="flow-num">①</div>
-              <div class="flow-icon">⚖️</div>
-              <div class="flow-label">竞标拍卖师</div>
-            </div>
-            <div class="flow-card">
-              <div class="flow-num">②</div>
-              <div class="flow-icon">🏺</div>
-              <div class="flow-label">挑选文物</div>
-            </div>
-            <div class="flow-card">
-              <div class="flow-num">③</div>
-              <div class="flow-icon">🎲</div>
-              <div class="flow-label">租骰掷骰</div>
-            </div>
-            <div class="flow-card">
-              <div class="flow-num">④</div>
-              <div class="flow-icon">🏆</div>
-              <div class="flow-label">结算得分</div>
-            </div>
-          </div>
         </div>
 
         <div class="start-form" id="startFormGuest">
@@ -57,14 +31,11 @@
         <div class="start-form" id="startFormLoggedIn" style="display:none;">
           <p class="start-form-greeting">👋 欢迎回来，<span id="startGreetingName"></span></p>
           <button id="btnContinueGame" class="btn btn-primary btn-start" onclick="onContinueFromStart()">
-            继续游戏 →
+            进入琳琅 →
           </button>
-          <p class="start-form-hint"><a href="#" onclick="doLogout(); return false;">退出登录</a></p>
-        </div>
-
-        <div class="start-guide">
-          <button id="btnHowToPlay" class="btn btn-guide">📖 如何玩？</button>
-          <button id="btnCollection" class="btn btn-guide" onclick="showView('collection'); renderCollection();">🏛️ 收藏馆</button>
+          <button class="btn btn-outline btn-start" onclick="doLogout()">
+            退出登录
+          </button>
         </div>
       </div>
     </section>
@@ -74,11 +45,75 @@
       <!-- 由 auth.js renderAuthPage() 动态渲染 -->
     </section>
 
+    <!-- ========== 视图 A3：个人首页（二级首页） ========== -->
+    <section id="view-home" class="view">
+      <div class="home-container">
+        <div class="home-hero">
+          <div class="home-avatar">🏺</div>
+          <h2 class="home-title">琳琅</h2>
+          <div class="home-nickname" id="homeNicknameDisplay">
+            <span id="homeNicknameText">玩家</span>
+            <button class="home-edit-nick" onclick="openNicknameEdit()" title="修改昵称">✏️</button>
+          </div>
+          <div class="home-username" id="homeUsernameText"></div>
+        </div>
+
+        <div class="home-actions">
+          <button class="btn btn-primary btn-home-start" onclick="goToMode()">
+            开始游戏 →
+          </button>
+
+          <div class="home-action-grid">
+            <button class="home-action-btn" onclick="showView('collection'); renderCollection('artifacts');">
+              <span class="home-action-icon">🏛️</span>
+              <span class="home-action-label">收藏馆</span>
+            </button>
+            <button class="home-action-btn" onclick="showView('collection'); renderCollection('skins');">
+              <span class="home-action-icon">🎨</span>
+              <span class="home-action-label">外观</span>
+            </button>
+            <button class="home-action-btn" onclick="showView('collection'); renderCollection('achievements');">
+              <span class="home-action-icon">🏆</span>
+              <span class="home-action-label">成就</span>
+            </button>
+            <button class="home-action-btn" onclick="openIntro()">
+              <span class="home-action-icon">📜</span>
+              <span class="home-action-label">介绍</span>
+            </button>
+          </div>
+
+          <button class="btn btn-outline btn-home-quiz" onclick="openDailyQuiz()">
+            📝 每日文物问答
+          </button>
+        </div>
+
+        <div class="home-footer">
+          <button class="home-logout" onclick="doLogout()">退出登录</button>
+        </div>
+      </div>
+
+      <!-- 修改昵称弹窗 -->
+      <div id="nicknameEditModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeNicknameEdit()">
+        <div class="modal-box">
+          <div class="modal-titlebar">
+            <span class="modal-titlebar-title">✏️ 修改游戏昵称</span>
+            <button class="modal-titlebar-close" onclick="closeNicknameEdit()">✕</button>
+          </div>
+          <div class="modal-body">
+            <p class="modal-hint">2-8 字符，将在游戏房间内显示</p>
+            <input type="text" id="nicknameEditInput" class="input-primary" maxlength="8" placeholder="输入新昵称">
+            <p class="modal-error" id="nicknameEditError"></p>
+            <button class="btn btn-primary btn-block" onclick="submitNicknameEdit()">保存</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ========== 视图 B：选择游戏模式 ========== -->
     <section id="view-mode" class="view">
       <div class="mode-container">
         <div class="mode-header">
-          <button class="mode-back" onclick="goToStart()">← 返回</button>
+          <button class="mode-back" onclick="goToHome()">← 返回</button>
           <h2 class="mode-title">选择游戏模式</h2>
           <button class="mode-join-btn" onclick="showJoinRoomFromMode()">加入房间</button>
         </div>
@@ -344,7 +379,7 @@
     <section id="view-collection" class="view">
       <div class="collection-container">
         <div class="collection-header">
-          <button class="col-back-btn" onclick="goToStart()">← 返回</button>
+          <button class="col-back-btn" onclick="goToHome()">← 返回</button>
           <h2 class="collection-title">🏛️ 收藏馆</h2>
         </div>
         <div class="collection-tabs">
@@ -730,10 +765,10 @@
 
   <!-- 客户端模块（按依赖顺序） -->
   <script src="js/state.js"></script>
-  <script src="js/auth.js?v=20260706a"></script>
-  <script src="js/socket.js?v=20260706a"></script>
+  <script src="js/auth.js?v=20260706b"></script>
+  <script src="js/socket.js?v=20260706b"></script>
   <script src="js/router.js"></script>
-  <script src="js/collection.js?v=20260706a"></script>
+  <script src="js/collection.js?v=20260706b"></script>
   <script src="js/collection-ui.js"></script>
   <script src="js/dailyQuiz.js"></script>
   <script src="js/mode.js"></script>
@@ -745,12 +780,12 @@
   <script src="js/roomlist.js"></script>
   <script src="js/diceParticles.js"></script>
   <script src="js/intro.js"></script>
-  <script src="js/tutorial.js?v=20260705f"></script>
-  <script src="js/tutorialGuide.js?v=20260705f"></script>
+  <script src="js/tutorial.js?v=20260706b"></script>
+  <script src="js/tutorialGuide.js?v=20260706b"></script>
   <script src="js/game/data.js"></script>
   <script src="js/game/animation.js"></script>
   <script src="js/game/actions.js"></script>
-  <script src="js/game/render.js?v=20260706a"></script>
+  <script src="js/game/render.js?v=20260706b"></script>
   <script src="js/game.js"></script>
 </body>
 </html>

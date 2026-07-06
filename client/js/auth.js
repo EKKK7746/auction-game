@@ -144,6 +144,7 @@ function renderAuthPage() {
   container.innerHTML = `
     <div class="auth-container">
       <div class="auth-card">
+        <button class="auth-back" onclick="goToStart()" title="返回">←</button>
         <div class="auth-header">
           <div class="auth-logo">🏺</div>
           <h2 class="auth-title">琳 琅</h2>
@@ -201,7 +202,7 @@ function _renderRegisterForm() {
       <input type="text" id="authUsername" class="input-primary" placeholder="2-20字符（字母、数字、下划线、中文）" maxlength="20" autocomplete="username">
     </div>
     <div class="auth-field">
-      <label>游戏昵称 <span class="auth-label-hint">（游戏内显示名）</span></label>
+      <label>游戏昵称 <span class="auth-label-hint">（可选，2-8字符，不填则使用用户名）</span></label>
       <input type="text" id="authNickname" class="input-primary" placeholder="2-8字符" maxlength="8">
     </div>
     <div class="auth-field">
@@ -260,7 +261,9 @@ function _bindRegisterForm() {
     const u = (usernameEl.value || '').trim();
     const n = (nicknameEl.value || '').trim();
     const p = (passwordEl.value || '');
-    btnEl.disabled = u.length < 2 || n.length < 2 || p.length < 6;
+    // 昵称可选：若填写则需 2-8 字符
+    const nicknameOk = !n || (n.length >= 2 && n.length <= 8);
+    btnEl.disabled = u.length < 2 || !nicknameOk || p.length < 6;
   }
 
   usernameEl.addEventListener('input', updateBtn);
@@ -319,12 +322,86 @@ async function _onAuthSuccess(data) {
     // 同步失败不影响继续使用
   }
 
-  // 4. 跳转到房间页面
-  showView(Views.LOGIN);
-  // 预填昵称
-  const nickInput = document.getElementById('nicknameInput');
-  if (nickInput) nickInput.value = data.nickname;
-  if (typeof updateLoginButtons === 'function') updateLoginButtons();
+  // 4. 跳转到个人首页（二级首页）
+  showView(Views.HOME);
+  if (typeof renderHomePage === 'function') renderHomePage();
+}
+
+/** 渲染个人首页（二级首页） */
+function renderHomePage() {
+  const user = getAuthUser();
+  if (!user) return;
+
+  const nickText = document.getElementById('homeNicknameText');
+  const userText = document.getElementById('homeUsernameText');
+  if (nickText) nickText.textContent = user.nickname || user.username;
+  if (userText) userText.textContent = '@' + user.username;
+}
+
+/** 打开修改昵称弹窗 */
+function openNicknameEdit() {
+  const modal = document.getElementById('nicknameEditModal');
+  const input = document.getElementById('nicknameEditInput');
+  const error = document.getElementById('nicknameEditError');
+  if (!modal) return;
+
+  const user = getAuthUser();
+  if (input) input.value = user?.nickname || '';
+  if (error) error.textContent = '';
+  modal.style.display = 'flex';
+  setTimeout(() => input?.focus(), 50);
+}
+
+/** 关闭修改昵称弹窗 */
+function closeNicknameEdit() {
+  const modal = document.getElementById('nicknameEditModal');
+  if (modal) modal.style.display = 'none';
+}
+
+/** 提交昵称修改 */
+async function submitNicknameEdit() {
+  const input = document.getElementById('nicknameEditInput');
+  const error = document.getElementById('nicknameEditError');
+  const btn = document.querySelector('#nicknameEditModal .btn-primary');
+  if (!input) return;
+
+  const nickname = input.value.trim();
+  if (!nickname) {
+    if (error) error.textContent = '昵称不能为空';
+    return;
+  }
+  if (nickname.length < 2 || nickname.length > 8) {
+    if (error) error.textContent = '昵称需 2-8 字符';
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '保存中...';
+  }
+  if (error) error.textContent = '';
+
+  try {
+    const data = await authUpdateNickname(nickname);
+    // 更新 GameState
+    GameState.nickname = data.nickname;
+    if (GameState.authUser) GameState.authUser.nickname = data.nickname;
+    // 刷新首页
+    renderHomePage();
+    // 同步到服务器上的玩家信息（通过 Socket 事件）
+    if (typeof socket !== 'undefined' && socket.connected) {
+      socket.emit('set:nickname', nickname);
+    }
+    closeNicknameEdit();
+    if (typeof showToast === 'function') showToast('昵称已更新', 'info');
+  } catch (err) {
+    if (error) error.textContent = err.message || '修改失败';
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '保存';
+    }
+  }
 }
 
 /** 退出登录 */
@@ -336,4 +413,5 @@ function doLogout() {
     disconnectSocket();
   }
   showView(Views.START);
+  if (typeof updateStartView === 'function') updateStartView();
 }

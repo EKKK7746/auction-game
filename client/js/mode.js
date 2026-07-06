@@ -157,48 +157,64 @@ function hideJoinRoomFromMode() {
 }
 
 /**
- * 返回开始界面
+ * 更新开始界面（一级首页）显示状态
  */
-function goToStart() {
-  const nickInput = document.getElementById('startNickname');
-  if (nickInput && GameState.nickname) {
-    nickInput.value = GameState.nickname;
+function updateStartView() {
+  const user = typeof getAuthUser === 'function' ? getAuthUser() : null;
+
+  if (user) {
+    GameState.nickname = user.nickname;
+    GameState.authUser = { userId: user.userId, username: user.username, nickname: user.nickname };
+    const guestForm = document.getElementById('startFormGuest');
+    const loggedForm = document.getElementById('startFormLoggedIn');
+    if (guestForm) guestForm.style.display = 'none';
+    if (loggedForm) loggedForm.style.display = '';
+    const greetingName = document.getElementById('startGreetingName');
+    if (greetingName) greetingName.textContent = user.nickname;
+
+    // 尝试自动连接
+    if (typeof connectSocket === 'function') connectSocket();
+  } else {
+    const guestForm = document.getElementById('startFormGuest');
+    const loggedForm = document.getElementById('startFormLoggedIn');
+    if (guestForm) guestForm.style.display = '';
+    if (loggedForm) loggedForm.style.display = 'none';
   }
-  showView(Views.START);
-  updateStartButton();
 }
 
 /**
- * 返回模式选择
+ * 返回个人首页（二级首页）
+ */
+function goToHome() {
+  if (typeof renderHomePage === 'function') renderHomePage();
+  showView(Views.HOME);
+}
+
+/**
+ * 返回开始界面（一级首页）
+ * 用于未登录场景或退出登录后
+ */
+function goToStart() {
+  showView(Views.START);
+  updateStartView();
+}
+
+/**
+ * 从首页进入模式选择
  */
 function goToMode() {
   renderModeCards();
   showView(Views.MODE);
+  if (typeof playSound === 'function') playSound('confirm');
 }
 
 // ==================== DOM 初始化 ====================
 
 document.addEventListener('DOMContentLoaded', () => {
-  // --- 开始界面：auth 适配 ---
-  const user = typeof getAuthUser === 'function' ? getAuthUser() : null;
+  // 初始化开始界面状态
+  updateStartView();
 
-  if (user) {
-    // 已登录：显示"继续游戏"
-    GameState.nickname = user.nickname;
-    GameState.authUser = { userId: user.userId, username: user.username, nickname: user.nickname };
-    document.getElementById('startFormGuest').style.display = 'none';
-    document.getElementById('startFormLoggedIn').style.display = '';
-    document.getElementById('startGreetingName').textContent = user.nickname;
-
-    // 尝试自动连接
-    if (typeof connectSocket === 'function') connectSocket();
-  } else {
-    // 未登录：显示"登录/注册"
-    document.getElementById('startFormGuest').style.display = '';
-    document.getElementById('startFormLoggedIn').style.display = 'none';
-  }
-
-  // "继续游戏" 点击 → 连 socket，然后跳模式选择
+  // "进入琳琅" 点击 → 跳转到个人首页（二级首页）
   window.onContinueFromStart = function() {
     if (typeof connectSocket === 'function') {
       const s = connectSocket();
@@ -207,10 +223,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
     }
-    renderModeCards();
-    showView(Views.MODE);
+    goToHome();
     if (typeof playSound === 'function') playSound('confirm');
   };
+
+  // 初始化开始界面状态
+  updateStartView();
 
   // --- 模式选择界面：加入房间面板 ---
   const modeRoomInput = document.getElementById('modeRoomInput');
