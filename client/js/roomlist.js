@@ -3,6 +3,11 @@
 // ============================================================
 
 function openRoomListModal() {
+  // 检查 Socket 连接状态
+  if (!socket || !socket.connected) {
+    if (typeof showToast === 'function') showToast('未连接到服务器，请稍后重试', 'error');
+    return;
+  }
   const modal = document.getElementById('roomListModal');
   if (!modal) return;
   modal.style.display = 'flex';
@@ -50,6 +55,11 @@ function loadRoomList() {
 }
 
 function joinPublicRoom(roomId) {
+  // 检查 Socket 连接状态
+  if (!socket || !socket.connected) {
+    if (typeof showToast === 'function') showToast('未连接到服务器，请稍后重试', 'error');
+    return;
+  }
   // 优先从 GameState 取，fallback 到输入框
   const nickname = GameState.nickname
     || (document.getElementById('nicknameInput')?.value || '').trim();

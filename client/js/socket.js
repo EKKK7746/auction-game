@@ -36,6 +36,10 @@ function connectSocket() {
 
   socket.on('disconnect', (reason) => {
     console.log('[Socket] 断开连接:', reason);
+    if (_intentionalDisconnect) {
+      _intentionalDisconnect = false;
+      return; // 主动退出不触发重连提示
+    }
     showLoading('连接中断，重连中…');
     showToast('与服务器断开连接，正在重连…', 'error');
   });
@@ -79,9 +83,12 @@ function connectSocket() {
   return socket;
 }
 
-/** 断开 Socket 连接 */
+/** 主动断开 Socket 连接（不触发重连提示） */
+let _intentionalDisconnect = false;
+
 function disconnectSocket() {
   if (socket) {
+    _intentionalDisconnect = true; // 标记为主动退出，不触发重连提示
     socket.disconnect();
     socket = null;
   }

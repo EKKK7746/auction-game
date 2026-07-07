@@ -83,6 +83,7 @@ function renderModeCards() {
 
 /**
  * 选择模式 → 进入房间界面
+ * 同时确保 Socket.IO 已连接
  */
 function selectMode(modeId) {
   const mode = getModeById(modeId);
@@ -93,6 +94,24 @@ function selectMode(modeId) {
 
   _selectedMode = mode;
   GameState.selectedMode = mode;
+
+  // 确保 Socket.IO 已连接
+  if (typeof connectSocket === 'function') {
+    const s = connectSocket();
+    if (!s) {
+      if (typeof showToast === 'function') showToast('连接服务器失败，请重新登录', 'error');
+      return;
+    }
+    // 如果尚未连接完成，显示提示并等连接后再允许操作
+    if (!s.connected) {
+      if (typeof showToast === 'function') showToast('正在连接服务器…', 'info');
+      s.once('connect', () => {
+        if (typeof showToast === 'function') showToast('已连接', 'info');
+        _enableLoginButtons(true);
+      });
+      _enableLoginButtons(false, '连接中…');
+    }
+  }
 
   // 更新房间界面的模式徽章
   const badge = document.getElementById('roomModeBadge');
@@ -112,6 +131,39 @@ function selectMode(modeId) {
   }
 
   showView(Views.LOGIN);
+}
+
+/**
+ * 启用/禁用房间界面的操作按钮（创建房间、浏览公开房间等）
+ */
+function _enableLoginButtons(enabled, disabledText) {
+  const btnCreate = document.getElementById('btnCreate');
+  const btnBrowseRooms = document.getElementById('btnBrowseRooms');
+  const btnJoin = document.getElementById('btnJoin');
+
+  if (btnCreate) {
+    if (!enabled) {
+      btnCreate.disabled = true;
+      btnCreate.textContent = disabledText || '连接中…';
+    } else {
+      btnCreate.disabled = false;
+      btnCreate.textContent = '创建房间';
+      // 重新检查昵称是否足够
+      const nickname = (document.getElementById('nicknameInput')?.value || '').trim();
+      if (nickname.length < 2) btnCreate.disabled = true;
+    }
+  }
+  if (btnBrowseRooms) {
+    btnBrowseRooms.disabled = !enabled;
+  }
+  if (btnJoin) {
+    if (!enabled) {
+      btnJoin.disabled = true;
+    } else {
+      // 重新检查
+      updateLoginButtons();
+    }
+  }
 }
 
 /**

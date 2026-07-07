@@ -413,6 +413,7 @@ function doLogout() {
   clearAuthToken();
   GameState.nickname = '';
   GameState.authUser = null;
+  if (typeof hideLoading === 'function') hideLoading();
   if (typeof disconnectSocket === 'function') {
     disconnectSocket();
   }

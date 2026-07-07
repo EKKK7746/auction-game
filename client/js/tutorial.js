@@ -29,16 +29,26 @@ function startTutorial() {
   closeTutorialModal();
 
   // 确保用户有昵称
-  const nicknameInput = document.getElementById('startNickname');
-  const nickname = (nicknameInput && nicknameInput.value.trim()) || GameState.nickname;
+  const nickname = GameState.nickname || (typeof getAuthUser === 'function' ? getAuthUser()?.nickname : null);
   if (!nickname || nickname.length < 2) {
-    if (typeof showToast === 'function') showToast('请先输入你的名字（至少2个字）', 'error');
+    if (typeof showToast === 'function') showToast('请先设置昵称', 'error');
+    return;
+  }
+
+  // 确保 Socket.IO 已连接
+  if (typeof connectSocket === 'function') {
+    const s = connectSocket();
+    if (!s || !s.connected) {
+      if (typeof showToast === 'function') showToast('正在连接服务器，请稍后重试', 'error');
+      return;
+    }
+  } else if (!socket || !socket.connected) {
+    if (typeof showToast === 'function') showToast('未连接到服务器，请刷新页面', 'error');
     return;
   }
 
   // 保存昵称
   GameState.nickname = nickname;
-  if (nicknameInput) nicknameInput.value = nickname;
 
   // 设置教程模式：使用经典模式但缩短为5轮，保留交易阶段
   GameState._tutorial = { active: true, seenPhases: {}, completed: false };

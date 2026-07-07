@@ -208,11 +208,11 @@ body {
 .login-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   flex: 1;
   gap: 32px;
-  padding: 24px 0;
+  padding: 0;
 }
 
 .logo-area {
@@ -305,7 +305,7 @@ body {
   flex-direction: column;
   flex: 1;
   gap: 20px;
-  padding: 8px 0;
+  padding: 0;
 }
 
 .room-id-area {
@@ -445,8 +445,8 @@ body {
 
 .room-wait-container {
   max-width: 400px;
-  margin: 40px auto;
-  padding: 30px;
+  margin: 0 auto;
+  padding: 0 30px 30px;
   background: #FFF8F0;
   border-radius: 16px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.1);
