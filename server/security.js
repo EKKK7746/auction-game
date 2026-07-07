@@ -24,12 +24,10 @@ const MAX_VIOLATIONS = 3;
 /** 事件参数校验规则 */
 const EVENT_SCHEMAS = {
   'room:create': {
-    nickname:  { type: 'string', minLen: 1, maxLen: 20 },
     isPublic:  { type: 'boolean' },
   },
   'room:join': {
     roomId:    { type: 'string', len: 6, pattern: /^[A-Z0-9]{6}$/ },
-    nickname:  { type: 'string', minLen: 1, maxLen: 20 },
   },
   'room:leave': {
     roomId:    { type: 'string', len: 6 },
