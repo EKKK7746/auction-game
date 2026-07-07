@@ -6,6 +6,18 @@ const SERVER_URL = window.location.origin;
 
 let socket = null;
 
+// -------------------- 延迟事件注册系统 --------------------
+// 其他模块在 socket 尚未创建时调用 onSocket() 注册处理器，
+// connectSocket() 创建 socket 后统一挂载所有待注册处理器。
+const _socketHandlers = [];
+
+function onSocket(event, handler) {
+  _socketHandlers.push({ event, handler });
+  if (socket) {
+    socket.on(event, handler);
+  }
+}
+
 /** 建立/恢复 Socket.IO 连接 */
 function connectSocket() {
   if (socket && socket.connected) return socket;
@@ -23,6 +35,11 @@ function connectSocket() {
     reconnectionDelay: 1000,
     reconnectionDelayMax: 5000,
     timeout: 20000,
+  });
+
+  // -------------------- 注册所有延迟事件处理器 --------------------
+  _socketHandlers.forEach(({ event, handler }) => {
+    socket.on(event, handler);
   });
 
   // -------------------- 连接事件 --------------------

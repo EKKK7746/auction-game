@@ -110,6 +110,9 @@ function selectMode(modeId) {
         _enableLoginButtons(true);
       });
       _enableLoginButtons(false, '连接中…');
+    } else {
+      // Socket 已连接 — 确保按钮处于正确状态
+      _enableLoginButtons(true);
     }
   }
 

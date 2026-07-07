@@ -1138,8 +1138,7 @@ function skipTrade() {
 }
 
 // 监听交易提案（全房间广播，含详情）
-if (typeof socket !== 'undefined') {
-  socket.on('trade:proposal', (data) => {
+onSocket('trade:proposal', (data) => {
     window.__MW_DEBUG__ && console.log('[Trade] 收到交易提案公示:', data);
     _pendingTradeProposal = data;
     // 即时更新浮窗
@@ -1179,21 +1178,21 @@ if (typeof socket !== 'undefined') {
         ${toParts.length > 0 ? `<div class="trade-prop-row">📥 要你的：${toParts.join(' + ')}</div>` : ''}`;
     }
   });
-  socket.on('trade:result', (data) => {
-    if (data && data.success) {
-      showToast(`✅ ${data.fromNick} 与 ${data.toNick} 交易成功！`, 'info');
-    } else {
-      const reason = (data && data.reason) || '交易未完成';
-      const msg = reason === 'rejected' ? '❌ 对方拒绝了交易' : `❌ ${reason}`;
-      showToast(msg, 'error');
-      // 交易被拒时，如果是发起方则记录
-      if (reason === 'rejected' && data && data.fromId === socket.id) {
-        if (typeof recordTradeRejected === 'function') recordTradeRejected();
-      }
+
+onSocket('trade:result', (data) => {
+  if (data && data.success) {
+    showToast(`✅ ${data.fromNick} 与 ${data.toNick} 交易成功！`, 'info');
+  } else {
+    const reason = (data && data.reason) || '交易未完成';
+    const msg = reason === 'rejected' ? '❌ 对方拒绝了交易' : `❌ ${reason}`;
+    showToast(msg, 'error');
+    // 交易被拒时，如果是发起方则记录
+    if (reason === 'rejected' && data && data.fromId === socket.id) {
+      if (typeof recordTradeRejected === 'function') recordTradeRejected();
     }
-    _pendingTradeProposal = null;  // 清除提案缓存
-  });
-}
+  }
+  _pendingTradeProposal = null;  // 清除提案缓存
+});
 
 // ==================== 镜中决斗阶段 ====================
 

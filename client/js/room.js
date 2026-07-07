@@ -97,7 +97,7 @@ function showConfirmModal({ title, message, confirmText = '确定', cancelText =
 
 // -------------------- Socket 事件监听（房间相关） --------------------
 
-socket.on('room:created', (data) => {
+onSocket('room:created', (data) => {
   console.log('[Room] 房间已创建:', data.roomId, '模式:', data.mode);
   GameState.roomId = data.roomId;
   GameState.players = data.players;
@@ -132,7 +132,7 @@ socket.on('room:created', (data) => {
   if (typeof showToast === 'function') showToast(`${mode.icon} 已创建${mode.name}房间`, 'info');
 });
 
-socket.on('room:joined', (data) => {
+onSocket('room:joined', (data) => {
   console.log('[Room] 已加入房间:', data.roomId);
   GameState.roomId = data.roomId;
   GameState.players = data.players;
@@ -166,7 +166,7 @@ socket.on('room:joined', (data) => {
   }
 });
 
-socket.on('room:player_joined', (data) => {
+onSocket('room:player_joined', (data) => {
   console.log('[Room] 玩家加入:', data.player.nickname);
   GameState.players = data.players;
 
@@ -178,7 +178,7 @@ socket.on('room:player_joined', (data) => {
   updateLobbyUI();
 });
 
-socket.on('room:player_left', (data) => {
+onSocket('room:player_left', (data) => {
   console.log('[Room] 玩家离开:', data.player.nickname);
   GameState.players = data.players;
 
@@ -194,7 +194,7 @@ socket.on('room:player_left', (data) => {
   updateLobbyUI();
 });
 
-socket.on('room:left', (data) => {
+onSocket('room:left', (data) => {
   console.log('[Room] 已离开房间:', data.roomId);
 
   // 托管模式：由 game.js 统一处理（登录页浮窗 + 回到模式页）
@@ -210,7 +210,7 @@ socket.on('room:left', (data) => {
   goToMode();
 });
 
-socket.on('room:kicked', (data) => {
+onSocket('room:kicked', (data) => {
   console.log('[Room] 被踢出房间:', data.roomId);
   GameState.roomId = null;
   GameState.players = [];
@@ -220,7 +220,7 @@ socket.on('room:kicked', (data) => {
 });
 
 // 监听其他玩家的"再来一局"ready 状态
-socket.on('player:ready', (data) => {
+onSocket('player:ready', (data) => {
   console.log(`[Lobby] 玩家 ready: ${data.playerId} (${data.readyCount}/${data.total})`);
   // 更新等待提示
   const waitingText = document.getElementById('waitingText');

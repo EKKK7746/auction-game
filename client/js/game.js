@@ -26,7 +26,7 @@ let _totalDeckSize = 0;           // 牌堆总数
 
 // ==================== 入口：接收 game:state_update ====================
 
-socket.on('game_state_update', (view) => {
+onSocket('game_state_update', (view) => {
   dbg(`[Game] game_state_update phase=${view.phase} round=${view.round} view=${GameState.currentView}`);
 
   // ★ 已主动退出（托管中）→ 忽略游戏状态更新，防止被拉回游戏
@@ -100,14 +100,14 @@ socket.on('game_state_update', (view) => {
   _lastView = view;
 });
 
-socket.on('game_error', (data) => {
+onSocket('game_error', (data) => {
   if (typeof showToast === 'function') {
     showToast(data.msg || '操作失败', 'error');
   }
 });
 
 // 监听 room:left（含托管标记）
-socket.on('room:left', (data) => {
+onSocket('room:left', (data) => {
   if (data && data.managed) {
     GameState._hasExitedManaged = true;
     if (typeof showToast === 'function') showToast('🤖 已退出，Bot 托管中。可随时重新加入。', 'info');
