@@ -104,6 +104,12 @@ socket.on('room:created', (data) => {
   GameState.isHost = true;
 
   document.getElementById('roomIdDisplay').textContent = data.roomId;
+  // 更新顶部栏标题
+  const topbarTitle = document.getElementById('lobbyTopbarTitle');
+  if (topbarTitle) {
+    const mode = getModeById(data.mode || 'classic');
+    topbarTitle.textContent = `${mode.icon} ${mode.name} · ${data.roomId}`;
+  }
   // 显示房间模式标签
   const modeTag = document.getElementById('lobbyModeTag');
   if (modeTag) {
@@ -136,6 +142,12 @@ socket.on('room:joined', (data) => {
   GameState.isHost = !!(me && me.isHost);
 
   document.getElementById('roomIdDisplay').textContent = data.roomId;
+  // 更新顶部栏标题
+  const topbarTitle2 = document.getElementById('lobbyTopbarTitle');
+  if (topbarTitle2 && GameState.selectedMode) {
+    const m2 = GameState.selectedMode;
+    topbarTitle2.textContent = `${m2.icon} ${m2.name} · ${data.roomId}`;
+  }
   // 显示房间模式标签
   const modeTag = document.getElementById('lobbyModeTag');
   if (modeTag && GameState.selectedMode) {

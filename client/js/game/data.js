@@ -179,6 +179,12 @@ function getCardInfoPanelHtml(cardId) {
 
 const CARD_COLORS = { 1: '#2E5C8A', 2: '#8B6914', 3: '#C43A31' };
 
+const CARD_SCORES = {
+  sxqts:3, qsbmy:3, qmht:3, syfz:3,
+  slj:2, jlyy:2, ltsx:2, zhybz:2, yqz:2, yqh:2, dhmh:2, rytqy:2,
+  kxqt:1, jgpx:1, dhft:1, sq:1, sxtc:1, cjgb:1, jofjg:1, dhcxb:1
+};
+
 const RANK_MEDALS = { 1: '👑', 2: '🥈', 3: '🥉' };
 
 console.log('[Game/Data] 数据常量已加载');

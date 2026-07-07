@@ -153,11 +153,40 @@ function _renderPhaseBar(view) {
   const cardScoreEl = $('phaseCardScore');
   const cardFramedEl = $('phaseCardFramed');
   const iconWrap = $('phaseIconWrap');
+  const cardInfoEl = $('phaseCardInfo');
+  const phaseVisualLabel = $('phaseVisualPhaseLabel');
+  const auctioneerInfoEl = $('phaseAuctioneerInfo');
 
   roundLabel.textContent = `第 ${view.round}/${view.maxRounds} 轮`;
   const phaseLabel = PHASE_LABELS[view.phase] || view.phase;
   const spectatorTag = view.isSpectator ? ' · 👁️观战' : '';
   phaseLabelEl.textContent = phaseLabel + spectatorTag;
+
+  // 右侧：阶段描述标签
+  if (phaseVisualLabel) {
+    const phaseDescs = {
+      auction: '🏛️ 拍卖师竞标',
+      selectCard: '👑 选择拍品',
+      rentDice: '🎲 租骰竞拍',
+      rollDice: '🎲 掷骰对决',
+      settle: '📊 回合结算',
+      trade: '🔄 交易阶段',
+      duel: '🪞 镜中决斗',
+      finished: '🏆 最终排名',
+    };
+    phaseVisualLabel.textContent = phaseDescs[view.phase] || phaseLabel;
+  }
+
+  // 拍卖师信息
+  if (auctioneerInfoEl) {
+    if (view.auctioneerId && view.phase !== 'auction') {
+      const auctioneer = view.players?.find(p => p.id === view.auctioneerId);
+      auctioneerInfoEl.textContent = auctioneer ? `👑 拍卖师：${auctioneer.nickname}` : '';
+      auctioneerInfoEl.style.display = auctioneer ? 'block' : 'none';
+    } else {
+      auctioneerInfoEl.style.display = 'none';
+    }
+  }
 
   // 阶段切换动效
   const prevPhase = _lastView?.phase;
@@ -208,18 +237,26 @@ function _renderPhaseBar(view) {
       : `<img src="assets/cards/${card.id || card.name}.png" alt="${card.name}" style="width:82px;height:82px;border-radius:8px;object-fit:cover;" onerror="this.style.display='none'" />`;
     cardNameEl.textContent = card.name || '';
     cardScoreEl.textContent = `★ ${card.score} 分`;
+    // 在上方展示区显示完整卡牌信息面板
+    if (cardInfoEl) {
+      const cardId = card.id || card.name;
+      cardInfoEl.innerHTML = (typeof getCardInfoPanelHtml === 'function') ? getCardInfoPanelHtml(cardId) : '';
+      cardInfoEl.style.display = cardInfoEl.innerHTML ? 'block' : 'none';
+    }
   } else if (card && card.hidden) {
     iconEl.style.display = 'flex';
     cardMiniEl.style.display = 'none';
     iconEl.textContent = '❓';
     cardNameEl.textContent = '待揭示';
     cardScoreEl.textContent = '';
+    if (cardInfoEl) cardInfoEl.style.display = 'none';
   } else {
     iconEl.style.display = 'flex';
     cardMiniEl.style.display = 'none';
     iconEl.textContent = phaseIcon;
     cardNameEl.textContent = '';
     cardScoreEl.textContent = '';
+    if (cardInfoEl) cardInfoEl.style.display = 'none';
   }
 
   if (iconWrap) iconWrap.style.display = 'flex';
@@ -667,21 +704,9 @@ function _renderRentDice(view, container) {
 
   const upgradeCheckbox = hasUpgrade ? _buildUpgradeCheckbox() : '';
 
-  // 拍品信息卡片
-  const currentCard = view.revealedCard;
-  const cardInfoHtml = (currentCard && !currentCard.hidden)
-    ? `<div class="rent-card-info">
-        <div class="rent-card-img">${getCardFramedImageHtml(currentCard.id || currentCard.name, 'frame-md')}</div>
-        <div class="rent-card-detail">
-          <div class="rent-card-name">${currentCard.name || ''} <span class="rent-card-score">★ ${currentCard.score}分</span></div>
-          ${getCardInfoPanelHtml(currentCard.id || currentCard.name)}
-        </div>
-      </div>`
-    : '';
-
+  // 拍品信息卡片（已在上方展示区显示，操作区只保留骰子按钮）
   container.innerHTML = `
     <div class="action-title">${isSpeedMode ? '⚡ 极速模式 — 选择骰子' : '🎲 选择你的骰子'}</div>
-    ${cardInfoHtml}
     <div class="dice-grid">
       ${buttons}
       <button class="dice-btn pass-btn-full"

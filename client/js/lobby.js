@@ -94,6 +94,14 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// 全局函数：供顶部栏"离开"按钮调用
+function leaveLobby() {
+  if (!GameState.roomId) return;
+  const roomId = GameState.roomId;
+  goToMode();
+  socket.emit('room:leave', roomId);
+}
+
 // 降级复制方案
 function fallbackCopy(text) {
   const ta = document.createElement('textarea');

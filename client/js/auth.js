@@ -144,7 +144,11 @@ function renderAuthPage() {
   container.innerHTML = `
     <div class="auth-container">
       <div class="auth-card">
-        <button class="auth-back" onclick="goToStart()" title="返回">←</button>
+        <div class="page-topbar">
+          <button class="page-topbar-back" onclick="goToStart()" title="返回">← 返回</button>
+          <h2 class="page-topbar-title">登录 / 注册</h2>
+          <div class="page-topbar-right"></div>
+        </div>
         <div class="auth-header">
           <div class="auth-logo">🏺</div>
           <h2 class="auth-title">琳 琅</h2>

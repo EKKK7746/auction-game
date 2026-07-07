@@ -42,9 +42,13 @@ function _renderArtifactsTab(container) {
   for (const cardId of ARTIFACT_IDS) {
     const card = collected[cardId];
     const name = (typeof CARD_NAMES !== 'undefined' && CARD_NAMES[cardId]) ? CARD_NAMES[cardId] : cardId;
-    const lore = (typeof getCardLoreText === 'function')
-      ? getCardLoreText(cardId).substring(0, 60) + '...'
-      : '神秘的古代文物...';
+    const loreData = (typeof CARD_LORE !== 'undefined' && CARD_LORE[cardId] && typeof CARD_LORE[cardId] !== 'string') ? CARD_LORE[cardId] : null;
+    const score = (typeof CARD_SCORES !== 'undefined') ? CARD_SCORES[cardId] : '?';
+    const scoreColor = (typeof CARD_COLORS !== 'undefined') ? CARD_COLORS[score] || '#2C2C2C' : '#2C2C2C';
+    const skillTag = loreData && loreData.skillType !== '无'
+      ? `<span class="skill-tag" style="background:${(typeof SKILL_TYPE_COLORS !== 'undefined') ? SKILL_TYPE_COLORS[loreData.skillType] || '#7F8C8D' : '#7F8C8D'}">${loreData.skillType}</span>`
+      : '';
+    const lore = loreData ? loreData.brief.substring(0, 50) + '...' : '神秘的古代文物...';
     const collectedClass = card ? 'collected' : 'uncollected';
     const countBadge = card ? `<span class="artifact-count">x${card.count}</span>` : '';
     const lockBadge = !card ? '<span class="artifact-lock-badge">?</span>' : '';
@@ -57,7 +61,7 @@ function _renderArtifactsTab(container) {
         ${countBadge}
         ${lockBadge}
         <div class="artifact-img-wrap">${iconHtml}</div>
-        <div class="artifact-name">${card ? name : '???'}</div>
+        <div class="artifact-name">${card ? name : '???'} ${card ? `<span class="artifact-score-badge" style="color:${scoreColor}">★ ${score}</span>` : ''} ${card ? skillTag : ''}</div>
         <div class="artifact-lore">${card ? lore : '尚未获得'}</div>
       </div>`;
   }
@@ -78,8 +82,9 @@ function _renderArtifactsTab(container) {
         </div>
         <img id="artifactModalImg" src="" alt="">
         <h3 id="artifactModalName"></h3>
+        <div id="artifactModalScoreLine"></div>
+        <div id="artifactModalInfoPanel"></div>
         <div id="artifactModalMeta"></div>
-        <p id="artifactModalLore"></p>
       </div>
     </div>
   `;
@@ -89,13 +94,16 @@ function openArtifactDetail(cardId) {
   const data = getCollection();
   const card = data.artifacts[cardId];
   const name = (typeof CARD_NAMES !== 'undefined' && CARD_NAMES[cardId]) ? CARD_NAMES[cardId] : cardId;
-  const lore = (typeof getCardLoreText === 'function') ? getCardLoreText(cardId) : '神秘的古代文物...';
+  const loreData = (typeof CARD_LORE !== 'undefined' && CARD_LORE[cardId] && typeof CARD_LORE[cardId] !== 'string') ? CARD_LORE[cardId] : null;
+  const score = (typeof CARD_SCORES !== 'undefined') ? CARD_SCORES[cardId] : '?';
+  const scoreColor = (typeof CARD_COLORS !== 'undefined') ? CARD_COLORS[score] || '#2C2C2C' : '#2C2C2C';
   const modal = document.getElementById('artifactDetailModal');
   const img = document.getElementById('artifactModalImg');
   const title = document.getElementById('artifactModalName');
   const titleBar = document.getElementById('artifactModalTitle');
+  const scoreLine = document.getElementById('artifactModalScoreLine');
+  const infoPanel = document.getElementById('artifactModalInfoPanel');
   const meta = document.getElementById('artifactModalMeta');
-  const text = document.getElementById('artifactModalLore');
   if (!modal) return;
 
   img.src = `assets/cards/${cardId}.png`;
@@ -103,10 +111,13 @@ function openArtifactDetail(cardId) {
   img.onload = () => { img.style.display = 'block'; };
   title.textContent = name;
   if (titleBar) titleBar.textContent = name;
+  // 分数行
+  scoreLine.innerHTML = `<span style="color:${scoreColor};font-weight:700;font-size:18px;">★ ${score} 分</span>`;
+  // 模块化信息面板
+  infoPanel.innerHTML = (typeof getCardInfoPanelHtml === 'function') ? getCardInfoPanelHtml(cardId) : '';
   meta.innerHTML = card
     ? `<span class="artifact-modal-count">已收集 ×${card.count}</span><span class="artifact-modal-date">首次获得 ${new Date(card.firstWon).toLocaleDateString('zh-CN')}</span>`
     : `<span class="artifact-modal-locked">🔒 尚未获得</span>`;
-  text.textContent = lore;
   modal.classList.add('show');
 }
 
