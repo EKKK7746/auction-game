@@ -624,7 +624,8 @@ body {
 
 .phase-visual-icon-wrap {
   width: 130px;
-  height: 130px;
+  min-height: 130px;
+  height: auto;
   border-radius: 22px;
   background: rgba(201, 169, 110, 0.15);
   border: 1px solid rgba(201, 169, 110, 0.3);
@@ -633,6 +634,8 @@ body {
   justify-content: center;
   flex-shrink: 0;
   position: relative;
+  overflow: visible;
+  padding: 6px;
 }
 
 .phase-visual-icon {
@@ -5794,8 +5797,11 @@ body.tutorial-lock #app .tg-clickable * {
   }
   .phase-visual-icon-wrap {
     width: 90px;
-    height: 90px;
+    min-height: 90px;
+    height: auto;
     border-radius: 16px;
+    padding: 4px;
+    overflow: visible;
   }
   .phase-visual-icon { font-size: 48px; }
   .phase-visual-card { gap: 6px; }
