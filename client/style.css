@@ -534,7 +534,7 @@ body {
   flex-direction: column;
   align-items: stretch;
   gap: 0;
-  padding: 12px;
+  padding: 8px 12px;
   background: linear-gradient(180deg, #FFFDF7 0%, #F5F0E8 100%);
   border: 1px solid #E8DCC8;
   border-radius: 12px;
@@ -543,7 +543,7 @@ body {
   min-height: 260px;
   max-height: 380px;
   position: relative;
-  overflow: hidden;
+  overflow-y: auto;
 }
 
 .phase-visual-split {
@@ -559,9 +559,10 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
+  justify-content: flex-start;
+  gap: 6px;
   min-width: 0;
+  padding-top: 4px;
 }
 
 .phase-visual-right {
@@ -570,9 +571,8 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
-  padding-top: 16px;
 }
 
 .phase-visual-card-info {

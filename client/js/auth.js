@@ -27,9 +27,13 @@ function getAuthUser() {
   const token = getAuthToken();
   if (!token) return null;
   try {
+    // ★ JWT payload 使用 base64url 编码（- 替换 +，_ 替换 /，无填充 =）
+    //   标准 atob() 不支持 base64url，必须先转换为标准 base64
+    let b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    while (b64.length % 4) b64 += '=';  // 补齐填充
+    const raw = atob(b64);
     // ★ atob() 按 Latin-1 解码 UTF-8 多字节字符会乱码，
     //   需先用 escape 将每个字节转为 %xx 序列，再用 decodeURIComponent 还原 UTF-8
-    const raw = atob(token.split('.')[1]);
     const utf8 = decodeURIComponent(escape(raw));
     const payload = JSON.parse(utf8);
     return { userId: payload.userId, username: payload.username, nickname: payload.nickname };

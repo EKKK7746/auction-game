@@ -174,15 +174,20 @@ function clearTurnTimer(roomId) {
  */
 function setTurnTimer(roomId, duration, phase, onTimeout) {
   clearTurnTimer(roomId);
-  const deadline = Date.now() + duration;
   const state = games.get(roomId);
+  if (!state) return;
+
+  // ★ 教程模式：大幅延长超时（5 分钟），避免玩家还没看懂提示就被自动推进
+  const effectiveDuration = state.isTutorial ? 300000 : duration;
+
+  const deadline = Date.now() + effectiveDuration;
   if (state) state.turnDeadline = deadline;
 
   const tid = setTimeout(() => {
     _turnTimers.delete(roomId);
-    console.log(`[计时器] 房间 ${roomId} ${phase} 阶段 ${duration/1000}s 超时，自动 pass`);
+    console.log(`[计时器] 房间 ${roomId} ${phase} 阶段 ${effectiveDuration/1000}s 超时，自动 pass`);
     onTimeout();
-  }, duration);
+  }, effectiveDuration);
   _turnTimers.set(roomId, tid);
 }
 
@@ -2321,15 +2326,9 @@ function disconnectPlayer(roomId, playerId) {
 
   console.log(`[引擎] 玩家 ${player.nickname}(${playerId}) 断连，Bot 托管接管 → ${player.strategy} (${humanCount}活跃真人)`);
 
-  // 检查真人数量（不计 managed 玩家）
-  if (humanCount === 0) {
-    state.phase = 'finished';
-    console.log(`[引擎] 房间 ${roomId} 无活跃真人玩家，游戏终止`);
-    const fr = calculateFinalScores(roomId);
-    state.finalResults = fr;
-    broadcast(roomId);
-    return fr;
-  }
+  // ★ 即使无活跃真人，也让 Bot 继续完成游戏（不再终止）
+  //    普通房间：Bot 打完 → 无人时自然结束
+  //    教程房间：玩家断连后 Bot 接管完成即可
 
   // 如果托管玩家正在等待操作，清除其等待状态让 Bot 接管
   state.playersDone.delete(playerId);

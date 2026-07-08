@@ -108,6 +108,12 @@ onSocket('game_error', (data) => {
 
 // 监听 room:left（含托管标记）
 onSocket('room:left', (data) => {
+  // ★ 清理教程状态：防止退出教程后状态残留到普通游戏
+  if (GameState._tutorial) {
+    GameState._tutorial = null;
+    if (window.TutorialGuide) TutorialGuide.reset();
+  }
+
   if (data && data.managed) {
     GameState._hasExitedManaged = true;
     if (typeof showToast === 'function') showToast('🤖 已退出，Bot 托管中。可随时重新加入。', 'info');

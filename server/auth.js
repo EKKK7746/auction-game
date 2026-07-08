@@ -49,7 +49,7 @@ function extractToken(req) {
 // ==================== 输入校验 ====================
 
 const USERNAME_RE = /^[\w\u4e00-\u9fff]{2,20}$/;  // 2-20字符，字母数字下划线中文
-const NICKNAME_RE = /^.{0,8}$/;                     // 0-8任意字符（可选）
+const NICKNAME_RE = /^.{0,8}$/u;                    // 0-8任意字符（可选，u flag 支持完整 Unicode）
 const PASSWORD_MIN = 6;
 
 /** 校验并返回错误消息，无错误返回 null */
