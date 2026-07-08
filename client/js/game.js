@@ -154,6 +154,15 @@ renderGame = function(view) {
     });
   }
 
+  // 牌堆卡牌详情弹窗——点击遮罩关闭
+  const dcdModal = document.getElementById('deckCardDetailModal');
+  if (dcdModal && !dcdModal._boundClick) {
+    dcdModal._boundClick = true;
+    dcdModal.addEventListener('click', (e) => {
+      if (e.target === dcdModal) closeDeckCardDetail();
+    });
+  }
+
   return _origRenderGame(view);
 };
 

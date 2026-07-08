@@ -271,15 +271,8 @@ io.on('connection', (socket) => {
 
   // --- ★ 托管 / 取消托管（玩家保持连接） ---
   socket.on('game:autoPlay', (roomId) => {
-    const result = gameEngine.setPlayerManaged(roomId, socket.id);
-    // ★ 无活跃真人 → 结束游戏并关闭房间
-    if (result && result.ended) {
-      botManager.cancelRoom(roomId);
-      gameEngine.destroyGame(roomId);
-      roomManager.destroyRoom(roomId);
-      socket.emit('room:left', { roomId, ended: true });
-      return;
-    }
+    gameEngine.setPlayerManaged(roomId, socket.id);
+    // 玩家仍在连接中（只是观看），游戏由 Bot 继续推进
     botManager.processBots(roomId);
   });
 

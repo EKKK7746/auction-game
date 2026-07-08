@@ -4840,6 +4840,73 @@ body.tutorial-lock #app .tg-clickable * {
   background: #F5F5F5;
 }
 
+/* 牌堆卡牌详情弹窗 */
+.deck-detail-modal {
+  max-width: 360px;
+  max-height: 80vh;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #FFFBF0 0%, #F8F3E8 100%);
+  border: 2px solid #C9A96E;
+  border-radius: 16px;
+}
+
+.deck-detail-content {
+  padding: 12px 16px 16px;
+}
+
+.deck-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.deck-detail-card {
+  flex-shrink: 0;
+}
+
+.deck-detail-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.deck-detail-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #3D2B1F;
+}
+
+.deck-detail-score {
+  font-size: 14px;
+  color: #B8860B;
+  font-weight: 600;
+}
+
+/* 牌堆卡片点击指针 */
+.deck-item {
+  cursor: pointer;
+}
+
+/* 精简版卡牌信息面板（局内上方展示区用） */
+.card-info-compact .card-info-skill {
+  padding: 6px 8px;
+}
+
+.card-info-compact .skill-name {
+  font-size: 13px;
+}
+
+.card-info-compact .skill-tag {
+  font-size: 10px;
+  padding: 1px 6px;
+}
+
+.card-info-compact .skill-desc {
+  font-size: 12px;
+  margin-top: 3px;
+}
+
 /* 移动端牌堆总览适配 */
 @media (max-width: 767px) {
   .cardpool-modal {

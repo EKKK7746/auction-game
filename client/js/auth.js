@@ -27,7 +27,11 @@ function getAuthUser() {
   const token = getAuthToken();
   if (!token) return null;
   try {
-    const payload = JSON.parse(atob(token.split('.')[1]));
+    // ★ atob() 按 Latin-1 解码 UTF-8 多字节字符会乱码，
+    //   需先用 escape 将每个字节转为 %xx 序列，再用 decodeURIComponent 还原 UTF-8
+    const raw = atob(token.split('.')[1]);
+    const utf8 = decodeURIComponent(escape(raw));
+    const payload = JSON.parse(utf8);
     return { userId: payload.userId, username: payload.username, nickname: payload.nickname };
   } catch {
     return null;

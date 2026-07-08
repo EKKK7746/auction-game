@@ -177,6 +177,22 @@ function getCardInfoPanelHtml(cardId) {
   </div>`;
 }
 
+/** 生成精简卡牌信息面板 HTML（仅技能区——用于局内上方展示区） */
+function getCardSkillPanelHtml(cardId) {
+  const lore = CARD_LORE[cardId];
+  if (!lore || typeof lore === 'string') return '';
+  const color = SKILL_TYPE_COLORS[lore.skillType] || '#7F8C8D';
+  return `<div class="card-info-panel card-info-compact">
+    <div class="card-info-skill">
+      <div class="skill-row">
+        <span class="skill-name">${lore.skillName}</span>
+        <span class="skill-tag" style="background:${color}">${lore.skillType}</span>
+      </div>
+      <div class="skill-desc">${lore.skillDesc}</div>
+    </div>
+  </div>`;
+}
+
 const CARD_COLORS = { 1: '#2E5C8A', 2: '#8B6914', 3: '#C43A31' };
 
 const CARD_SCORES = {

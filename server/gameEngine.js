@@ -2401,16 +2401,8 @@ function setPlayerManaged(roomId, playerId) {
 
   console.log(`[引擎] 玩家 ${player.nickname}(${playerId}) 主动托管 → ${player.strategy} (${humanCount}活跃真人)`);
 
-  // ★ 无活跃真人 → 结束游戏（避免全托管房间无限运行）
-  if (humanCount === 0) {
-    state.phase = 'finished';
-    console.log(`[引擎] 房间 ${roomId} 无活跃真人玩家，游戏终止`);
-    const fr = calculateFinalScores(roomId);
-    state.finalResults = fr;
-    broadcast(roomId);
-    return { player, ended: true, finalResults: fr };
-  }
-
+  // ★ 托管模式下玩家仍保持连接（只是观看），游戏继续由 Bot 推进
+  // 不因"无活跃真人"而结束游戏——玩家可以观战 Bot 打完全程
   broadcast(roomId);
   return { player, ended: false };
 }

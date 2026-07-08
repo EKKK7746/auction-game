@@ -102,6 +102,7 @@ onSocket('room:created', (data) => {
   GameState.roomId = data.roomId;
   GameState.players = data.players;
   GameState.isHost = true;
+  GameState._hasExitedManaged = false;  // ★ 进入新房间时清除托管退出标记
 
   document.getElementById('roomIdDisplay').textContent = data.roomId;
   // 更新顶部栏标题
@@ -136,6 +137,7 @@ onSocket('room:joined', (data) => {
   console.log('[Room] 已加入房间:', data.roomId);
   GameState.roomId = data.roomId;
   GameState.players = data.players;
+  GameState._hasExitedManaged = false;  // ★ 进入新房间时清除托管退出标记
 
   // 先根据服务器数据判断自己是否为房主（必须在 renderPlayerList 之前）
   const me = data.players.find(p => p.id === socket.id);

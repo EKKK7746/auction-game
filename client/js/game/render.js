@@ -240,7 +240,7 @@ function _renderPhaseBar(view) {
     // 在上方展示区显示完整卡牌信息面板
     if (cardInfoEl) {
       const cardId = card.id || card.name;
-      cardInfoEl.innerHTML = (typeof getCardInfoPanelHtml === 'function') ? getCardInfoPanelHtml(cardId) : '';
+      cardInfoEl.innerHTML = (typeof getCardSkillPanelHtml === 'function') ? getCardSkillPanelHtml(cardId) : '';
       cardInfoEl.style.display = cardInfoEl.innerHTML ? 'block' : 'none';
     }
   } else if (card && card.hidden) {
@@ -2176,7 +2176,7 @@ function showCardPool() {
     }
 
     return `
-      <div class="deck-item ${acquiredClass} ${scoreClass} ${c.dealt ? 'dealt' : ''}">
+      <div class="deck-item ${acquiredClass} ${scoreClass} ${c.dealt ? 'dealt' : ''}" onclick="showDeckCardDetail('${c.id}')">
         <div class="deck-emoji">${emojiHtml}</div>
         <div class="deck-name">${c.name}</div>
         <div class="deck-score">★ ${c.score} 分</div>
@@ -2187,6 +2187,38 @@ function showCardPool() {
 
 function closeCardPool() {
   const modal = document.getElementById('cardPoolModal');
+  if (modal) modal.style.display = 'none';
+}
+
+/** 牌堆浮窗：点击卡牌查看详情弹窗 */
+function showDeckCardDetail(cardId) {
+  if (typeof playSound === 'function') playSound('click');
+  const modal = document.getElementById('deckCardDetailModal');
+  if (!modal) return;
+
+  const contentEl = document.getElementById('deckCardDetailContent');
+  if (contentEl) {
+    const infoHtml = (typeof getCardInfoPanelHtml === 'function') ? getCardInfoPanelHtml(cardId) : '';
+    const score = (typeof CARD_SCORES === 'object' && CARD_SCORES[cardId]) ? CARD_SCORES[cardId] : '?';
+    const name = (typeof CARD_NAMES === 'object' && CARD_NAMES[cardId]) ? CARD_NAMES[cardId] : cardId;
+    const framedHtml = (typeof getCardFramedImageHtml === 'function') ? getCardFramedImageHtml(cardId, 'frame-lg') : '';
+
+    contentEl.innerHTML = `
+      <div class="deck-detail-header">
+        <div class="deck-detail-card">${framedHtml}</div>
+        <div class="deck-detail-title">
+          <span class="deck-detail-name">${name}</span>
+          <span class="deck-detail-score">★${score}分</span>
+        </div>
+      </div>
+      ${infoHtml}
+    `;
+  }
+  modal.style.display = 'flex';
+}
+
+function closeDeckCardDetail() {
+  const modal = document.getElementById('deckCardDetailModal');
   if (modal) modal.style.display = 'none';
 }
 
