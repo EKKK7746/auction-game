@@ -1,9 +1,89 @@
 /* ============================================================
-   style.css — 琳琅 移动端优先极简样式
-   颜色主题：墨灰 #2C2C2C / 深金 #C9A96E / 素白 #FAFAFA
+   style.css — 琳琅·华夏文物拍卖 样式表
+   ============================================================
+   目录:
+   1. CSS 变量 & Reset
+   2. 基础组件 (btn/input/divider)
+   3. 视图: 开始页 / 登录 / 首页
+   4. 视图: 模式选择 / 大厅 / 房间等待
+   5. 视图: 游戏界面 (相位栏/展示区/玩家列表/操作区)
+   6. 视图: 收藏馆 / 模态框
+   7. 组件: Bot / Toast / 加载 / 卡牌 / 骰子
+   8. 动画
+   9. 响应式 (桌面端 / 移动端)
+  10. 可访问性
    ============================================================ */
 
-/* -------------------- Reset & Base -------------------- */
+:root {
+  /* 主色调 */
+  --color-primary: #8B2252;
+  --color-primary-dark: #701A40;
+  --color-primary-light: #FFF5F5;
+  --color-accent: #C9A96E;
+  --color-accent-light: rgba(201, 169, 110, 0.15);
+  --color-accent-border: rgba(201, 169, 110, 0.3);
+  
+  /* 灰阶 */
+  --gray-50: #FAFAFA;
+  --gray-100: #F5F0E8;
+  --gray-200: #F0EDE4;
+  --gray-300: #E8DCC8;
+  --gray-400: #E0E0E0;
+  --gray-500: #D4CFC4;
+  --gray-600: #B0B0B0;
+  --gray-700: #8B7B6B;
+  --gray-800: #3C3C3C;
+  --gray-900: #2C2C2C;
+  
+  /* 语义色 */
+  --color-success: #4CAF50;
+  --color-success-bg: #F0FFF0;
+  --color-warning: #FF9800;
+  --color-warning-bg: #FFF8E7;
+  --color-danger: #C43A31;
+  --color-info-bg: #E8F4E8;
+  
+  /* 排版 */
+  --font-xs: 10px;
+  --font-sm: 12px;
+  --font-base: 14px;
+  --font-md: 16px;
+  --font-lg: 18px;
+  --font-xl: 22px;
+  --font-hero: 32px;
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.4;
+  --line-height-relaxed: 1.6;
+  
+  /* 间距（4px 基数） */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  --space-2xl: 32px;
+  
+  /* 圆角 */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 50%;
+  
+  /* 阴影 */
+  --shadow-xs: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-sm: 0 2px 6px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 14px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 20px rgba(0,0,0,0.15);
+  
+  /* 过渡 */
+  --transition-fast: 0.15s;
+  --transition-normal: 0.2s;
+  --transition-slow: 0.3s;
+}
+
+/* ==== Reset & Base ==== */
 
 *, *::before, *::after {
   margin: 0;
@@ -12,7 +92,7 @@
 }
 
 html {
-  font-size: 16px;
+  font-size: var(--font-md);
   -webkit-text-size-adjust: 100%;
 }
 
@@ -20,8 +100,8 @@ body {
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", sans-serif;
-  background-color: #FAFAFA;
-  color: #2C2C2C;
+  background-color: var(--gray-50);
+  color: var(--gray-900);
   line-height: 1.6;
   min-height: 100vh;
   display: flex;
@@ -41,7 +121,7 @@ body {
   padding-bottom: 0;
 }
 
-/* -------------------- View System -------------------- */
+/* ==== View System ==== */
 
 .view {
   display: none;
@@ -54,26 +134,26 @@ body {
   display: flex;
 }
 
-/* -------------------- Shared Components -------------------- */
+/* ==== 基础组件 (Shared Components) ==== */
 
 .input-primary {
   width: 100%;
   padding: 12px 16px;
-  border: 1.5px solid #E0E0E0;
+  border: 1.5px solid var(--gray-400);
   border-radius: 8px;
-  font-size: 16px;
-  background: #FFFFFF;
-  color: #2C2C2C;
+  font-size: var(--font-md);
+  background: #fff;
+  color: var(--gray-900);
   outline: none;
   transition: border-color 0.2s;
 }
 
 .input-primary:focus {
-  border-color: #8B2252;
+  border-color: var(--color-primary);
 }
 
 .input-primary::placeholder {
-  color: #B0B0B0;
+  color: var(--gray-600);
 }
 
 .btn {
@@ -85,7 +165,7 @@ body {
   padding: 12px 24px;
   border: none;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
@@ -103,27 +183,31 @@ body {
 }
 
 .btn-primary {
-  background: #8B2252;
-  color: #FFFFFF;
+  background: var(--color-primary);
+  color: #fff;
 }
 
 .btn-primary:not(:disabled):hover {
-  background: #701A40;
+  background: var(--color-primary-dark);
 }
 
 .btn-secondary {
-  background: #3C3C3C;
-  color: #FFFFFF;
+  background: var(--gray-800);
+  color: #fff;
 }
 
 .btn-secondary:not(:disabled):hover {
-  background: #2C2C2C;
+  background: var(--gray-900);
 }
 
 .btn-outline {
   background: transparent;
-  color: #8B2252;
-  border: 1.5px solid #8B2252;
+  color: var(--color-primary);
+  border: 1.5px solid var(--color-primary);
+}
+
+.btn-outline:not(:disabled):hover {
+  background: rgba(139, 34, 82, 0.06);
 }
 
 .btn-outline:active {
@@ -132,29 +216,33 @@ body {
 
 .btn-danger {
   background: transparent;
-  color: #999;
-  border: 1px solid #E0E0E0;
+  color: var(--color-danger);
+  border: 1.5px solid var(--color-danger);
+}
+
+.btn-danger:not(:disabled):hover {
+  background: rgba(196, 58, 49, 0.08);
 }
 
 .btn-danger:active {
-  background: rgba(0, 0, 0, 0.04);
+  background: rgba(196, 58, 49, 0.12);
 }
 
 .btn-start {
   width: 100%;
   padding: 16px;
-  font-size: 18px;
+  font-size: var(--font-lg);
   letter-spacing: 2px;
 }
 
-/* ---- Bot 难度选择器 ---- */
+/* Bot 难度选择器 */
 .select-difficulty {
   width: 100%;
   padding: 10px 14px;
   font-size: 15px;
-  background: #FAFAFA;
-  color: #2C2C2C;
-  border: 1px solid #E0E0E0;
+  background: var(--gray-50);
+  color: var(--gray-900);
+  border: 1px solid var(--gray-400);
   border-radius: 8px;
   outline: none;
   appearance: none;
@@ -169,11 +257,11 @@ body {
 }
 
 .select-difficulty:hover {
-  border-color: #C9A96E;
+  border-color: var(--color-accent);
 }
 
 .select-difficulty:focus {
-  border-color: #C9A96E;
+  border-color: var(--color-accent);
   box-shadow: 0 0 0 2px rgba(201, 169, 110, 0.2);
 }
 
@@ -187,23 +275,23 @@ body {
 .divider-line {
   flex: 1;
   height: 1px;
-  background: #E0E0E0;
+  background: var(--gray-400);
 }
 
 .divider-text {
-  font-size: 14px;
-  color: #B0B0B0;
+  font-size: var(--font-base);
+  color: var(--gray-600);
 }
 
 .error-msg {
-  color: #8B2252;
-  font-size: 14px;
+  color: var(--color-primary);
+  font-size: var(--font-base);
   text-align: center;
   min-height: 20px;
   margin-top: 4px;
 }
 
-/* -------------------- 视图 A：登录页 -------------------- */
+/* ==== 视图: 登录页 ==== */
 
 .login-container {
   display: flex;
@@ -225,16 +313,16 @@ body {
 }
 
 .game-title {
-  font-size: 32px;
+  font-size: var(--font-hero);
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
   letter-spacing: 6px;
   margin-bottom: 6px;
 }
 
 .game-subtitle {
-  font-size: 14px;
-  color: #8B2252;
+  font-size: var(--font-base);
+  color: var(--color-primary);
   letter-spacing: 4px;
 }
 
@@ -244,16 +332,16 @@ body {
   flex-direction: column;
   gap: 12px;
   padding: 24px;
-  background: #FFFFFF;
+  background: #fff;
   border-radius: 12px;
   border: 1px solid #F0F0F0;
 }
 
-/* ★ 托管对局浮窗 */
+/* 托管对局浮窗 */
 .managed-game-banner {
   width: 100%;
   background: linear-gradient(135deg, #FFF8E7 0%, #FFFBF0 100%);
-  border: 1px solid #E8DCC8;
+  border: 1px solid var(--gray-300);
   border-radius: 12px;
   padding: 12px 14px;
   margin-bottom: 12px;
@@ -278,8 +366,8 @@ body {
   color: #4A3728;
 }
 .mgb-room {
-  font-size: 12px;
-  color: #8B2252;
+  font-size: var(--font-sm);
+  color: var(--color-primary);
   font-weight: 700;
 }
 .mgb-btn {
@@ -298,7 +386,7 @@ body {
   min-width: 0;
 }
 
-/* -------------------- 视图 B：等待大厅 -------------------- */
+/* ==== 视图: 等待大厅 ==== */
 
 .lobby-container {
   display: flex;
@@ -311,21 +399,21 @@ body {
 .room-id-area {
   text-align: center;
   padding: 20px;
-  background: #FFFFFF;
+  background: #fff;
   border-radius: 12px;
   border: 1px solid #F0F0F0;
 }
 
 .room-id-label {
-  font-size: 14px;
-  color: #B0B0B0;
+  font-size: var(--font-base);
+  color: var(--gray-600);
   margin-bottom: 6px;
 }
 
 .room-id-value {
   font-size: 36px;
   font-weight: 700;
-  color: #8B2252;
+  color: var(--color-primary);
   letter-spacing: 8px;
   margin-bottom: 12px;
 }
@@ -335,7 +423,7 @@ body {
   font-size: 13px;
   color: #8B6914;
   background: linear-gradient(135deg, #FFF8E7, #FFFBF0);
-  border: 1px solid #E8DCC8;
+  border: 1px solid var(--gray-300);
   padding: 3px 12px;
   border-radius: 10px;
   margin-bottom: 6px;
@@ -344,7 +432,7 @@ body {
 }
 
 .player-section {
-  background: #FFFFFF;
+  background: #fff;
   border-radius: 12px;
   padding: 16px;
   border: 1px solid #F0F0F0;
@@ -352,9 +440,9 @@ body {
 }
 
 .section-title {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 600;
-  color: #2C2C2C;
+  color: var(--gray-900);
   margin-bottom: 12px;
 }
 
@@ -367,7 +455,7 @@ body {
   align-items: center;
   gap: 10px;
   padding: 10px 0;
-  border-bottom: 1px solid #F0EDE4;
+  border-bottom: 1px solid var(--gray-200);
   font-size: 15px;
 }
 
@@ -384,7 +472,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 700;
   flex-shrink: 0;
 }
@@ -402,8 +490,8 @@ body {
 
 .player-list .host-badge {
   font-size: 11px;
-  background: #C9A96E;
-  color: #FFFFFF;
+  background: var(--color-accent);
+  color: #fff;
   padding: 2px 8px;
   border-radius: 10px;
   flex-shrink: 0;
@@ -417,8 +505,8 @@ body {
 
 .waiting-text {
   text-align: center;
-  font-size: 16px;
-  color: #B0B0B0;
+  font-size: var(--font-md);
+  color: var(--gray-600);
   padding: 8px;
 }
 
@@ -441,7 +529,7 @@ body {
   gap: 8px;
 }
 
-/* -------------------- 视图 D：房间等待界面（再来一局）-------------------- */
+/* ==== 视图: 房间等待 ==== */
 
 .room-wait-container {
   max-width: 400px;
@@ -491,7 +579,7 @@ body {
 .wait-player-name { font-size: 15px; color: #333; font-weight: 500; }
 .wait-player-status { font-size: 13px; color: #888; }
 
-/* -------------------- 视图 C：游戏界面 -------------------- */
+/* ==== 视图: 游戏界面 ==== */
 
 .game-container {
   display: flex;
@@ -502,7 +590,7 @@ body {
   align-items: stretch;
 }
 
-/* --- 顶部相位栏 --- */
+/* 顶部相位栏 */
 
 .game-phase-bar {
   display: flex;
@@ -524,10 +612,10 @@ body {
   min-width: 0;
 }
 
-.game-round { color: #C9A96E; font-size: 13px; font-weight: 600; }
-.game-phase { color: #FFFFFF; font-size: 14px; font-weight: 600; }
+.game-round { color: var(--color-accent); font-size: 13px; font-weight: 600; }
+.game-phase { color: #fff; font-size: var(--font-base); font-weight: 600; }
 
-/* --- 相位视觉展示区 --- */
+/* 相位视觉展示区 */
 
 .game-phase-visual {
   display: flex;
@@ -536,7 +624,7 @@ body {
   gap: 0;
   padding: 8px 12px;
   background: linear-gradient(180deg, #FFFDF7 0%, #F5F0E8 100%);
-  border: 1px solid #E8DCC8;
+  border: 1px solid var(--gray-300);
   border-radius: 12px;
   flex-shrink: 0;
   height: 42vh;
@@ -578,7 +666,7 @@ body {
 .phase-visual-card-info {
   width: 100%;
   overflow-y: auto;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 .phase-visual-card-info .card-info-panel {
@@ -607,7 +695,7 @@ body {
 }
 
 .phase-visual-phase-label {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
   color: #4A3728;
   text-align: center;
@@ -655,12 +743,9 @@ body {
   box-shadow: 0 4px 14px rgba(0,0,0,0.08);
 }
 
-/* 顶部相位区卡牌框：去除内框线，填充更紧凑，避免文字/边框错位感 */
+/* 顶部相位区卡牌框：填充更紧凑，避免文字/边框错位感 */
 .phase-card-framed .artifact-frame.frame-lg {
   padding: 6px;
-}
-.phase-card-framed .artifact-frame::before {
-  display: none;
 }
 .phase-card-framed .artifact-frame.frame-lg img {
   width: 92px;
@@ -710,7 +795,7 @@ body {
 }
 
 .phase-visual-card-name {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
   color: #4A3728;
   white-space: nowrap;
@@ -720,9 +805,9 @@ body {
 }
 
 .phase-visual-card-score {
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 700;
-  color: #C9A96E;
+  color: var(--color-accent);
 }
 
 .phase-crown-burst {
@@ -751,7 +836,7 @@ body {
   animation: crown-burst-in 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* --- 顶部相位视觉区：决斗动画 --- */
+/* 顶部相位视觉区：决斗动画 */
 
 .phase-visual-normal {
   display: flex;
@@ -794,7 +879,7 @@ body {
   height: 64px;
   border-radius: 50%;
   background: linear-gradient(135deg, #FFF8E7, #F5F0E8);
-  border: 2px solid #C9A96E;
+  border: 2px solid var(--color-accent);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -813,14 +898,14 @@ body {
 }
 
 .phase-duel-player .pdp-role {
-  font-size: 10px;
-  color: #8B7B6B;
+  font-size: var(--font-xs);
+  color: var(--gray-700);
 }
 
 .phase-duel-vs {
-  font-size: 22px;
+  font-size: var(--font-xl);
   font-weight: 900;
-  color: #C43A31;
+  color: var(--color-danger);
   animation: phaseDuelVsIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s backwards;
 }
 
@@ -855,7 +940,7 @@ body {
 .phase-timer-bar {
   width: 100%;
   height: 6px;
-  background: #E8DCC8;
+  background: var(--gray-300);
   border-radius: 3px;
   overflow: hidden;
   flex-shrink: 0;
@@ -880,7 +965,7 @@ body {
   animation: phase-reveal-pulse 0.4s ease;
 }
 
-/* --- 主体双列布局 --- */
+/* 主体双列布局 */
 
 .game-main {
   display: flex;
@@ -909,52 +994,17 @@ body {
   min-height: 0;
 }
 
-/* --- 我的状态 --- */
+/* 我的状态 */
 
-.game-my-status {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 12px;
-  background: #FFFFFF;
-  border: 1px solid #EEEEEE;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.my-status-item { display: flex; align-items: center; gap: 3px; }
-.my-status-item .effect-tag {
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 6px;
-  background: #FFF8E7;
-  color: #8B6914;
-  border: 1px solid #E8DCC8;
-}
-
-/* --- 玩家列表 --- */
-
-.game-other-players {
-  flex: 1;
-  background: #FFFFFF;
-  border: 1px solid #EEEEEE;
-  border-radius: 8px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  min-height: 120px;
-}
+/* 玩家列表 */
 
 .other-list-title {
   padding: 8px 10px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
-  color: #8B7B6B;
-  background: #FAFAFA;
-  border-bottom: 1px solid #F0EDE4;
+  color: var(--gray-700);
+  background: var(--gray-50);
+  border-bottom: 1px solid var(--gray-200);
   flex-shrink: 0;
 }
 
@@ -970,36 +1020,21 @@ body {
   display: block;
   text-align: center;
   padding: 20px 8px;
-  font-size: 12px;
-  color: #B0B0B0;
+  font-size: var(--font-sm);
+  color: var(--gray-600);
 }
 
 .player-row-placeholder {
   text-align: center;
   padding: 20px 8px;
-  font-size: 12px;
-  color: #B0B0B0;
+  font-size: var(--font-sm);
+  color: var(--gray-600);
 }
-
-.player-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background 0.15s;
-  font-size: 13px;
-  min-height: 28px;
-}
-
-.player-row:hover { background: #F5F0E8; }
-.player-row.is-me { background: #FFF8E7; }
 
 .pl-nick {
   flex: 1;
   font-weight: 600;
-  color: #2C2C2C;
+  color: var(--gray-900);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1010,13 +1045,13 @@ body {
 
 .pl-stats {
   font-size: 11px;
-  color: #8B7B6B;
+  color: var(--gray-700);
   white-space: nowrap;
 }
 
 .pl-expand-icon {
-  font-size: 10px;
-  color: #B0B0B0;
+  font-size: var(--font-xs);
+  color: var(--gray-600);
   cursor: pointer;
   flex-shrink: 0;
   padding: 2px 4px;
@@ -1028,8 +1063,8 @@ body {
 .player-popup {
   position: fixed;
   z-index: 1000;
-  background: #FFFFFF;
-  border: 1px solid #C9A96E;
+  background: #fff;
+  border: 1px solid var(--color-accent);
   border-radius: 10px;
   padding: 12px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
@@ -1041,7 +1076,7 @@ body {
   font-weight: 700;
   font-size: 15px;
   margin-bottom: 8px;
-  color: #2C2C2C;
+  color: var(--gray-900);
 }
 
 .player-popup .pp-cards {
@@ -1055,7 +1090,7 @@ body {
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 4px;
-  background: #F5F0E8;
+  background: var(--gray-100);
 }
 
 .player-popup .pp-skills {
@@ -1064,10 +1099,10 @@ body {
   line-height: 1.5;
 }
 
-/* --- 操作区 --- */
+/* 操作区 */
 
 .game-action-area {
-  background: #FFFFFF;
+  background: #fff;
   border-radius: 12px;
   padding: 16px;
   border: 1px solid #EEEEEE;
@@ -1079,19 +1114,19 @@ body {
 }
 
 .game-action-area.my-turn {
-  border-color: #C9A96E;
+  border-color: var(--color-accent);
   background: #FFFDF7;
 }
 
 .game-action-area .action-title {
   font-size: 15px;
   font-weight: 600;
-  color: #2C2C2C;
+  color: var(--gray-900);
   margin-bottom: 12px;
   text-align: center;
 }
 
-/* --- 报价按钮矩阵 --- */
+/* 报价按钮矩阵 */
 
 .bid-grid {
   display: grid;
@@ -1103,10 +1138,10 @@ body {
   min-height: 56px;
   border: 2px solid #D4CFC4;
   border-radius: 10px;
-  background: #FFFFFF;
-  font-size: 18px;
+  background: #fff;
+  font-size: var(--font-lg);
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
   cursor: pointer;
   transition: all 0.15s;
   display: flex;
@@ -1116,21 +1151,21 @@ body {
   gap: 2px;
 }
 
-.bid-btn:active { transform: scale(0.95); background: #F5F0E8; }
+.bid-btn:active { transform: scale(0.95); background: var(--gray-100); }
 .bid-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; }
 
 .bid-btn.pass-btn {
   color: #999;
-  font-size: 16px;
+  font-size: var(--font-md);
 }
 
 .bid-btn .bid-hint {
   font-size: 11px;
   font-weight: 400;
-  color: #B0B0B0;
+  color: var(--gray-600);
 }
 
-/* --- 选卡列表 --- */
+/* 选卡列表 */
 
 .select-card-list {
   display: grid;
@@ -1143,23 +1178,23 @@ body {
   align-items: center;
   gap: 8px;
   padding: 10px 12px;
-  background: #F5F0E8;
+  background: var(--gray-100);
   border: 2px solid transparent;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.15s;
-  font-size: 14px;
+  font-size: var(--font-base);
   min-height: 44px;
 }
 
-.select-card-item:active { border-color: #8B2252; transform: scale(0.97); }
+.select-card-item:active { border-color: var(--color-primary); transform: scale(0.97); }
 
 .select-card-item .sc-emoji { font-size: 24px; flex-shrink: 0; }
 .select-card-item .sc-info { min-width: 0; }
-.select-card-item .sc-name { font-size: 14px; font-weight: 600; color: #2C2C2C; }
-.select-card-item .sc-meta { font-size: 12px; color: #B0B0B0; }
+.select-card-item .sc-name { font-size: var(--font-base); font-weight: 600; color: var(--gray-900); }
+.select-card-item .sc-meta { font-size: var(--font-sm); color: var(--gray-600); }
 
-/* --- 骰子按钮 --- */
+/* 骰子按钮 */
 
 .dice-grid {
   display: grid;
@@ -1171,7 +1206,7 @@ body {
   min-height: 70px;
   border: 2px solid #D4CFC4;
   border-radius: 12px;
-  background: #FFFFFF;
+  background: #fff;
   cursor: pointer;
   transition: all 0.15s;
   display: flex;
@@ -1182,15 +1217,15 @@ body {
   padding: 8px;
 }
 
-.dice-btn:active { transform: scale(0.95); background: #F5F0E8; }
-.dice-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; background: #F5F0E8; }
+.dice-btn:active { transform: scale(0.95); background: var(--gray-100); }
+.dice-btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none; background: var(--gray-100); }
 
-.dice-btn .dice-btn-name { font-size: 18px; font-weight: 700; color: #2C2C2C; }
-.dice-btn .dice-btn-range { font-size: 13px; color: var(--text-tertiary, #B0B0B0); }
-.dice-btn .dice-btn-cost { font-size: 14px; color: #B0B0B0; }
-.dice-btn .dice-free-tag { font-size: 14px; color: #4CAF50; font-weight: 700; }
+.dice-btn .dice-btn-name { font-size: var(--font-lg); font-weight: 700; color: var(--gray-900); }
+.dice-btn .dice-btn-range { font-size: 13px; color: var(--text-tertiary, var(--gray-600)); }
+.dice-btn .dice-btn-cost { font-size: var(--font-base); color: var(--gray-600); }
+.dice-btn .dice-free-tag { font-size: var(--font-base); color: var(--color-success); font-weight: 700; }
 
-.dice-btn.dice-free { border-color: #4CAF50; background: #F0FFF0; }
+.dice-btn.dice-free { border-color: var(--color-success); background: #F0FFF0; }
 .dice-btn.dice-free:hover { background: #E0FFE0; }
 
 .dice-btn.pass-btn-full {
@@ -1198,18 +1233,18 @@ body {
   min-height: 44px;
   flex-direction: row;
   gap: 4px;
-  font-size: 16px;
+  font-size: var(--font-md);
   color: #999;
 }
 
 .dice-btn.upgrade {
-  border-color: #8B2252;
+  border-color: var(--color-primary);
   background: #FFF5F5;
 }
 
-.dice-btn.upgrade .dice-btn-name { color: #8B2252; }
+.dice-btn.upgrade .dice-btn-name { color: var(--color-primary); }
 
-/* --- 掷骰结果 --- */
+/* 掷骰结果 */
 
 .roll-results {
   display: flex;
@@ -1222,23 +1257,23 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 10px 14px;
-  background: #F5F0E8;
+  background: var(--gray-100);
   border-radius: 10px;
   border: 2px solid transparent;
-  font-size: 16px;
+  font-size: var(--font-md);
 }
 
 .roll-player.winner {
-  border-color: #C9A96E;
+  border-color: var(--color-accent);
   background: #FFF9ED;
 }
 
-.roll-player .roll-nick { font-weight: 600; color: #2C2C2C; }
-.roll-player .roll-dice { font-size: 14px; color: #B0B0B0; }
+.roll-player .roll-nick { font-weight: 600; color: var(--gray-900); }
+.roll-player .roll-dice { font-size: var(--font-base); color: var(--gray-600); }
 .roll-player .roll-value {
-  font-size: 22px;
+  font-size: var(--font-xl);
   font-weight: 700;
-  color: #8B2252;
+  color: var(--color-primary);
   min-width: 32px;
   text-align: center;
 }
@@ -1252,7 +1287,7 @@ body {
   to   { transform: translateY(2px); }
 }
 
-/* --- 结算 --- */
+/* 结算 */
 
 .settle-result {
   text-align: center;
@@ -1260,22 +1295,22 @@ body {
 }
 
 .settle-winner {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
-  color: #8B2252;
+  color: var(--color-primary);
   margin-bottom: 4px;
 }
 
 .settle-card {
   font-size: 15px;
-  color: #2C2C2C;
+  color: var(--gray-900);
   margin-bottom: 12px;
 }
 
 .btn-next-round {
   width: 100%;
   padding: 14px;
-  background: #8B2252;
+  background: var(--color-primary);
   color: #FFF;
   border: none;
   border-radius: 10px;
@@ -1287,7 +1322,7 @@ body {
 
 .btn-next-round:active { transform: scale(0.97); }
 
-/* --- 对书俑升级 checkbox --- */
+/* 对书俑升级 checkbox */
 .upgrade-checkbox {
   display: flex;
   align-items: center;
@@ -1313,13 +1348,13 @@ body {
 }
 
 .dice-upgrade-preview {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 700;
-  color: #C9A96E;
+  color: var(--color-accent);
   margin-left: 2px;
 }
 
-/* --- 镜中决斗面板（重做版）--- */
+/* 镜中决斗面板 */
 .duel-panel {
   padding: 16px;
   text-align: center;
@@ -1333,13 +1368,13 @@ body {
   margin-bottom: 8px;
 }
 .duel-header h3 {
-  font-size: 22px;
-  color: #8B2252;
+  font-size: var(--font-xl);
+  color: var(--color-primary);
   margin: 0 0 4px;
 }
 .duel-desc {
   font-size: 13px;
-  color: #8B7B6B;
+  color: var(--gray-700);
   margin: 0;
 }
 
@@ -1356,9 +1391,9 @@ body {
   border: 2px solid #D4AF37;
   border-radius: 12px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
-  color: #2C2C2C;
+  color: var(--gray-900);
   transition: background 0.2s, transform 0.15s;
 }
 .duel-target-btn:hover { background: #FFF9F0; }
@@ -1377,7 +1412,7 @@ body {
   flex-direction: column;
   align-items: center;
   padding: 12px 15px;
-  background: #FFFFFF;
+  background: #fff;
   border: 2px solid #D4AF37;
   border-radius: 10px;
   color: #4A3728;
@@ -1396,7 +1431,7 @@ body {
 .duel-card-name { font-size: 13px; font-weight: 600; color: #4A3728; }
 .duel-card-score { font-size: 11px; color: #B8860B; font-weight: bold; }
 
-/* 租用骰子 — 决斗中只覆盖间距，不改颜色（继承全局 .dice-btn 的 #FFFFFF） */
+/* 租用骰子（决斗中） */
 .rent-dice-options {
   display: flex;
   flex-wrap: wrap;
@@ -1409,7 +1444,7 @@ body {
 }
 .rent-dice-options .dice-btn:hover {
   border-color: #D4A574;
-  background: #F5F0E8;
+  background: var(--gray-100);
 }
 
 /* Duel VS 展示 */
@@ -1431,7 +1466,7 @@ body {
   margin-top: 20px;
 }
 .duel-result-title {
-  font-size: 22px !important;
+  font-size: var(--font-xl) !important;
   margin: 0;
 }
 .duel-result-title.duel-win {
@@ -1464,17 +1499,17 @@ body {
 .duel-vs-name {
   font-size: 15px;
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
   margin-bottom: 4px;
 }
 .duel-vs-dice {
   font-size: 24px;
   font-weight: 800;
-  color: #8B2252;
+  color: var(--color-primary);
   margin-bottom: 4px;
 }
 .duel-vs-tag {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: #B8A99A;
 }
@@ -1492,7 +1527,7 @@ body {
 }
 .duel-won-card .card-emoji { display: flex; justify-content: center; }
 .duel-won-card .card-name {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: bold;
   color: #D4AF37;
   text-shadow: 0 0 6px rgba(212, 175, 55, 0.3);
@@ -1500,7 +1535,7 @@ body {
 .duel-auto-close {
   margin-top: 15px;
   color: #aaa;
-  font-size: 12px;
+  font-size: var(--font-sm);
   animation: pulse 1.5s infinite;
 }
 
@@ -1520,7 +1555,7 @@ body {
   50% { transform: scale(1.1); }
 }
 
-/* --- 等待动画 --- */
+/* 等待动画 */
 
 .waiting-area {
   display: flex;
@@ -1534,8 +1569,8 @@ body {
 .waiting-spinner {
   width: 36px;
   height: 36px;
-  border: 3px solid #F0EDE4;
-  border-top-color: #8B2252;
+  border: 3px solid var(--gray-200);
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -1546,19 +1581,19 @@ body {
 
 .waiting-label {
   font-size: 15px;
-  color: #B0B0B0;
+  color: var(--gray-600);
 }
 
-/* --- 我的状态栏 --- */
+/* 我的状态栏 */
 
 .game-my-status {
   display: flex;
   align-items: center;
   gap: 16px;
   padding: 10px 16px;
-  background: #2C2C2C;
+  background: var(--gray-900);
   border-radius: 10px;
-  color: #FFFFFF;
+  color: #fff;
   font-size: 15px;
   font-weight: 600;
   flex-shrink: 0; /* 固定高度 */
@@ -1573,17 +1608,17 @@ body {
 
 .my-status-item .effect-tag {
   font-size: 11px;
-  background: #8B2252;
+  background: var(--color-primary);
   color: #FFF;
   padding: 2px 6px;
   border-radius: 6px;
   margin-left: 4px;
 }
 
-/* --- 其他玩家 --- */
+/* 其他玩家 */
 
 .game-other-players {
-  background: #FFFFFF;
+  background: #fff;
   border-radius: 12px;
   border: 1px solid #EEEEEE;
   overflow: hidden;
@@ -1595,7 +1630,7 @@ body {
   padding: 12px 16px;
   font-size: 15px;
   font-weight: 600;
-  color: #2C2C2C;
+  color: var(--gray-900);
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -1606,9 +1641,9 @@ body {
 
 .other-toggle::after {
   content: '▼';
-  font-size: 12px;
+  font-size: var(--font-sm);
   transition: transform 0.25s;
-  color: #B0B0B0;
+  color: var(--gray-600);
 }
 
 .other-toggle.collapsed::after {
@@ -1625,14 +1660,13 @@ body {
   display: block;
 }
 
-
-/* --- 玩家列表 --- */
+/* 玩家列表 */
 
 .player-row {
   cursor: pointer;
   padding: 8px;
   border-radius: 10px;
-  border-top: 1px solid #F0EDE4;
+  border-top: 1px solid var(--gray-200);
   transition: background 0.2s;
   position: relative;
   display: grid;
@@ -1661,7 +1695,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
 }
@@ -1671,7 +1705,7 @@ body {
   min-height: 16px;
 }
 .pl-tag {
-  font-size: 10px;
+  font-size: var(--font-xs);
   padding: 1px 5px;
   border-radius: 4px;
   font-weight: 700;
@@ -1696,15 +1730,15 @@ body {
 }
 .pl-nick {
   font-weight: 600;
-  color: #2C2C2C;
-  font-size: 14px;
+  color: var(--gray-900);
+  font-size: var(--font-base);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .pl-stats {
-  color: #8B7B6B;
-  font-size: 12px;
+  color: var(--gray-700);
+  font-size: var(--font-sm);
 }
 
 /* 右侧箭头 */
@@ -1714,8 +1748,8 @@ body {
   gap: 0;
 }
 .pl-expand-icon {
-  font-size: 10px;
-  color: #B0B0B0;
+  font-size: var(--font-xs);
+  color: var(--gray-600);
   transition: transform 0.2s;
 }
 
@@ -1727,7 +1761,7 @@ body {
 }
 .player-detail.open { max-height: 200px; margin-top: 8px; }
 
-.pl-cards { font-size: 12px; color: #6B5B4B; margin-bottom: 4px; }
+.pl-cards { font-size: var(--font-sm); color: #6B5B4B; margin-bottom: 4px; }
 .pl-card-icons {
   display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px;
 }
@@ -1742,9 +1776,9 @@ body {
   margin-right: 4px;
   white-space: nowrap;
 }
-.pl-skills { font-size: 12px; color: #8B6914; }
+.pl-skills { font-size: var(--font-sm); color: #8B6914; }
 
-/* --- 终局 --- */
+/* 终局 */
 
 .finished-area {
   text-align: center;
@@ -1763,27 +1797,27 @@ body {
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
-  background: #F5F0E8;
+  background: var(--gray-100);
   border-radius: 10px;
   border: 2px solid transparent;
   font-size: 15px;
 }
 
-.rank-item.rank-1 { border-color: #C9A96E; background: #FFF9ED; }
+.rank-item.rank-1 { border-color: var(--color-accent); background: #FFF9ED; }
 .rank-item.rank-2 { border-color: #C0C0C0; }
 .rank-item.rank-3 { border-color: #CD7F32; }
 
-.rank-num { font-size: 22px; font-weight: 700; min-width: 32px; text-align: center; }
-.rank-1 .rank-num { color: #C9A96E; }
+.rank-num { font-size: var(--font-xl); font-weight: 700; min-width: 32px; text-align: center; }
+.rank-1 .rank-num { color: var(--color-accent); }
 .rank-2 .rank-num { color: #C0C0C0; }
 .rank-3 .rank-num { color: #CD7F32; }
 
 .rank-info { flex: 1; }
-.rank-name { font-weight: 600; color: #2C2C2C; }
-.rank-detail { font-size: 12px; color: #B0B0B0; }
-.rank-score { font-size: 20px; font-weight: 700; color: #8B2252; }
+.rank-name { font-weight: 600; color: var(--gray-900); }
+.rank-detail { font-size: var(--font-sm); color: var(--gray-600); }
+.rank-score { font-size: 20px; font-weight: 700; color: var(--color-primary); }
 
-/* -------------------- Bot 样式 -------------------- */
+/* ==== 组件: Bot 样式 ==== */
 
 .bot-tag {
   font-size: 0.9em;
@@ -1818,7 +1852,7 @@ body {
   to { transform: rotate(360deg); }
 }
 
-/* -------------------- Toast 提示 -------------------- */
+/* ==== 组件: Toast 提示 ==== */
 
 .toast {
   position: fixed;
@@ -1828,7 +1862,7 @@ body {
   z-index: 1000;
   padding: 10px 20px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 500;
   pointer-events: none;
   opacity: 0;
@@ -1849,7 +1883,7 @@ body {
 
 .toast.error {
   background: #FDECEA;
-  color: #8B2252;
+  color: var(--color-primary);
   border: 1px solid #F5C6C3;
 }
 
@@ -1867,7 +1901,7 @@ body {
   animation: toastIn 0.3s ease-out;
 }
 
-/* -------------------- 视图淡入 -------------------- */
+/* 视图淡入动画 */
 
 @keyframes viewFadeIn {
   from { opacity: 0; transform: translateY(6px); }
@@ -1878,7 +1912,7 @@ body {
   animation: viewFadeIn 0.3s ease-out;
 }
 
-/* -------------------- 加载覆盖层 -------------------- */
+/* 加载覆盖层 */
 
 .loading-overlay {
   position: fixed;
@@ -1902,18 +1936,18 @@ body {
   width: 40px;
   height: 40px;
   border: 3px solid #D4CFC4;
-  border-top-color: #8B2252;
+  border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
 
 .loading-overlay .loading-text {
   font-size: 15px;
-  color: #2C2C2C;
+  color: var(--gray-900);
   font-weight: 500;
 }
 
-/* -------------------- 卡牌翻转 -------------------- */
+/* 卡牌翻转 */
 
 .card-flip-container {
   perspective: 800px;
@@ -1950,10 +1984,10 @@ body {
 
 .card-flip-back .artifact-card {
   max-width: 100%;
-  border-color: #C9A96E;
+  border-color: var(--color-accent);
 }
 
-/* -------------------- 骰子滚动动画 -------------------- */
+/* ==== 动画: 骰子滚动 ==== */
 
 @keyframes diceRollFlash {
   0%, 100% { opacity: 1; transform: scale(1); }
@@ -1975,7 +2009,7 @@ body {
   animation: diceLand 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* -------------------- 阶段过渡 -------------------- */
+/* 阶段过渡 */
 
 @keyframes phaseIn {
   from { opacity: 0; transform: translateY(20px); }
@@ -1995,16 +2029,16 @@ body {
   animation: phaseOut 0.2s ease-in;
 }
 
-/* -------------------- 资金计数动画 -------------------- */
+/* 资金计数动画 */
 
 .funds-counting {
   transition: color 0.2s;
 }
 
-.funds-down { color: #8B2252; }
+.funds-down { color: var(--color-primary); }
 .funds-up   { color: #5B7B5E; }
 
-/* -------------------- 我的回合脉冲 -------------------- */
+/* 我的回合脉冲 */
 
 @keyframes turnPulse {
   0%, 100% { border-color: #C9A96E; }
@@ -2015,7 +2049,7 @@ body {
   animation: turnPulse 2s ease-in-out infinite;
 }
 
-/* -------------------- 卡牌稀有度辉光 -------------------- */
+/* 卡牌稀有度辉光 */
 
 @keyframes legendaryGlow {
   0%, 100% { box-shadow: 0 4px 16px rgba(196, 58, 49, 0.2); }
@@ -2028,12 +2062,12 @@ body {
 }
 
 .artifact-card.rarity-legendary {
-  border-color: #8B2252;
+  border-color: var(--color-primary);
   animation: legendaryGlow 2s ease-in-out infinite;
 }
 
 .artifact-card.rarity-rare {
-  border-color: #C9A96E;
+  border-color: var(--color-accent);
   animation: rareGlow 2s ease-in-out infinite;
 }
 
@@ -2041,7 +2075,7 @@ body {
   border-color: #5B7B5E;
 }
 
-/* -------------------- 终局庆祝 -------------------- */
+/* 终局庆祝 */
 
 @keyframes celebrate {
   0%, 100% { box-shadow: 0 0 12px rgba(201, 169, 110, 0.4); }
@@ -2067,8 +2101,8 @@ body {
   margin-bottom: 12px;
   background: linear-gradient(135deg, #C9A96E 0%, #F5E6C8 50%, #C9A96E 100%);
   border-radius: 12px;
-  color: #2C2C2C;
-  font-size: 18px;
+  color: var(--gray-900);
+  font-size: var(--font-lg);
   font-weight: 700;
 }
 
@@ -2083,7 +2117,7 @@ body {
   to   { transform: translateY(-4px) scale(1.1); }
 }
 
-/* ==================== 终局结算面板 ==================== */
+/* ==== 视图: 终局结算面板 ==== */
 
 .finish-overlay {
   position: fixed;
@@ -2123,7 +2157,7 @@ body {
   to   { transform: translateY(0); opacity: 1; }
 }
 
-/* --- 标题 --- */
+/* 标题 */
 
 .finish-header {
   text-align: center;
@@ -2134,7 +2168,7 @@ body {
 
 .finish-title {
   font-size: 28px;
-  color: #8B2252;
+  color: var(--color-primary);
   font-weight: 900;
   letter-spacing: 4px;
   margin-bottom: 4px;
@@ -2142,11 +2176,11 @@ body {
 
 .finish-sub {
   font-size: 13px;
-  color: #8B7B6B;
+  color: var(--gray-700);
   letter-spacing: 1px;
 }
 
-/* --- 排名列表 --- */
+/* 排名列表 */
 
 .finish-rank-list {
   display: flex;
@@ -2197,7 +2231,7 @@ body {
   font-size: 24px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: #F5F0E8;
+  background: var(--gray-100);
 }
 
 .finish-first .finish-rank-badge {
@@ -2213,7 +2247,7 @@ body {
 .finish-rank-name {
   font-size: 15px;
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
@@ -2224,7 +2258,7 @@ body {
 .me-tag {
   font-size: 11px;
   font-weight: 500;
-  background: #8B2252;
+  background: var(--color-primary);
   color: #FFF;
   padding: 1px 6px;
   border-radius: 4px;
@@ -2236,7 +2270,7 @@ body {
   font-weight: 500;
 }
 
-/* --- 卡牌标签 --- */
+/* 卡牌标签 */
 
 .finish-rank-cards {
   display: flex;
@@ -2253,7 +2287,7 @@ body {
   font-weight: 500;
 }
 
-/* --- 分数列 --- */
+/* 分数列 */
 
 .finish-rank-score {
   display: flex;
@@ -2266,27 +2300,27 @@ body {
 .score-num {
   font-size: 28px;
   font-weight: 900;
-  color: #8B2252;
+  color: var(--color-primary);
   line-height: 1;
 }
 
 .finish-first .score-num {
-  font-size: 32px;
+  font-size: var(--font-hero);
 }
 
 .score-label {
   font-size: 11px;
-  color: #B0B0B0;
+  color: var(--gray-600);
   letter-spacing: 2px;
 }
 
 .funds-note {
-  font-size: 10px;
-  color: #8B7B6B;
+  font-size: var(--font-xs);
+  color: var(--gray-700);
   margin-top: 2px;
 }
 
-/* --- 文物图鉴 --- */
+/* 文物图鉴 */
 
 .finish-lore {
   background: rgba(61, 43, 31, 0.03);
@@ -2298,7 +2332,7 @@ body {
 }
 
 .finish-lore summary {
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: #5B4B3B;
   list-style: none;
@@ -2312,13 +2346,13 @@ body {
 }
 
 .lore-icon {
-  font-size: 18px;
+  font-size: var(--font-lg);
 }
 
 .lore-hint {
   font-size: 11px;
   font-weight: 400;
-  color: #B0B0B0;
+  color: var(--gray-600);
   margin-left: auto;
 }
 
@@ -2344,16 +2378,16 @@ body {
 .lore-name {
   font-size: 13px;
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
 }
 
 .lore-text {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #6B5B4B;
   line-height: 1.7;
 }
 
-/* --- 按钮 --- */
+/* 按钮 */
 
 .finish-buttons {
   display: flex;
@@ -2365,7 +2399,7 @@ body {
   width: 100%;
   padding: 14px 32px;
   border-radius: 12px;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
   letter-spacing: 2px;
   cursor: pointer;
@@ -2378,7 +2412,7 @@ body {
 }
 
 .finish-btn-restart {
-  background: #8B2252;
+  background: var(--color-primary);
   color: #FFF;
   box-shadow: 0 4px 16px rgba(196, 58, 49, 0.3);
 }
@@ -2389,15 +2423,15 @@ body {
 
 .finish-btn-lobby {
   background: transparent;
-  color: #8B2252;
-  border: 2px solid #8B2252;
+  color: var(--color-primary);
+  border: 2px solid var(--color-primary);
 }
 
 .finish-btn-lobby:hover {
   background: rgba(196, 58, 49, 0.04);
 }
 
-/* --- 撒花粒子 --- */
+/* 撒花粒子 */
 
 .confetti-dot {
   position: absolute;
@@ -2421,7 +2455,7 @@ body {
          ) rotate(var(--rot)); opacity: 0; }
 }
 
-/* -------------------- 按钮增强 -------------------- */
+/* 按钮增强 */
 
 .btn:not(:disabled):hover {
   transform: translateY(-2px);
@@ -2432,14 +2466,14 @@ body {
   transform: translateY(0) scale(0.97);
 }
 
-/* -------------------- 滚动条美化 -------------------- */
+/* 滚动条美化 */
 
 ::-webkit-scrollbar {
   width: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #F5F0E8;
+  background: var(--gray-100);
   border-radius: 3px;
 }
 
@@ -2449,10 +2483,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #B0B0B0;
+  background: var(--gray-600);
 }
 
-/* -------------------- 玩家列表滑入 -------------------- */
+/* 玩家列表滑入 */
 
 .player-list li {
   animation: playerSlideIn 0.3s ease-out;
@@ -2463,7 +2497,7 @@ body {
   to   { opacity: 1; transform: translateX(0); }
 }
 
-/* ==================== Canvas 粒子骰（幽灵文物风格） ==================== */
+/* ==== 组件: Canvas 粒子骰 ==== */
 
 .dice-particle-area {
   display: flex;
@@ -2484,14 +2518,14 @@ body {
   margin-top: 4px;
   font-size: 13px;
   font-weight: 700;
-  color: #8B2252;
+  color: var(--color-primary);
   text-align: center;
   letter-spacing: 2px;
 }
 
-/* ==================== 签筒抽签（深红漆器·直筒竹节纹风格，已废弃保留兼容） ==================== */
+/* ==== 组件: 签筒抽签（已废弃，保留兼容） ==== */
 
-/* --- 自己签筒区 --- */
+/* 自己签筒区 */
 .qt-area {
   display: flex; flex-direction: column; align-items: center;
   margin: 20px 0 10px;
@@ -2499,7 +2533,7 @@ body {
   padding-top: 120px;
 }
 
-/* --- 弹出签条「灵签」--- */
+/* 弹出签条「灵签」 */
 .qt-popped {
   position: absolute; top: -20px; left: 50%;
   transform: translateX(-50%) translateY(40px) scale(0.6);
@@ -2514,7 +2548,7 @@ body {
   100% { transform: translateX(-50%) translateY(-30px) scale(1); opacity: 1; }
 }
 
-/* 双签弹出（双掷 rerollDice） */
+/* 双签弹出 */
 .qt-popped-2 {
   position: absolute; top: -20px; left: 50%;
   transform: translateX(-50%) translateY(40px) scale(0.6);
@@ -2529,7 +2563,7 @@ body {
   100% { transform: translateX(-50%) translateY(-30px) scale(1); opacity: 1; }
 }
 
-/* 双签布局：左签和右签水平并排 */
+/* 双签布局 */
 .qt-area.reroll .qt-popped  { left: calc(50% - 40px); }
 .qt-area.reroll .qt-popped-2 { left: calc(50% + 40px); }
 
@@ -2542,7 +2576,7 @@ body {
     0 12px 36px rgba(0,0,0,0.32),
     0 0 20px rgba(212,175,55,0.22);
   display: flex; align-items: center; justify-content: center;
-  font-size: 42px; font-weight: 900; color: #8B2252;
+  font-size: 42px; font-weight: 900; color: var(--color-primary);
   position: relative; overflow: hidden;
 }
 .qt-popped-slip::before {
@@ -2552,7 +2586,7 @@ body {
   border-radius: 4px 4px 0 0;
 }
 
-/* --- 签筒容器（直筒圆柱，无拱顶） --- */
+/* 签筒容器 */
 .qt-tube {
   width: 120px; height: 180px;
   position: relative; overflow: hidden;
@@ -2575,7 +2609,7 @@ body {
   );
 }
 
-/* 竹节纹 — 上环（38%） */
+/* 竹节纹 — 上环 */
 .qt-tube::before {
   content: '';
   position: absolute;
@@ -2596,7 +2630,7 @@ body {
   pointer-events: none;
 }
 
-/* 竹节纹 — 下环（68%） */
+/* 竹节纹 — 下环 */
 .qt-tube::after {
   content: '';
   position: absolute;
@@ -2617,7 +2651,7 @@ body {
   pointer-events: none;
 }
 
-/* --- 后壁（筒内暗面，直筒矩形） --- */
+/* 后壁 */
 .qt-tube-back {
   position: absolute; top: 0; left: 0; right: 0; bottom: 0;
   background: linear-gradient(180deg, #1A0808 0%, #0D0404 100%);
@@ -2625,7 +2659,7 @@ body {
   z-index: 1;
 }
 
-/* --- 前壁（漆器筒身正面 + 金字） --- */
+/* 前壁 */
 .qt-tube-front {
   position: absolute; bottom: 0; left: 0; right: 0; height: 100%;
   background: linear-gradient(
@@ -2645,7 +2679,7 @@ body {
   justify-content: center;
   gap: 2px;
 }
-/* 漆器高光带（左侧） */
+/* 漆器高光带 */
 .qt-tube-front::before {
   content: '';
   position: absolute; top: 8%; left: 12%; right: 70%; bottom: 12%;
@@ -2660,12 +2694,12 @@ body {
   border-radius: 4px;
   z-index: 11;
 }
-/* 金字：有求必应 + 签 */
+/* 金字 */
 .qt-tube-front::after {
   content: '有求必应\A 签';
   white-space: pre;
   text-align: center;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 700;
   color: #D4AF37;
   letter-spacing: 2px;
@@ -2675,7 +2709,7 @@ body {
   opacity: 0.85;
 }
 
-/* --- 筒口（直口，横线包边） --- */
+/* 筒口 */
 .qt-tube-rim {
   position: absolute; top: 0; left: 0; right: 0; height: 6px;
   border: none;
@@ -2690,7 +2724,7 @@ body {
   z-index: 4;
 }
 
-/* --- 签条容器 --- */
+/* 签条容器 */
 .qt-slips-container {
   position: absolute; bottom: 0; left: 14px; right: 14px;
   height: 80%;
@@ -2699,7 +2733,7 @@ body {
   z-index: 2;
 }
 
-/* --- 单根签条（深棕竹简） --- */
+/* 单根签条 */
 .qt-slip {
   width: 14px; height: 76px;
   background: linear-gradient(
@@ -2721,7 +2755,7 @@ body {
     inset 0 1px 2px rgba(255,220,170,0.08);
   position: relative;
 }
-/* 签子顶部削尖效果 */
+/* 签子顶部 */
 .qt-slip::after {
   content: '';
   position: absolute; top: 0; left: 0; right: 0; height: 6px;
@@ -2733,14 +2767,14 @@ body {
   z-index: 10;
 }
 
-/* --- 签筒标签 --- */
+/* 签筒标签 */
 .qt-label {
-  text-align: center; font-size: 13px; color: #B0B0B0;
+  text-align: center; font-size: 13px; color: var(--gray-600);
   margin-top: 8px; font-weight: 600;
   letter-spacing: 1px;
 }
 
-/* --- 摇签动画 --- */
+/* 摇签动画 */
 .qt-tube.shaking {
   animation: qt-shake 1.5s linear forwards;
 }
@@ -2763,7 +2797,7 @@ body {
   100% { transform: translateY(-110px) rotate(0deg) scale(1); color: #8B2252; }
 }
 
-/* --- 计分板动画 --- */
+/* 计分板动画 */
 .dice-scoreboard {
   margin: 14px 0; border-radius: 12px;
   background: rgba(61,43,31,0.03);
@@ -2783,15 +2817,15 @@ body {
   transform: translateY(0);
 }
 .sb-title {
-  text-align: center; font-size: 14px; font-weight: 600;
-  color: #B0B0B0; padding: 10px; letter-spacing: 3px;
+  text-align: center; font-size: var(--font-base); font-weight: 600;
+  color: var(--gray-600); padding: 10px; letter-spacing: 3px;
 }
 .sb-row {
   display: flex; align-items: center; gap: 8px;
   padding: 10px 14px; background: #FDF8EE;
   border-top: 1px solid rgba(180,160,140,0.1);
   animation: scoreSlideIn 0.4s ease-out both;
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 .sb-row.is-winner {
   background: #FFFDF5; border-left: 3px solid #D4AF37;
@@ -2800,10 +2834,10 @@ body {
 .sb-row.is-me { background: #FFF9ED; }
 .sb-row.is-auctioneer { opacity: 0.7; background: #F8F4F0; }
 .sb-row.is-auctioneer .sb-result { color: #888; }
-.sb-rank { width: 28px; text-align: center; font-size: 18px; flex-shrink: 0; }
-.sb-name { flex: 1; font-weight: 600; color: #2C2C2C; }
-.sb-dice { font-size: 12px; color: #B0B0B0; font-family: monospace; width: 28px; }
-.sb-result { font-size: 22px; font-weight: 800; color: #8B2252; width: 36px; text-align: center; }
+.sb-rank { width: 28px; text-align: center; font-size: var(--font-lg); flex-shrink: 0; }
+.sb-name { flex: 1; font-weight: 600; color: var(--gray-900); }
+.sb-dice { font-size: var(--font-sm); color: var(--gray-600); font-family: monospace; width: 28px; }
+.sb-result { font-size: var(--font-xl); font-weight: 800; color: var(--color-primary); width: 36px; text-align: center; }
 
 @keyframes scoreSlideIn {
   from { opacity: 0; transform: translateY(20px); }
@@ -2814,13 +2848,13 @@ body {
   50%     { box-shadow: 0 0 16px 4px rgba(255,215,0,0.3); }
 }
 
-/* --- 覆盖层 & 标签 --- */
+/* 覆盖层 & 标签 */
 .dice-result-overlay {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-size: 56px; font-weight: 900;
-  color: #8B2252;
+  color: var(--color-primary);
   text-shadow: 0 3px 6px rgba(0,0,0,0.3);
   opacity: 0;
   transition: opacity 0.6s ease;
@@ -2830,12 +2864,12 @@ body {
 
 .dice-type-label {
   text-align: center;
-  font-size: 14px; color: #D4A96A;
+  font-size: var(--font-base); color: #D4A96A;
   margin-top: 10px;
   letter-spacing: 2px; font-weight: 600;
 }
 
-/* ==================== 等待投骰状态 ==================== */
+/* 等待投骰状态 */
 
 .dice-waiting {
   text-align: center;
@@ -2849,7 +2883,7 @@ body {
 }
 
 .dice-waiting p {
-  font-size: 15px; color: #B0B0B0;
+  font-size: 15px; color: var(--gray-600);
   margin-bottom: 16px;
 }
 
@@ -2866,16 +2900,15 @@ body {
   background: rgba(61, 43, 31, 0.04);
 }
 
-.player-status .ps-item .ps-nick { font-size: 14px; color: #2C2C2C; }
-.player-status .ps-item .ps-icon { font-size: 16px; }
+.player-status .ps-item .ps-nick { font-size: var(--font-base); color: var(--gray-900); }
+.player-status .ps-item .ps-icon { font-size: var(--font-md); }
 
 @keyframes waitingPulse {
   0%, 100% { transform: scale(1); opacity: 0.6; }
   50%      { transform: scale(1.1); opacity: 1; }
 }
 
-
-/* ==================== 卡牌图标（玩家列表内） ==================== */
+/* ==== 组件: 卡牌图标 ==== */
 
 .card-icon {
   position: relative;
@@ -2899,10 +2932,10 @@ body {
 .card-icon:active { transform: scale(1.15); }
 .card-icon.score-1 { background: #2E5C8A; color: #FFF; }
 .card-icon.score-2 { background: #8B6914; color: #FFF; }
-.card-icon.score-3 { background: #8B2252; color: #FFF; }
+.card-icon.score-3 { background: var(--color-primary); color: #FFF; }
 .card-icon.score-hidden { background: #6B5B4B; color: #CCC; }
 
-/* ==================== 卡牌详情浮窗 ==================== */
+/* ==== 组件: 卡牌详情浮窗 ==== */
 
 .card-popup {
   display: none;
@@ -2912,7 +2945,7 @@ body {
   z-index: 10000;
 }
 .card-popup-content {
-  background: #FFFFFF !important;
+  background: #fff !important;
   border: 2px solid #B8860B;
   border-radius: 12px;
   padding: 20px;
@@ -2923,13 +2956,13 @@ body {
   animation: panelSlideUp 0.25s ease-out;
 }
 .card-popup-emoji { margin-bottom: 10px; text-align: center; }
-.card-popup-name { font-size: 18px; font-weight: bold; margin-bottom: 5px; color: #8B2252; }
-.card-popup-score { font-size: 14px; color: #333333; margin-bottom: 5px; }
-.card-popup-effect { font-size: 12px; color: #666666; margin-bottom: 10px; }
+.card-popup-name { font-size: var(--font-lg); font-weight: bold; margin-bottom: 5px; color: var(--color-primary); }
+.card-popup-score { font-size: var(--font-base); color: #333333; margin-bottom: 5px; }
+.card-popup-effect { font-size: var(--font-sm); color: #666666; margin-bottom: 10px; }
 .card-popup-lore { font-size: 11px; color: #999999; line-height: 1.4; }
 .card-popup-desc { font-size: 13px; color: #666666; }
 
-/* ========== 卡牌信息卡片面板（P0/1） ========== */
+/* 卡牌信息卡片面板 */
 .card-info-panel {
   margin-top: 8px;
   text-align: left;
@@ -2939,16 +2972,16 @@ body {
 }
 .card-info-skill { padding: 8px 10px; }
 .skill-row { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
-.skill-name { font-size: 14px; font-weight: 700; color: #333; }
+.skill-name { font-size: var(--font-base); font-weight: 700; color: #333; }
 .skill-tag {
-  font-size: 10px; color: #FFF; padding: 2px 6px; border-radius: 4px;
+  font-size: var(--font-xs); color: #FFF; padding: 2px 6px; border-radius: 4px;
   white-space: nowrap;
 }
-.skill-desc { font-size: 12px; color: #666; line-height: 1.4; }
+.skill-desc { font-size: var(--font-sm); color: #666; line-height: 1.4; }
 .card-info-divider { height: 1px; background: linear-gradient(90deg, transparent, #D4CFC4, transparent); margin: 0 4px; }
 .card-info-lore { padding: 8px 10px; }
 .lore-meta-row { display: flex; gap: 6px; margin-bottom: 3px; font-size: 11px; }
-.lore-label { color: #B0B0B0; min-width: 28px; }
+.lore-label { color: var(--gray-600); min-width: 28px; }
 .lore-value { color: #666; }
 .lore-brief { font-size: 11px; color: #888; line-height: 1.5; margin-top: 4px; }
 
@@ -2958,7 +2991,7 @@ body {
 .select-card-item .sc-skill-type {
   font-size: 9px; color: #FFF; padding: 1px 4px; border-radius: 3px; white-space: nowrap;
 }
-.select-card-item .sc-skill-desc { font-size: 10px; color: #888; margin-top: 1px; }
+.select-card-item .sc-skill-desc { font-size: var(--font-xs); color: #888; margin-top: 1px; }
 
 /* 租骰阶段拍品信息卡片 */
 .rent-card-info {
@@ -2968,11 +3001,11 @@ body {
 }
 .rent-card-img { flex-shrink: 0; }
 .rent-card-detail { flex: 1; min-width: 0; }
-.rent-card-name { font-size: 14px; font-weight: 700; color: #333; margin-bottom: 4px; }
-.rent-card-score { font-size: 12px; color: #B8860B; }
+.rent-card-name { font-size: var(--font-base); font-weight: 700; color: #333; margin-bottom: 4px; }
+.rent-card-score { font-size: var(--font-sm); color: #B8860B; }
 .rent-card-info .card-info-panel { margin-top: 2px; }
 
-/* ========== 卡牌图片统一样式 ========== */
+/* 卡牌图片统一样式 */
 .card-image {
   display: inline-block;
   vertical-align: middle;
@@ -2991,26 +3024,18 @@ body {
   vertical-align: middle;
 }
 
-/* ========== 文物展示框（画框） ========== */
+/* 文物展示框 */
 .artifact-frame {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #F8F5F0 0%, #EDE6D8 50%, #F5F0E8 100%);
-  border: 2px solid #C9A96E;
+  border: 2px solid var(--color-accent);
   border-radius: 8px;
   padding: 8px;
   position: relative;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: inset 0 0 0 1px rgba(201, 169, 110, 0.25), 0 2px 8px rgba(0,0,0,0.06);
   flex-shrink: 0;
-}
-.artifact-frame::before {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border: 1px solid rgba(201, 169, 110, 0.35);
-  border-radius: 5px;
-  pointer-events: none;
 }
 .artifact-frame img {
   display: block;
@@ -3019,34 +3044,34 @@ body {
   z-index: 1;
 }
 .artifact-frame .card-emoji-fallback {
-  font-size: 32px;
+  font-size: var(--font-hero);
   position: relative;
   z-index: 1;
 }
 
 /* 展示框尺寸 */
-.artifact-frame.frame-sm  { width: 56px;  height: 56px;  border-radius: 6px;  padding: 5px; }
+.artifact-frame.frame-sm  { width: 56px;  height: 56px;  border-radius: var(--radius-sm); padding: 5px; }
 .artifact-frame.frame-sm img  { width: 40px;  height: 40px; }
 
-.artifact-frame.frame-md  { width: 72px;  height: 72px;  border-radius: 6px;  padding: 6px; }
+.artifact-frame.frame-md  { width: 72px;  height: 72px;  border-radius: var(--radius-sm); padding: 6px; }
 .artifact-frame.frame-md img  { width: 56px;  height: 56px; }
 
-.artifact-frame.frame-lg  { width: 104px; height: 104px; border-radius: 8px;  padding: 8px; }
+.artifact-frame.frame-lg  { width: 104px; height: 104px; border-radius: var(--radius-md); padding: 8px; }
 .artifact-frame.frame-lg img  { width: 82px;  height: 82px; }
 
-.artifact-frame.frame-xl  { width: 148px; height: 148px; border-radius: 10px; padding: 10px; }
+.artifact-frame.frame-xl  { width: 148px; height: 148px; border-radius: var(--radius-lg); padding: 10px; }
 .artifact-frame.frame-xl img  { width: 120px; height: 120px; }
 
-/* ==================== 踢人按钮 ==================== */
+/* 踢人按钮 */
 
 .btn-kick-player {
   width: 28px;
   height: 28px;
   border-radius: 50%;
   border: none;
-  background: #8B2252;
+  background: var(--color-primary);
   color: #FFF;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   cursor: pointer;
   display: flex;
@@ -3065,12 +3090,12 @@ body {
   transform: scale(0.95);
 }
 
-/* ==================== 决策倒计时条 ==================== */
+/* 决策倒计时条 */
 
 .turn-timer-bar {
   width: 100%;
   height: 6px;
-  background: #F0EDE4;
+  background: var(--gray-200);
   border-radius: 3px;
   margin-top: 12px;
   overflow: hidden;
@@ -3083,7 +3108,7 @@ body {
   transition: width 0.2s linear, background 0.3s ease;
 }
 
-/* ==================== 结算自动下一轮倒计时 ==================== */
+/* 结算自动下一轮倒计时 */
 
 .settle-countdown {
   margin-top: 14px;
@@ -3091,7 +3116,7 @@ body {
 .settle-timer-bar {
   width: 100%;
   height: 6px;
-  background: #F0EDE4;
+  background: var(--gray-200);
   border-radius: 3px;
   overflow: hidden;
   margin-bottom: 6px;
@@ -3105,11 +3130,11 @@ body {
 }
 .settle-timer-text {
   font-size: 13px;
-  color: #B0B0B0;
+  color: var(--gray-600);
   text-align: center;
 }
 
-/* ==================== 公开房间列表弹窗 ==================== */
+/* ==== 组件: 公开房间列表弹窗 ==== */
 
 .room-list-modal {
   position: fixed;
@@ -3143,8 +3168,8 @@ body {
 .room-list-loading {
   text-align: center;
   padding: 30px;
-  color: #B0B0B0;
-  font-size: 14px;
+  color: var(--gray-600);
+  font-size: var(--font-base);
 }
 .room-list-item {
   display: flex;
@@ -3173,8 +3198,8 @@ body {
 }
 .room-list-num {
   font-weight: 700;
-  color: #8B2252;
-  font-size: 16px;
+  color: var(--color-primary);
+  font-size: var(--font-md);
   letter-spacing: 2px;
 }
 .room-list-mode {
@@ -3182,15 +3207,15 @@ body {
   font-size: 11px;
   color: #8B6914;
   background: #FFF8E7;
-  border: 1px solid #E8DCC8;
+  border: 1px solid var(--gray-300);
   padding: 1px 6px;
   border-radius: 6px;
   align-self: flex-start;
   width: fit-content;
 }
 .room-list-host {
-  font-size: 12px;
-  color: #8B7B6B;
+  font-size: var(--font-sm);
+  color: var(--gray-700);
 }
 .room-list-item-right {
   display: flex;
@@ -3198,15 +3223,15 @@ body {
   gap: 10px;
 }
 .room-list-count {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: #666;
   font-weight: 600;
 }
 .room-list-empty {
   text-align: center;
   padding: 30px 10px;
-  color: #B0B0B0;
-  font-size: 14px;
+  color: var(--gray-600);
+  font-size: var(--font-base);
 }
 .room-list-footer {
   padding: 12px 20px;
@@ -3214,7 +3239,7 @@ body {
   text-align: center;
 }
 
-/* ==================== 可见性开关 ==================== */
+/* 可见性开关 */
 
 .visibility-toggle {
   display: flex;
@@ -3236,16 +3261,16 @@ body {
   font-weight: 500;
 }
 
-/* ==================== 小按钮 ==================== */
+/* 小按钮 */
 
 .btn-sm {
   padding: 8px 18px;
-  font-size: 14px;
+  font-size: var(--font-base);
   min-height: 36px;
   border-radius: 8px;
 }
 
-/* ==================== 通用模态框基础 ==================== */
+/* ==== 组件: 通用模态框 ==== */
 
 .modal-overlay {
   position: fixed;
@@ -3286,7 +3311,7 @@ body {
 .modal-error {
   margin: 0;
   font-size: 13px;
-  color: #C43A31;
+  color: var(--color-danger);
   text-align: center;
   min-height: 18px;
 }
@@ -3294,7 +3319,7 @@ body {
   width: 100%;
 }
 
-/* --- 确认弹窗 --- */
+/* 确认弹窗 */
 .confirm-modal-box {
   max-width: 360px;
   padding: 0;
@@ -3309,7 +3334,7 @@ body {
   padding: 20px 18px;
   font-size: 15px;
   line-height: 1.6;
-  color: #2C2C2C;
+  color: var(--gray-900);
   text-align: center;
 }
 .confirm-modal-buttons {
@@ -3323,7 +3348,7 @@ body {
   font-size: 15px;
 }
 
-/* ==================== 统一弹窗标题栏 ==================== */
+/* 统一弹窗标题栏 */
 
 .modal-titlebar {
   display: flex;
@@ -3339,7 +3364,7 @@ body {
 }
 
 .modal-titlebar-title {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: #6B4226;
   margin: 0;
@@ -3358,7 +3383,7 @@ body {
   border: none;
   background: rgba(0,0,0,0.06);
   color: #888;
-  font-size: 16px;
+  font-size: var(--font-md);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -3371,10 +3396,10 @@ body {
 
 .modal-titlebar-close:hover {
   background: rgba(196, 58, 49, 0.1);
-  color: #8B2252;
+  color: var(--color-primary);
 }
 
-/* --- .modal-box 系列弹窗：sticky titlebar --- */
+/* .modal-box sticky titlebar */
 .modal-box .modal-titlebar {
   margin: 0 -20px 16px;
   border-radius: 12px 12px 0 0;
@@ -3392,7 +3417,7 @@ body {
   border-radius: 14px 14px 0 0;
 }
 
-/* --- 设置弹窗 --- */
+/* 设置弹窗 */
 .settings-modal .modal-titlebar {
   margin: 0 -24px 16px;
   border-radius: 10px 10px 0 0;
@@ -3400,16 +3425,16 @@ body {
 }
 
 .settings-modal .modal-titlebar-title {
-  color: #2C2C2C;
+  color: var(--gray-900);
 }
 
-/* --- 文物详情浮窗 --- */
+/* 文物详情浮窗 */
 .artifact-modal-content .modal-titlebar {
   margin: 0 -24px 16px;
   border-radius: 14px 14px 0 0;
 }
 
-/* --- 玩家详情浮窗 --- */
+/* 玩家详情浮窗 */
 .player-popup .modal-titlebar {
   margin: 0 -12px 10px;
   border-radius: 9px 9px 0 0;
@@ -3418,17 +3443,17 @@ body {
 }
 
 .player-popup .modal-titlebar-title {
-  font-size: 14px;
-  color: #2C2C2C;
+  font-size: var(--font-base);
+  color: var(--gray-900);
 }
 
 .player-popup .modal-titlebar-close {
   width: 24px;
   height: 24px;
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
-/* --- 卡牌详情浮窗 --- */
+/* 卡牌详情浮窗 */
 .card-popup-content .modal-titlebar {
   margin: 0 -20px 14px;
   border-radius: 10px 10px 0 0;
@@ -3437,24 +3462,24 @@ body {
 }
 
 .card-popup-content .modal-titlebar-title {
-  font-size: 14px;
-  color: #8B2252;
+  font-size: var(--font-base);
+  color: var(--color-primary);
 }
 
 .card-popup-content .modal-titlebar-close {
   width: 24px;
   height: 24px;
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
-/* --- 房间列表弹窗 --- */
+/* 房间列表弹窗 */
 .room-list-dialog .modal-titlebar {
   margin: 0;
   border-radius: 12px 12px 0 0;
   padding: 16px 20px;
 }
 
-/* --- 加入房间面板 --- */
+/* 加入房间面板 */
 .mode-join-panel .modal-titlebar {
   margin: 0;
   border-radius: 11px 11px 0 0;
@@ -3465,10 +3490,10 @@ body {
 
 .mode-join-panel .modal-titlebar-title {
   font-size: 15px;
-  color: #2C2C2C;
+  color: var(--gray-900);
 }
 
-/* ==================== 游戏介绍模态框 ==================== */
+/* ==== 组件: 游戏介绍模态框 ==== */
 
 .intro-modal {
   max-width: 640px;
@@ -3482,21 +3507,21 @@ body {
 }
 
 .intro-section h3 {
-  font-size: 16px;
+  font-size: var(--font-md);
   margin-bottom: 8px;
-  color: #2C2C2C;
-  border-bottom: 2px solid #8B2252;
+  color: var(--gray-900);
+  border-bottom: 2px solid var(--color-primary);
   padding-bottom: 4px;
 }
 
 .intro-section p {
   font-size: 13px;
   line-height: 1.7;
-  color: #8B7B6B;
+  color: var(--gray-700);
   margin-bottom: 6px;
 }
 
-/* ---- 文物介绍列表（一行一个）---- */
+/* 文物介绍列表 */
 
 .intro-cards-list {
   display: flex;
@@ -3509,7 +3534,7 @@ body {
   align-items: flex-start;
   gap: 14px;
   padding: 12px;
-  background: #F5F0E8;
+  background: var(--gray-100);
   border-radius: 10px;
   border: 1px solid #D4CFC4;
 }
@@ -3521,7 +3546,7 @@ body {
   border-radius: 6px;
   overflow: hidden;
   background: linear-gradient(135deg, #F8F5F0 0%, #EDE6D8 50%, #F5F0E8 100%);
-  border: 1.5px solid #C9A96E;
+  border: 1.5px solid var(--color-accent);
   padding: 4px;
 }
 .intro-card-img img {
@@ -3544,8 +3569,8 @@ body {
 }
 
 .intro-card-header strong {
-  font-size: 14px;
-  color: #2C2C2C;
+  font-size: var(--font-base);
+  color: var(--gray-900);
 }
 
 .skill-tag {
@@ -3566,7 +3591,7 @@ body {
 .intro-card-score {
   display: inline-block;
   padding: 1px 8px;
-  background: #8B2252;
+  background: var(--color-primary);
   color: #fff;
   border-radius: 10px;
   font-size: 11px;
@@ -3575,16 +3600,16 @@ body {
 }
 
 .intro-card-artifact {
-  font-size: 12px;
+  font-size: var(--font-sm);
   line-height: 1.6;
-  color: #8B7B6B;
+  color: var(--gray-700);
   margin-bottom: 4px;
 }
 
 .intro-card-effect {
-  font-size: 12px;
+  font-size: var(--font-sm);
   line-height: 1.5;
-  color: #8B7B6B;
+  color: var(--gray-700);
   margin: 0;
 }
 
@@ -3618,7 +3643,7 @@ body {
   }
 }
 
-/* ==================== 新手引导 ==================== */
+/* ==== 组件: 新手引导 ==== */
 
 /* 开始页 "如何玩？" 按钮 */
 .start-guide {
@@ -3628,7 +3653,7 @@ body {
 
 .btn-guide {
   background: linear-gradient(135deg, #8B2252, #C9A96E);
-  color: #FFFFFF;
+  color: #fff;
   border: none;
   padding: 10px 28px;
   border-radius: 24px;
@@ -3652,7 +3677,7 @@ body {
 
 .tutorial-sub {
   color: #888;
-  font-size: 14px;
+  font-size: var(--font-base);
   margin-bottom: 20px;
 }
 
@@ -3668,7 +3693,7 @@ body {
   align-items: center;
   gap: 4px;
   background: linear-gradient(135deg, #FFF8F0, #FFF0E0);
-  border: 2px solid #C9A96E;
+  border: 2px solid var(--color-accent);
   border-radius: 12px;
   padding: 16px 20px;
   cursor: pointer;
@@ -3685,7 +3710,7 @@ body {
 }
 
 .tutorial-btn-label {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: #5C3D2E;
 }
@@ -3695,7 +3720,7 @@ body {
   color: #999;
 }
 
-/* 教程高亮环（action 步骤：金色脉动边框，独立 div） */
+/* 教程高亮环 */
 .tg-highlight-ring {
   position: fixed;
   z-index: 100000;
@@ -3708,7 +3733,7 @@ body {
   animation: tgPulse 1.4s ease-in-out infinite;
 }
 
-/* 教程目标提示：带箭头 */
+/* 教程目标提示 */
 .tg-target-tooltip {
   max-width: 240px;
   padding: 10px 14px;
@@ -3784,7 +3809,7 @@ body {
   display: inline-block;
   margin-top: 16px;
   padding: 8px 32px;
-  background: #C9A96E;
+  background: var(--color-accent);
   color: #1a1a1a;
   border: none;
   border-radius: 8px;
@@ -3797,7 +3822,7 @@ body {
   background: #D4B97E;
 }
 
-/* 教程引导步骤进行时隐藏阶段操作说明，避免与引导提示重复 */
+/* 教程引导时隐藏操作说明 */
 body.tutorial-lock .action-title,
 body.tutorial-lock .action-desc {
   display: none !important;
@@ -3815,12 +3840,12 @@ body.tutorial-lock .action-desc {
 .tutorial-complete-title {
   font-size: 20px;
   font-weight: 700;
-  color: #8B2252;
+  color: var(--color-primary);
   margin-bottom: 8px;
 }
 
 .tutorial-complete-text {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: #666;
   margin-bottom: 16px;
   line-height: 1.6;
@@ -3831,21 +3856,21 @@ body.tutorial-lock .action-desc {
   50%      { box-shadow: inset 0 0 0 4px #FFD700, inset 0 0 0 7px rgba(255,215,0,0.35), 0 0 36px rgba(255, 215, 0, 0.85); }
 }
 
-/* ==================== 教程交互锁定（pointer-events 方案） ==================== */
+/* 教程交互锁定 */
 
-/* 锁定 #app 内所有交互 */
+/* 锁定 #app 交互 */
 body.tutorial-lock #app,
 body.tutorial-lock #app * {
   pointer-events: none !important;
 }
 
-/* 恢复高亮目标的交互 */
+/* 恢复高亮目标交互 */
 body.tutorial-lock #app .tg-clickable,
 body.tutorial-lock #app .tg-clickable * {
   pointer-events: auto !important;
 }
 
-/* ==================== 观战功能 ==================== */
+/* ==== 组件: 观战功能 ==== */
 
 .spectator-bar {
   display: flex;
@@ -3860,14 +3885,14 @@ body.tutorial-lock #app .tg-clickable * {
 
 .spectator-badge {
   color: #D4AF37;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   letter-spacing: 1px;
 }
 
 .spectator-bar .btn-sm {
   padding: 4px 12px;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 @keyframes spectateBarIn {
@@ -3888,7 +3913,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .spectator-action .spectator-text {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 600;
   color: #D4AF37;
   margin-bottom: 6px;
@@ -3909,7 +3934,7 @@ body.tutorial-lock #app .tg-clickable * {
   to { opacity: 1; }
 }
 
-/* ==================== 方案B：拍卖师公示页 ==================== */
+/* ==== 组件: 拍卖师公示页 ==== */
 
 .auction-result-overlay {
   text-align: center;
@@ -3918,7 +3943,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .ar-title {
-  font-size: 22px;
+  font-size: var(--font-xl);
   font-weight: 700;
   color: #D4AF37;
   margin: 6px 0 4px;
@@ -3928,13 +3953,13 @@ body.tutorial-lock #app .tg-clickable * {
 .ar-winner-name {
   font-size: 26px;
   font-weight: 800;
-  color: #C43A31;
+  color: var(--color-danger);
   margin: 4px 0;
   animation: arNameGlow 1.5s ease-in-out infinite;
 }
 
 .ar-commission {
-  font-size: 16px;
+  font-size: var(--font-md);
   color: #8B6914;
   margin-bottom: 10px;
 }
@@ -3945,7 +3970,7 @@ body.tutorial-lock #app .tg-clickable * {
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 13px;
-  color: #C43A31;
+  color: var(--color-danger);
   margin-bottom: 10px;
 }
 
@@ -3964,7 +3989,7 @@ body.tutorial-lock #app .tg-clickable * {
   padding: 6px 14px;
   background: rgba(255,255,255,0.04);
   border-radius: 6px;
-  font-size: 14px;
+  font-size: var(--font-base);
   animation: arRowSlideIn 0.3s ease backwards;
 }
 
@@ -4006,7 +4031,7 @@ body.tutorial-lock #app .tg-clickable * {
   to { opacity: 1; transform: translateX(0); }
 }
 
-/* ==================== 方案B：结算页三栏 ==================== */
+/* 结算页三栏 */
 
 .settle-result-v2 {
   animation: arFadeIn 0.4s ease;
@@ -4018,9 +4043,9 @@ body.tutorial-lock #app .tg-clickable * {
   border-radius: 8px;
   padding: 8px 14px;
   text-align: center;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
-  color: #C43A31;
+  color: var(--color-danger);
   margin-bottom: 10px;
   animation: arFadeIn 0.5s ease;
 }
@@ -4042,7 +4067,7 @@ body.tutorial-lock #app .tg-clickable * {
 
 .settle-col-title,
 .settle-winner-title {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: #D4AF37;
   text-align: center;
@@ -4056,9 +4081,9 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .settle-winner-name {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
-  color: #C43A31;
+  color: var(--color-danger);
   margin-bottom: 6px;
 }
 
@@ -4074,7 +4099,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .settle-card-score {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #D4AF37;
 }
 .settle-win-reason {
@@ -4096,7 +4121,7 @@ body.tutorial-lock #app .tg-clickable * {
   gap: 6px;
   padding: 4px 6px;
   border-radius: 5px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   animation: arRowSlideIn 0.3s ease backwards;
 }
 
@@ -4112,11 +4137,11 @@ body.tutorial-lock #app .tg-clickable * {
 
 .sd-rank { width: 22px; text-align: center; flex-shrink: 0; }
 .sd-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #E0D8D0; }
-.sd-dice { width: 32px; text-align: center; color: #8B7B6B; flex-shrink: 0; }
+.sd-dice { width: 32px; text-align: center; color: var(--gray-700); flex-shrink: 0; }
 .sd-val { width: 28px; text-align: right; font-weight: 600; color: #D4AF37; flex-shrink: 0; }
 
 .settle-comm-detail {
-  font-size: 12px;
+  font-size: var(--font-sm);
   line-height: 1.8;
 }
 
@@ -4126,14 +4151,14 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .sd-comm-penalty {
-  color: #C43A31;
+  color: var(--color-danger);
 }
 
 .sd-comm-net {
   margin-top: 4px;
   padding-top: 4px;
   border-top: 1px solid rgba(201,169,110,0.15);
-  font-size: 14px;
+  font-size: var(--font-base);
 }
 
 @media (max-width: 600px) {
@@ -4142,7 +4167,7 @@ body.tutorial-lock #app .tg-clickable * {
   }
 }
 
-/* ==================== P0-1 + P2-2: 回合切换横幅 ==================== */
+/* ==== 组件: 回合切换横幅 ==== */
 
 .round-transition-overlay {
   position: fixed;
@@ -4167,7 +4192,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .rt-title {
-  font-size: 32px;
+  font-size: var(--font-hero);
   font-weight: 800;
   color: #D4AF37;
   text-shadow: 0 0 20px rgba(212, 175, 55, 0.5);
@@ -4176,16 +4201,16 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .rt-subtitle {
-  font-size: 18px;
+  font-size: var(--font-lg);
   color: #B8A99A;
   font-weight: 500;
 }
 
 .rt-endgame {
   margin-top: 10px;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
-  color: #C43A31;
+  color: var(--color-danger);
   animation: rtBlink 1s ease-in-out infinite;
 }
 
@@ -4209,7 +4234,7 @@ body.tutorial-lock #app .tg-clickable * {
   50% { opacity: 0.5; }
 }
 
-/* ==================== P2-1: 决斗开场动画 ==================== */
+/* ==== 组件: 决斗开场动画 ==== */
 
 .duel-intro-overlay {
   position: relative;
@@ -4220,7 +4245,7 @@ body.tutorial-lock #app .tg-clickable * {
   overflow: hidden;
   background: linear-gradient(135deg, #FFFFFF 0%, #F5F0E8 100%);
   border-radius: 12px;
-  border: 1px solid #E8DCC8;
+  border: 1px solid var(--gray-300);
 }
 
 .duel-intro-overlay .di-flash {
@@ -4271,7 +4296,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .duel-intro-overlay .di-name {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 800;
   color: #4A3728;
   max-width: 120px;
@@ -4282,14 +4307,14 @@ body.tutorial-lock #app .tg-clickable * {
 
 .duel-intro-overlay .di-role {
   font-size: 11px;
-  color: #8B7B6B;
+  color: var(--gray-700);
   margin-top: 2px;
 }
 
 .duel-intro-overlay .di-vs-text {
   font-size: 42px;
   font-weight: 900;
-  color: #C43A31;
+  color: var(--color-danger);
   text-shadow: 0 0 12px rgba(196, 58, 49, 0.25);
   animation: diVsIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s backwards;
 }
@@ -4297,14 +4322,14 @@ body.tutorial-lock #app .tg-clickable * {
 .duel-intro-overlay .di-title {
   font-size: 26px;
   font-weight: 800;
-  color: #C43A31;
+  color: var(--color-danger);
   letter-spacing: 6px;
   animation: diTitleIn 0.5s ease 0.8s backwards;
 }
 
 .duel-intro-overlay .di-subtitle {
   font-size: 13px;
-  color: #8B7B6B;
+  color: var(--gray-700);
   margin-top: 8px;
   animation: diContentIn 0.5s ease 1s backwards;
 }
@@ -4347,7 +4372,7 @@ body.tutorial-lock #app .tg-clickable * {
   to { opacity: 1; letter-spacing: 6px; transform: scale(1); }
 }
 
-/* ==================== P0-2: 暗标提交确认 ==================== */
+/* ==== 组件: 暗标提交确认 ==== */
 
 .bid-submitted-view {
   text-align: center;
@@ -4361,14 +4386,14 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .bid-submitted-view .bs-title {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: #5B7B5E;
   margin-bottom: 4px;
 }
 
 .bid-submitted-view .bs-count {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: #B8A99A;
   margin-bottom: 16px;
 }
@@ -4387,7 +4412,7 @@ body.tutorial-lock #app .tg-clickable * {
   gap: 10px;
   padding: 8px 14px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   animation: bsRowIn 0.3s ease backwards;
 }
 
@@ -4407,7 +4432,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .bid-status-row .bs-icon {
-  font-size: 16px;
+  font-size: var(--font-md);
   flex-shrink: 0;
 }
 
@@ -4420,7 +4445,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .bid-status-row .bs-state {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #B8A99A;
   flex-shrink: 0;
 }
@@ -4446,7 +4471,7 @@ body.tutorial-lock #app .tg-clickable * {
   50% { opacity: 0.6; }
 }
 
-/* ==================== P1-1: 选卡旁观体验 ==================== */
+/* ==== 组件: 选卡旁观体验 ==== */
 
 .select-card-waiting {
   text-align: center;
@@ -4460,14 +4485,14 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .select-card-waiting .scw-title {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
-  color: #2C2C2C;
+  color: var(--gray-900);
   margin-bottom: 8px;
 }
 
 .select-card-waiting .scw-deck-info {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: #D4AF37;
   font-weight: 600;
   margin-bottom: 10px;
@@ -4508,7 +4533,7 @@ body.tutorial-lock #app .tg-clickable * {
   50% { opacity: 1; }
 }
 
-/* ==================== P1-2: 卡牌揭晓动画 ==================== */
+/* ==== 动画: 卡牌揭晓 ==== */
 
 #gameCardArea.reveal-legendary {
   animation: revealLegendary 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -4564,7 +4589,7 @@ body.tutorial-lock #app .tg-clickable * {
   }
 }
 
-/* ==================== P1-3: 租骰等待扩充 ==================== */
+/* 租骰等待扩充 */
 
 .player-status .ps-item.ps-done {
   background: rgba(91, 123, 94, 0.08);
@@ -4578,12 +4603,12 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .player-status .ps-item .ps-dice-icon {
-  font-size: 16px;
+  font-size: var(--font-md);
   flex-shrink: 0;
 }
 
 .player-status .ps-item .ps-state {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #B8A99A;
   flex-shrink: 0;
   margin-left: 6px;
@@ -4610,11 +4635,9 @@ body.tutorial-lock #app .tg-clickable * {
   margin-left: 6px;
 }
 
-/* ============================================================
-   设置面板（游戏内底部）
-   ============================================================ */
+/* ==== 组件: 设置面板 ==== */
 
-/* --- 浮动设置按钮 --- */
+/* 浮动设置按钮 */
 
 .settings-fab {
   position: fixed;
@@ -4625,7 +4648,7 @@ body.tutorial-lock #app .tg-clickable * {
   border-radius: 50%;
   background: linear-gradient(135deg, #C9A96E, #B8956A);
   border: none;
-  font-size: 22px;
+  font-size: var(--font-xl);
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(0,0,0,0.2);
   z-index: 100;
@@ -4642,7 +4665,7 @@ body.tutorial-lock #app .tg-clickable * {
 
 .settings-fab:active { transform: scale(0.95); }
 
-/* --- 设置模态框 --- */
+/* 设置模态框 */
 
 .settings-modal-overlay {
   position: fixed;
@@ -4655,7 +4678,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .settings-modal {
-  background: #FFFFFF;
+  background: #fff;
   border-radius: 12px;
   padding: 0 24px 20px;
   min-width: 300px;
@@ -4669,7 +4692,7 @@ body.tutorial-lock #app .tg-clickable * {
   align-items: center;
   gap: 10px;
   color: #8C8C8C;
-  font-size: 14px;
+  font-size: var(--font-base);
   margin-bottom: 12px;
 }
 
@@ -4685,7 +4708,7 @@ body.tutorial-lock #app .tg-clickable * {
   -webkit-appearance: none;
   height: 4px;
   border-radius: 2px;
-  background: #E0E0E0;
+  background: var(--gray-400);
   outline: none;
 }
 
@@ -4694,7 +4717,7 @@ body.tutorial-lock #app .tg-clickable * {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #C9A96E;
+  background: var(--color-accent);
   cursor: pointer;
 }
 
@@ -4702,12 +4725,10 @@ body.tutorial-lock #app .tg-clickable * {
   min-width: 36px;
   text-align: right;
   font-size: 13px;
-  color: #C9A96E;
+  color: var(--color-accent);
 }
 
-/* ============================================================
-   托管徽章
-   ============================================================ */
+/* ==== 组件: 托管徽章 ==== */
 
 .managed-badge {
   display: inline-block;
@@ -4726,23 +4747,21 @@ body.tutorial-lock #app .tg-clickable * {
   50% { opacity: 0.5; }
 }
 
-/* ============================================================
-   卡池总览模态框
-   ============================================================ */
+/* ==== 组件: 卡池总览模态框 ==== */
 
-/* ==================== 本局牌堆总览（浅色游戏风格） ==================== */
+/* 本局牌堆总览 */
 
 .cardpool-modal {
   max-width: 560px;
   max-height: 80vh;
   overflow-y: auto;
   background: linear-gradient(180deg, #FFFBF0 0%, #F8F3E8 100%);
-  border: 2px solid #C9A96E;
+  border: 2px solid var(--color-accent);
   border-radius: 16px;
 }
 
 .cardpool-sub {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #8C7A66;
   text-align: center;
   margin-bottom: 14px;
@@ -4757,8 +4776,8 @@ body.tutorial-lock #app .tg-clickable * {
 
 /* 牌堆卡片项 */
 .deck-item {
-  background: #FFFFFF;
-  border: 1px solid #E8DCC8;
+  background: #fff;
+  border: 1px solid var(--gray-300);
   border-radius: 10px;
   padding: 10px 8px;
   text-align: center;
@@ -4767,18 +4786,18 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .deck-item:hover {
-  border-color: #C9A96E;
+  border-color: var(--color-accent);
   box-shadow: 0 2px 8px rgba(201,169,110,0.18);
   transform: translateY(-1px);
 }
 
-/* 已打出（翻开过）*/
+/* 已打出 */
 .deck-item.dealt {
   opacity: 0.85;
   border-color: #D4AF37;
 }
 
-/* 已被获得：整体置灰，但仍保持可见 */
+/* 已被获得 */
 .deck-item.acquired {
   opacity: 0.55;
   filter: grayscale(1);
@@ -4800,7 +4819,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 /* 分数左边框 */
-.deck-item.score-3 { border-left: 3px solid #C43A31; }
+.deck-item.score-3 { border-left: 3px solid var(--color-danger); }
 .deck-item.score-2 { border-left: 3px solid #8B6914; }
 .deck-item.score-1 { border-left: 3px solid #2E5C8A; }
 
@@ -4823,7 +4842,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .deck-status {
-  font-size: 10px;
+  font-size: var(--font-xs);
   margin-top: 2px;
   padding: 2px 6px;
   border-radius: 8px;
@@ -4838,7 +4857,7 @@ body.tutorial-lock #app .tg-clickable * {
 .deck-status.status-dealt {
   color: #8B6914;
   background: #FFF8E7;
-  border: 1px solid #E8DCC8;
+  border: 1px solid var(--gray-300);
 }
 
 .deck-status.status-hidden {
@@ -4852,7 +4871,7 @@ body.tutorial-lock #app .tg-clickable * {
   max-height: 80vh;
   overflow-y: auto;
   background: linear-gradient(180deg, #FFFBF0 0%, #F8F3E8 100%);
-  border: 2px solid #C9A96E;
+  border: 2px solid var(--color-accent);
   border-radius: 16px;
 }
 
@@ -4878,13 +4897,13 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .deck-detail-name {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   color: #3D2B1F;
 }
 
 .deck-detail-score {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: #B8860B;
   font-weight: 600;
 }
@@ -4894,7 +4913,7 @@ body.tutorial-lock #app .tg-clickable * {
   cursor: pointer;
 }
 
-/* 精简版卡牌信息面板（局内上方展示区用） */
+/* 精简版卡牌信息面板 */
 .card-info-compact .card-info-skill {
   padding: 6px 8px;
 }
@@ -4904,12 +4923,12 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .card-info-compact .skill-tag {
-  font-size: 10px;
+  font-size: var(--font-xs);
   padding: 1px 6px;
 }
 
 .card-info-compact .skill-desc {
-  font-size: 12px;
+  font-size: var(--font-sm);
   margin-top: 3px;
 }
 
@@ -4926,15 +4945,13 @@ body.tutorial-lock #app .tg-clickable * {
     padding: 0 4px 6px;
   }
   .deck-item { padding: 7px 4px; border-radius: 8px; }
-  .deck-emoji { font-size: 22px; }
+  .deck-emoji { font-size: var(--font-xl); }
   .deck-name { font-size: 11px; }
-  .deck-score { font-size: 10px; }
+  .deck-score { font-size: var(--font-xs); }
   .deck-status { font-size: 9px; padding: 1px 4px; }
 }
 
-/* ============================================================
-   回合标签可点击提示
-   ============================================================ */
+/* 回合标签可点击提示 */
 
 .game-round {
   cursor: pointer;
@@ -4943,12 +4960,12 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .game-round:hover {
-  color: #C9A96E;
+  color: var(--color-accent);
 }
 
 .game-round::after {
   content: ' 👆';
-  font-size: 10px;
+  font-size: var(--font-xs);
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -4964,7 +4981,7 @@ body.tutorial-lock #app .tg-clickable * {
   border: none;
   padding: 8px 16px;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   cursor: pointer;
   font-weight: 700;
   transition: all 0.2s;
@@ -4975,9 +4992,7 @@ body.tutorial-lock #app .tg-clickable * {
   box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
 }
 
-/* ============================================================
-   开始界面 (#view-start)
-   ============================================================ */
+/* ==== 视图: 开始界面 ==== */
 
 .start-container {
   display: flex;
@@ -5014,14 +5029,14 @@ body.tutorial-lock #app .tg-clickable * {
 .start-title {
   font-size: 36px;
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
   letter-spacing: 12px;
   margin-bottom: 4px;
 }
 
 .start-subtitle {
-  font-size: 14px;
-  color: #8B2252;
+  font-size: var(--font-base);
+  color: var(--color-primary);
   letter-spacing: 6px;
 }
 
@@ -5032,7 +5047,7 @@ body.tutorial-lock #app .tg-clickable * {
 
 .start-flow-title {
   font-size: 13px;
-  color: #B0B0B0;
+  color: var(--gray-600);
   text-align: center;
   margin-bottom: 10px;
 }
@@ -5049,15 +5064,15 @@ body.tutorial-lock #app .tg-clickable * {
   align-items: center;
   gap: 4px;
   padding: 12px 6px;
-  background: #FFFFFF;
-  border: 1px solid #F0EDE4;
+  background: #fff;
+  border: 1px solid var(--gray-200);
   border-radius: 10px;
   text-align: center;
 }
 
 .flow-num {
   font-size: 11px;
-  color: #C9A96E;
+  color: var(--color-accent);
   font-weight: 600;
 }
 
@@ -5081,12 +5096,10 @@ body.tutorial-lock #app .tg-clickable * {
 
 .start-input {
   text-align: center;
-  font-size: 18px;
+  font-size: var(--font-lg);
 }
 
-/* ============================================================
-   Home 页面（#view-home）— 二级首页
-   ============================================================ */
+/* ==== 视图: Home 页面 ==== */
 .home-container {
   min-height: 100%;
   padding: 32px 20px 24px;
@@ -5125,13 +5138,13 @@ body.tutorial-lock #app .tg-clickable * {
   gap: 6px;
   font-size: 20px;
   font-weight: 700;
-  color: #8B2252;
+  color: var(--color-primary);
   margin-bottom: 4px;
 }
 .home-edit-nick {
   background: none;
   border: none;
-  font-size: 16px;
+  font-size: var(--font-md);
   padding: 4px;
   cursor: pointer;
   opacity: 0.7;
@@ -5154,7 +5167,7 @@ body.tutorial-lock #app .tg-clickable * {
 .btn-home-start {
   width: 100%;
   padding: 16px;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
 }
 .home-action-grid {
@@ -5184,7 +5197,7 @@ body.tutorial-lock #app .tg-clickable * {
   font-size: 28px;
 }
 .home-action-label {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: #5c1a35;
   font-weight: 600;
 }
@@ -5201,40 +5214,38 @@ body.tutorial-lock #app .tg-clickable * {
   background: none;
   border: none;
   color: #999;
-  font-size: 14px;
+  font-size: var(--font-base);
   padding: 8px 16px;
   cursor: pointer;
   text-decoration: underline;
 }
 .home-logout:hover {
-  color: #8B2252;
+  color: var(--color-primary);
 }
 
-/* Start 页面：登录/注册 + 继续游戏 */
+/* Start 页面：登录/注册 */
 .start-form-hint {
   text-align: center;
   color: #999;
-  font-size: 12px;
+  font-size: var(--font-sm);
   margin-top: 4px;
 }
 .start-form-hint a {
-  color: #8B2252;
+  color: var(--color-primary);
   text-decoration: none;
 }
 .start-form-greeting {
   text-align: center;
   color: #555;
-  font-size: 16px;
+  font-size: var(--font-md);
   margin-bottom: 4px;
 }
 .start-form-greeting span {
   font-weight: 700;
-  color: #8B2252;
+  color: var(--color-primary);
 }
 
-/* ============================================================
-   Auth 页面 (#view-auth) — 登录/注册
-   ============================================================ */
+/* ==== 视图: Auth 页面 ==== */
 
 .auth-container {
   display: flex;
@@ -5252,7 +5263,7 @@ body.tutorial-lock #app .tg-clickable * {
   max-width: 380px;
   padding: 32px 28px 28px;
 }
-/* auth-back → 已统一为 .page-topbar-back */
+/* auth-back → 已统一 */
 .auth-header {
   text-align: center;
   margin-bottom: 24px;
@@ -5264,7 +5275,7 @@ body.tutorial-lock #app .tg-clickable * {
 .auth-title {
   font-size: 28px;
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
   letter-spacing: 8px;
 }
 .auth-subtitle {
@@ -5291,8 +5302,8 @@ body.tutorial-lock #app .tg-clickable * {
   transition: color 0.2s, border-color 0.2s;
 }
 .auth-tab.active {
-  color: #8B2252;
-  border-bottom-color: #8B2252;
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
   font-weight: 600;
 }
 .auth-form {
@@ -5319,7 +5330,7 @@ body.tutorial-lock #app .tg-clickable * {
 .btn-auth-submit {
   width: 100%;
   padding: 12px;
-  font-size: 16px;
+  font-size: var(--font-md);
   margin-top: 4px;
 }
 .auth-hint {
@@ -5329,7 +5340,7 @@ body.tutorial-lock #app .tg-clickable * {
   margin-top: 8px;
 }
 .auth-hint a {
-  color: #8B2252;
+  color: var(--color-primary);
   text-decoration: none;
   font-weight: 500;
 }
@@ -5341,9 +5352,7 @@ body.tutorial-lock #app .tg-clickable * {
   min-height: 18px;
 }
 
-/* ============================================================
-   模式选择界面 (#view-mode)
-   ============================================================ */
+/* ==== 视图: 模式选择 ==== */
 
 .mode-container {
   display: flex;
@@ -5354,7 +5363,7 @@ body.tutorial-lock #app .tg-clickable * {
   position: relative;
 }
 
-/* ==================== 统一页面顶部栏（sticky，不随滚动移出） ==================== */
+/* 统一页面顶部栏 */
 .page-topbar {
   position: sticky;
   top: 0;
@@ -5363,14 +5372,14 @@ body.tutorial-lock #app .tg-clickable * {
   align-items: center;
   padding: 10px 16px;
   background: #FFF9F0;
-  border-bottom: 1px solid #E8DCC8;
+  border-bottom: 1px solid var(--gray-300);
   gap: 12px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 .page-topbar-back {
   background: none;
   border: none;
-  color: #8B2252;
+  color: var(--color-primary);
   font-size: 15px;
   cursor: pointer;
   padding: 6px 0;
@@ -5382,9 +5391,9 @@ body.tutorial-lock #app .tg-clickable * {
 .page-topbar-back:hover { opacity: 0.7; }
 .page-topbar-title {
   flex: 1;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -5401,9 +5410,9 @@ body.tutorial-lock #app .tg-clickable * {
 }
 .page-topbar-right-btn {
   background: none;
-  border: 1.5px solid #8B2252;
+  border: 1.5px solid var(--color-primary);
   border-radius: 8px;
-  color: #8B2252;
+  color: var(--color-primary);
   font-size: 13px;
   cursor: pointer;
   padding: 4px 10px;
@@ -5411,12 +5420,11 @@ body.tutorial-lock #app .tg-clickable * {
   transition: all 0.15s;
 }
 .page-topbar-right-btn:hover {
-  background: #8B2252;
+  background: var(--color-primary);
   color: #FFF9F0;
 }
 
-/* mode-join-btn → 已统一为 .page-topbar-right-btn */
-}
+/* mode-join-btn → 已统一 */
 
 .mode-cards {
   display: flex;
@@ -5427,10 +5435,10 @@ body.tutorial-lock #app .tg-clickable * {
 .btn-card-guide {
   margin-top: 8px;
   width: 100%;
-  font-size: 14px;
+  font-size: var(--font-base);
   padding: 12px;
   color: #6B4226;
-  border-color: #C9A96E;
+  border-color: var(--color-accent);
   background: linear-gradient(180deg, #FFFBF0, #F8F3E8);
 }
 .btn-card-guide:hover {
@@ -5443,15 +5451,15 @@ body.tutorial-lock #app .tg-clickable * {
   align-items: center;
   gap: 14px;
   padding: 18px 16px;
-  background: #FFFFFF;
-  border: 2px solid #E0E0E0;
+  background: #fff;
+  border: 2px solid var(--gray-400);
   border-radius: 14px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .mode-card:not(.mode-locked):active {
-  border-color: #8B2252;
+  border-color: var(--color-primary);
   transform: scale(0.98);
   background: #FFFDF7;
 }
@@ -5477,7 +5485,7 @@ body.tutorial-lock #app .tg-clickable * {
 .mode-card-name {
   font-size: 17px;
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
   margin-bottom: 4px;
 }
 
@@ -5489,8 +5497,8 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .mode-card-meta {
-  font-size: 12px;
-  color: #B0B0B0;
+  font-size: var(--font-sm);
+  color: var(--gray-600);
 }
 
 .mode-card-action {
@@ -5499,24 +5507,24 @@ body.tutorial-lock #app .tg-clickable * {
 
 .mode-card-action .btn {
   padding: 8px 16px;
-  font-size: 14px;
+  font-size: var(--font-base);
   min-height: 36px;
 }
 
 .mode-lock-badge {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #999;
   padding: 6px 10px;
-  background: #F5F0E8;
+  background: var(--gray-100);
   border-radius: 6px;
   white-space: nowrap;
 }
 
-/* 模式选择中的加入房间面板 */
+/* 加入房间面板 */
 
 .mode-join-panel {
-  background: #FFFFFF;
-  border: 1px solid #E0E0E0;
+  background: #fff;
+  border: 1px solid var(--gray-400);
   border-radius: 12px;
   overflow: hidden;
   margin-top: 8px;
@@ -5532,14 +5540,14 @@ body.tutorial-lock #app .tg-clickable * {
 .mode-room-preview {
   padding: 12px 16px;
   background: #FFFDF7;
-  border: 1px solid #C9A96E;
+  border: 1px solid var(--color-accent);
   border-radius: 8px;
 }
 
 .room-preview-mode {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
   margin-bottom: 4px;
 }
 
@@ -5548,11 +5556,9 @@ body.tutorial-lock #app .tg-clickable * {
   color: #666;
 }
 
-/* ============================================================
-   房间页改造 (#view-login)
-   ============================================================ */
+/* ==== 视图: 房间页 ==== */
 
-/* room-header → 已统一为 .page-topbar */
+/* room-header → 已统一 */
 
 .room-create-section {
   display: flex;
@@ -5580,10 +5586,10 @@ body.tutorial-lock #app .tg-clickable * {
 
 .max-players-select {
   padding: 6px 28px 6px 10px;
-  font-size: 14px;
-  background: #FAFAFA;
-  color: #2C2C2C;
-  border: 1px solid #E0E0E0;
+  font-size: var(--font-base);
+  background: var(--gray-50);
+  color: var(--gray-900);
+  border: 1px solid var(--gray-400);
   border-radius: 8px;
   outline: none;
   appearance: none;
@@ -5597,7 +5603,7 @@ body.tutorial-lock #app .tg-clickable * {
 .room-player-info {
   text-align: center;
   padding: 12px;
-  font-size: 14px;
+  font-size: var(--font-base);
   color: #666;
   background: #F8F6F0;
   border-radius: 8px;
@@ -5617,9 +5623,7 @@ body.tutorial-lock #app .tg-clickable * {
   white-space: nowrap;
 }
 
-/* ============================================================
-   回合切换横幅重设计 — 卷轴展开
-   ============================================================ */
+/* 回合切换横幅（卷轴展开） */
 
 .round-transition-overlay {
   position: fixed;
@@ -5676,7 +5680,7 @@ body.tutorial-lock #app .tg-clickable * {
 .rt-title {
   font-size: 36px;
   font-weight: 900;
-  color: #2C2C2C;
+  color: var(--gray-900);
   letter-spacing: 8px;
   margin-bottom: 8px;
 }
@@ -5689,8 +5693,8 @@ body.tutorial-lock #app .tg-clickable * {
 
 .rt-endgame {
   margin-top: 10px;
-  font-size: 14px;
-  color: #8B2252;
+  font-size: var(--font-base);
+  color: var(--color-primary);
   font-weight: 700;
   letter-spacing: 2px;
   animation: rtEndgamePulse 0.8s ease-in-out infinite alternate;
@@ -5710,14 +5714,12 @@ body.tutorial-lock #app .tg-clickable * {
   to   { opacity: 0; transform: scale(1.05); }
 }
 
-/* 已有 rt-fade-out 覆盖旧的 */
+/* 已有 rt-fade-out 覆盖 */
 .round-transition-overlay.rt-fade-out {
   animation: rtFadeOut 0.3s ease-in forwards;
 }
 
-/* ============================================================
-   桌面端响应式布局 (>=768px)
-   ============================================================ */
+/* ==== 响应式: 桌面端 (>=768px) ==== */
 
 @media (min-width: 768px) {
   #app {
@@ -5725,8 +5727,8 @@ body.tutorial-lock #app .tg-clickable * {
     padding: 24px 32px;
   }
 
-  /* 游戏界面：双列布局（左玩家列表 + 右操作区），顶部相位栏 */
-  /* 已由 .game-main flex 布局实现，此处仅做桌面端微调 */
+  /* 游戏界面双列布局微调 */
+  /* .game-main flex 布局 */
 
   .game-left-panel {
     width: 260px;
@@ -5746,7 +5748,7 @@ body.tutorial-lock #app .tg-clickable * {
   }
 
   /* 操作按钮更宽松 */
-  .bid-btn { min-height: 56px; font-size: 18px; }
+  .bid-btn { min-height: 56px; font-size: var(--font-lg); }
   .dice-btn { min-height: 60px; }
 
   /* 大厅和房间页面居中 */
@@ -5759,12 +5761,10 @@ body.tutorial-lock #app .tg-clickable * {
   .room-player-info { font-size: 15px; }
 }
 
-/* ============================================================
-   移动端增强 (<768px)
-   ============================================================ */
+/* ==== 响应式: 移动端 (<768px) ==== */
 
 @media (max-width: 767px) {
-  /* ★ 移动端双列布局：左玩家列表 + 右交互区 */
+  /* 移动端双列布局 */
 
   #view-game.view.active {
     display: flex;
@@ -5784,13 +5784,13 @@ body.tutorial-lock #app .tg-clickable * {
     border-radius: 8px;
   }
   .game-round { font-size: 11px; }
-  .game-phase { font-size: 12px; }
+  .game-phase { font-size: var(--font-sm); }
 
   /* 相位视觉展示区 */
   .game-phase-visual {
-    height: 34vh;
-    min-height: 160px;
-    max-height: 240px;
+    height: 38vh;
+    min-height: 180px;
+    max-height: 260px;
     padding: 10px;
     gap: 8px;
     border-radius: 10px;
@@ -5808,10 +5808,10 @@ body.tutorial-lock #app .tg-clickable * {
   .phase-visual-card .artifact-frame.frame-lg { width: 82px; height: 82px; padding: 6px; }
   .phase-visual-card .artifact-frame.frame-lg img { width: 64px; height: 64px; }
   .phase-visual-card-name { font-size: 13px; max-width: 140px; }
-  .phase-visual-card-score { font-size: 12px; }
+  .phase-visual-card-score { font-size: var(--font-sm); }
   .phase-crown-burst { font-size: 64px; }
 
-  /* 托管对局浮窗移动端 */
+  /* 托管对局浮窗 */
   .managed-game-banner {
     padding: 8px 10px;
     margin-bottom: 8px;
@@ -5819,21 +5819,21 @@ body.tutorial-lock #app .tg-clickable * {
   }
   .mgb-icon { font-size: 20px; }
   .mgb-title { font-size: 11px; }
-  .mgb-room { font-size: 10px; }
+  .mgb-room { font-size: var(--font-xs); }
   .mgb-btn { padding: 6px 10px; font-size: 11px; }
 
   /* 顶部决斗视觉区 */
   .phase-duel-player .pdp-avatar {
     width: 48px;
     height: 48px;
-    font-size: 22px;
+    font-size: var(--font-xl);
   }
   .phase-duel-player .pdp-name {
     font-size: 11px;
     max-width: 70px;
   }
   .phase-duel-player .pdp-role { font-size: 9px; }
-  .phase-duel-vs { font-size: 18px; }
+  .phase-duel-vs { font-size: var(--font-lg); }
   .phase-duel-players { gap: 10px; }
 
   .phase-timer-bar { height: 2px; }
@@ -5860,7 +5860,7 @@ body.tutorial-lock #app .tg-clickable * {
 
   .game-my-status {
     padding: 4px 6px;
-    font-size: 10px;
+    font-size: var(--font-xs);
     gap: 4px;
     border-radius: 6px;
     flex-shrink: 0;
@@ -5875,18 +5875,18 @@ body.tutorial-lock #app .tg-clickable * {
   }
   .other-list-title {
     padding: 5px 6px;
-    font-size: 10px;
+    font-size: var(--font-xs);
   }
   .other-list {
     padding: 2px 4px;
   }
   .other-list:empty::before {
     padding: 12px 4px;
-    font-size: 10px;
+    font-size: var(--font-xs);
   }
   .player-row-placeholder {
     padding: 12px 4px;
-    font-size: 10px;
+    font-size: var(--font-xs);
   }
   .player-row {
     padding: 6px 5px;
@@ -5904,8 +5904,8 @@ body.tutorial-lock #app .tg-clickable * {
     padding: 0 4px;
     border-radius: 3px;
   }
-  .pl-nick { font-size: 12px; }
-  .pl-stats { font-size: 10px; }
+  .pl-nick { font-size: var(--font-sm); }
+  .pl-stats { font-size: var(--font-xs); }
   .pl-expand-icon { font-size: 8px; padding: 1px 2px; }
 
   /* 右栏 */
@@ -5919,7 +5919,7 @@ body.tutorial-lock #app .tg-clickable * {
     -webkit-overflow-scrolling: touch;
   }
   .game-action-area .action-title {
-    font-size: 12px;
+    font-size: var(--font-sm);
     margin-bottom: 4px;
   }
 
@@ -5937,36 +5937,36 @@ body.tutorial-lock #app .tg-clickable * {
   /* 实时点数统计 */
   .dice-scoreboard { margin: 3px 0; border-radius: 6px; }
   .dice-scoreboard .sb-title { font-size: 9px; padding: 2px 4px; }
-  .dice-scoreboard .sb-row { padding: 3px 6px; font-size: 10px; gap: 3px; }
+  .dice-scoreboard .sb-row { padding: 3px 6px; font-size: var(--font-xs); gap: 3px; }
   .dice-scoreboard .sb-rank { width: 16px; font-size: 11px; }
-  .dice-scoreboard .sb-name { font-size: 10px; }
+  .dice-scoreboard .sb-name { font-size: var(--font-xs); }
   .dice-scoreboard .sb-dice { width: 18px; font-size: 8px; }
   .dice-scoreboard .sb-result { width: 22px; font-size: 13px; }
 
   /* 获得卡牌列表 */
   .select-card-list { grid-template-columns: 1fr !important; gap: 3px; }
   .select-card-item { padding: 3px 6px; min-height: 26px; }
-  .select-card-item .sc-emoji { font-size: 14px; }
-  .select-card-item .sc-name { font-size: 10px; }
+  .select-card-item .sc-emoji { font-size: var(--font-base); }
+  .select-card-item .sc-name { font-size: var(--font-xs); }
   .select-card-item .sc-meta { font-size: 8px; }
 
   /* 按钮 */
   .bid-grid { gap: 6px; }
   .bid-btn { min-height: 44px; font-size: 15px; padding: 6px 8px; }
-  .bid-btn .bid-hint { font-size: 10px; }
-  .bid-btn.pass-btn { font-size: 14px; }
+  .bid-btn .bid-hint { font-size: var(--font-xs); }
+  .bid-btn.pass-btn { font-size: var(--font-base); }
   .dice-grid { gap: 6px; }
   .dice-btn { min-height: 56px; padding: 6px 8px; }
   .dice-btn .dice-btn-name { font-size: 15px; }
-  .dice-btn .dice-btn-range { font-size: 12px; }
-  .dice-btn .dice-btn-cost { font-size: 12px; }
-  .dice-btn.pass-btn-full { min-height: 42px; font-size: 14px; }
+  .dice-btn .dice-btn-range { font-size: var(--font-sm); }
+  .dice-btn .dice-btn-cost { font-size: var(--font-sm); }
+  .dice-btn.pass-btn-full { min-height: 42px; font-size: var(--font-base); }
 
   /* 设置浮动按钮 */
   .settings-fab {
     width: 40px;
     height: 40px;
-    font-size: 18px;
+    font-size: var(--font-lg);
     bottom: 12px;
     right: 12px;
   }
@@ -5974,11 +5974,11 @@ body.tutorial-lock #app .tg-clickable * {
   /* 流程卡缩小 */
   .start-flow-cards { gap: 4px; }
   .flow-card { padding: 6px 4px; }
-  .flow-icon { font-size: 18px; }
+  .flow-icon { font-size: var(--font-lg); }
   .flow-label { font-size: 9px; }
 }
 
-/* ==================== 交易阶段 ==================== */
+/* ==== 视图: 交易阶段 ==== */
 
 .trade-container {
   display: flex;
@@ -5995,9 +5995,9 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .trade-title {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
   white-space: nowrap;
   word-break: keep-all;
   flex-shrink: 0;
@@ -6028,7 +6028,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .trade-info {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: #666;
   text-align: center;
   line-height: 1.6;
@@ -6036,14 +6036,14 @@ body.tutorial-lock #app .tg-clickable * {
 
 .trade-info .trade-no-quota {
   display: block;
-  font-size: 12px;
+  font-size: var(--font-sm);
   margin-top: 2px;
   color: #999;
 }
 
 .trade-no-quota {
   color: #999;
-  font-size: 12px;
+  font-size: var(--font-sm);
 }
 
 .trade-info-tip {
@@ -6079,14 +6079,14 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .trade-prop-row {
-  font-size: 14px;
-  color: #2C2C2C;
+  font-size: var(--font-base);
+  color: var(--gray-900);
   line-height: 1.6;
 }
 
 .trade-prop-card {
   display: inline-block;
-  background: #8B2252;
+  background: var(--color-primary);
   color: #FFF;
   padding: 2px 8px;
   border-radius: 4px;
@@ -6130,7 +6130,7 @@ body.tutorial-lock #app .tg-clickable * {
   justify-content: space-between;
   align-items: center;
   padding: 10px 14px;
-  background: #F5F0E8;
+  background: var(--gray-100);
   border: 1px solid #D4CFC4;
   border-radius: 8px;
   transition: all 0.2s;
@@ -6138,16 +6138,16 @@ body.tutorial-lock #app .tg-clickable * {
 
 .trade-player-item.can-target:hover {
   background: #E8F5E9;
-  border-color: #4CAF50;
+  border-color: var(--color-success);
 }
 
 .trade-player-nick {
   font-weight: 600;
-  color: #2C2C2C;
+  color: var(--gray-900);
 }
 
 .trade-player-status {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #999;
 }
 
@@ -6155,14 +6155,14 @@ body.tutorial-lock #app .tg-clickable * {
   padding: 8px 20px;
   border: none;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .trade-btn.trade-accept {
-  background: #4CAF50;
+  background: var(--color-success);
   color: #FFF;
 }
 
@@ -6171,7 +6171,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .trade-btn.trade-reject {
-  background: #E0E0E0;
+  background: var(--gray-400);
   color: #666;
 }
 
@@ -6180,7 +6180,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .trade-btn.trade-skip-btn {
-  background: #F5F0E8;
+  background: var(--gray-100);
   border: 1px solid #D4CFC4;
   color: #666;
   width: 100%;
@@ -6220,11 +6220,11 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .trade-proposal-title {
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   text-align: center;
   margin-bottom: 16px;
-  color: #2C2C2C;
+  color: var(--gray-900);
 }
 
 .trade-proposal-body {
@@ -6256,7 +6256,7 @@ body.tutorial-lock #app .tg-clickable * {
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  background: #F5F0E8;
+  background: var(--gray-100);
   border-radius: 6px;
   cursor: pointer;
   font-size: 13px;
@@ -6267,14 +6267,14 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .trade-card-option input[type="checkbox"] {
-  accent-color: #C43A31;
+  accent-color: var(--color-danger);
 }
 
 .trade-gold-input {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #666;
 }
 
@@ -6283,7 +6283,7 @@ body.tutorial-lock #app .tg-clickable * {
   padding: 6px 8px;
   border: 1px solid #D4CFC4;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: var(--font-base);
   text-align: center;
 }
 
@@ -6292,7 +6292,7 @@ body.tutorial-lock #app .tg-clickable * {
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  color: #C43A31;
+  color: var(--color-danger);
   padding-top: 28px;
 }
 
@@ -6309,22 +6309,20 @@ body.tutorial-lock #app .tg-clickable * {
   padding: 16px;
 }
 
-/* ============================================================
-   收藏馆页面 (.collection-*)
-   ============================================================ */
+/* ==== 视图: 收藏馆 ==== */
 .collection-container {
   max-width: 720px;
   margin: 0 auto;
   padding: 20px 16px 40px;
 }
 
-/* collection-header → 已统一为 .page-topbar */
+/* collection-header → 已统一 */
 
 /* 标签页 */
 .collection-tabs {
   display: flex;
   gap: 4px;
-  background: #F5F0E8;
+  background: var(--gray-100);
   border-radius: 12px;
   padding: 4px;
   margin-bottom: 20px;
@@ -6337,7 +6335,7 @@ body.tutorial-lock #app .tg-clickable * {
   border: none;
   background: transparent;
   border-radius: 10px;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   color: #888;
   cursor: pointer;
@@ -6347,7 +6345,7 @@ body.tutorial-lock #app .tg-clickable * {
 
 .collection-tab.active {
   background: #fff;
-  color: #2C2C2C;
+  color: var(--gray-900);
   box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
@@ -6363,7 +6361,7 @@ body.tutorial-lock #app .tg-clickable * {
 /* 收集进度 */
 .collect-summary {
   text-align: center;
-  font-size: 16px;
+  font-size: var(--font-md);
   color: #666;
   margin-bottom: 20px;
 }
@@ -6436,11 +6434,11 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .artifact-emoji-fallback {
-  font-size: 32px;
+  font-size: var(--font-hero);
 }
 
 .artifact-icon {
-  font-size: 32px;
+  font-size: var(--font-hero);
   margin-bottom: 4px;
 }
 
@@ -6457,7 +6455,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .artifact-score-badge {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -6472,7 +6470,7 @@ body.tutorial-lock #app .tg-clickable * {
   position: absolute;
   top: 6px;
   right: 8px;
-  background: #C43A31;
+  background: var(--color-danger);
   color: #fff;
   font-size: 11px;
   font-weight: 700;
@@ -6480,14 +6478,14 @@ body.tutorial-lock #app .tg-clickable * {
   border-radius: 10px;
 }
 
-/* 未收集 — 小角标而非全覆盖 */
+/* 未收集角标 */
 .artifact-lock-badge {
   position: absolute;
   top: 6px;
   right: 8px;
   background: #E8E0D0;
   color: #999;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 700;
   width: 22px;
   height: 22px;
@@ -6542,12 +6540,12 @@ body.tutorial-lock #app .tg-clickable * {
 .artifact-modal-content h3 {
   font-size: 20px;
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
   margin-bottom: 8px;
 }
 
 .artifact-modal-content p {
-  font-size: 14px;
+  font-size: var(--font-base);
   color: #666;
   line-height: 1.6;
   margin-top: 12px;
@@ -6559,12 +6557,12 @@ body.tutorial-lock #app .tg-clickable * {
   justify-content: center;
   gap: 12px;
   flex-wrap: wrap;
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #999;
 }
 
 .artifact-modal-count {
-  background: #C43A31;
+  background: var(--color-danger);
   color: #fff;
   padding: 2px 10px;
   border-radius: 10px;
@@ -6603,13 +6601,13 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .stat-value {
-  font-size: 22px;
+  font-size: var(--font-xl);
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #999;
   margin-top: 2px;
 }
@@ -6632,7 +6630,7 @@ body.tutorial-lock #app .tg-clickable * {
 .stats-chart-title {
   font-size: 15px;
   font-weight: 600;
-  color: #2C2C2C;
+  color: var(--gray-900);
   margin-bottom: 14px;
 }
 
@@ -6660,7 +6658,7 @@ body.tutorial-lock #app .tg-clickable * {
 .stats-pie-num {
   font-size: 24px;
   font-weight: 700;
-  color: #C43A31;
+  color: var(--color-danger);
 }
 
 .stats-pie-label {
@@ -6690,7 +6688,7 @@ body.tutorial-lock #app .tg-clickable * {
   border-radius: 50%;
 }
 
-.legend-dot.win { background: #C43A31; }
+.legend-dot.win { background: var(--color-danger); }
 .legend-dot.lose { background: #E8E0D0; }
 
 /* 进度条形图 */
@@ -6737,7 +6735,7 @@ body.tutorial-lock #app .tg-clickable * {
 /* 成就列表 */
 .ach-summary {
   text-align: center;
-  font-size: 16px;
+  font-size: var(--font-md);
   color: #666;
   margin-bottom: 16px;
 }
@@ -6759,7 +6757,7 @@ body.tutorial-lock #app .tg-clickable * {
 .ach-cat-label {
   font-size: 15px;
   font-weight: 700;
-  color: #2C2C2C;
+  color: var(--gray-900);
 }
 
 .ach-cat-count {
@@ -6811,11 +6809,11 @@ body.tutorial-lock #app .tg-clickable * {
 .ach-name {
   font-size: 15px;
   font-weight: 600;
-  color: #2C2C2C;
+  color: var(--gray-900);
 }
 
 .ach-desc {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #888;
   margin-top: 2px;
 }
@@ -6843,7 +6841,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .ach-progress {
-  font-size: 12px;
+  font-size: var(--font-sm);
   color: #888;
 }
 
@@ -6868,9 +6866,9 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .skin-section-title {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
-  color: #2C2C2C;
+  color: var(--gray-900);
   margin-bottom: 12px;
 }
 
@@ -6901,7 +6899,7 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .skin-card:hover:not(.locked) {
-  border-color: #C43A31;
+  border-color: var(--color-danger);
   transform: translateY(-2px);
 }
 
@@ -6928,14 +6926,14 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .skin-name {
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-weight: 600;
   color: #333;
   margin-bottom: 4px;
 }
 
 .skin-badge {
-  font-size: 10px;
+  font-size: var(--font-xs);
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 8px;
@@ -6966,7 +6964,7 @@ body.tutorial-lock #app .tg-clickable * {
   border-radius: 8px;
 }
 
-/* ==================== 成就解锁横幅（固定顶部浮层） ==================== */
+/* 成就解锁横幅 */
 .achievement-banner {
   position: fixed;
   top: 10px;
@@ -6978,7 +6976,7 @@ body.tutorial-lock #app .tg-clickable * {
   padding: 12px 18px;
   background: linear-gradient(135deg, #FFFDF7, #F5F0E8);
   color: #6B4226;
-  font-size: 14px;
+  font-size: var(--font-base);
   font-weight: 600;
   text-align: center;
   border-radius: 10px;
@@ -7002,7 +7000,7 @@ body.tutorial-lock #app .tg-clickable * {
   vertical-align: middle;
 }
 
-/* ==================== 交易浮窗公示面板 ==================== */
+/* 交易浮窗公示面板 */
 .trade-float-panel {
   background: linear-gradient(135deg, #3D2222, #4A3030);
   border: 1px solid #D4AF37;
@@ -7035,7 +7033,7 @@ body.tutorial-lock #app .tg-clickable * {
 .tfp-arrow {
   color: #D4AF37;
   font-weight: bold;
-  font-size: 16px;
+  font-size: var(--font-md);
 }
 .tfp-to {
   font-weight: 600;
@@ -7051,12 +7049,12 @@ body.tutorial-lock #app .tg-clickable * {
 }
 .tfp-status {
   color: #D4AF37;
-  font-size: 12px;
+  font-size: var(--font-sm);
   font-style: italic;
   white-space: nowrap;
 }
 
-/* ==================== 玩家详情浮窗头像 ==================== */
+/* 玩家详情浮窗头像 */
 .pp-avatar-row {
   display: flex;
   justify-content: center;
@@ -7071,26 +7069,26 @@ body.tutorial-lock #app .tg-clickable * {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 18px;
+  font-size: var(--font-lg);
   font-weight: 700;
   box-shadow: 0 2px 10px rgba(0,0,0,0.2);
 }
 
-/* ========== 每日文物问答 ========== */
+/* ==== 组件: 每日文物问答 ==== */
 .daily-quiz-modal {
   max-width: 480px;
   width: 90%;
 }
 
 .quiz-progress {
-  font-size: 12px;
-  color: #B0B0B0;
+  font-size: var(--font-sm);
+  color: var(--gray-600);
   margin-bottom: 12px;
   text-align: center;
 }
 
 .quiz-question {
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
   color: #333;
   margin-bottom: 16px;
@@ -7118,8 +7116,8 @@ body.tutorial-lock #app .tg-clickable * {
 }
 
 .quiz-option-btn:hover {
-  border-color: #C9A96E;
-  background: #F5F0E8;
+  border-color: var(--color-accent);
+  background: var(--gray-100);
 }
 
 .quiz-option-btn:active {
@@ -7135,23 +7133,23 @@ body.tutorial-lock #app .tg-clickable * {
 
 .quiz-result.correct {
   background: #F0FFF0;
-  border: 1px solid #4CAF50;
+  border: 1px solid var(--color-success);
   color: #2E7D32;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
 }
 
 .quiz-result.wrong {
   background: #FFF0F0;
-  border: 1px solid #C43A31;
+  border: 1px solid var(--color-danger);
   color: #C62828;
-  font-size: 16px;
+  font-size: var(--font-md);
   font-weight: 600;
 }
 
 .quiz-correct-answer {
   margin-top: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   color: #666;
   font-weight: 400;
 }
@@ -7160,7 +7158,7 @@ body.tutorial-lock #app .tg-clickable * {
   display: block;
   margin: 12px auto 0;
   padding: 8px 32px;
-  background: #C9A96E;
+  background: var(--color-accent);
   color: #1a1a1a;
   border: none;
   border-radius: 8px;
@@ -7180,38 +7178,58 @@ body.tutorial-lock #app .tg-clickable * {
 .quiz-result-grade {
   font-size: 24px;
   font-weight: 700;
-  color: #C9A96E;
+  color: var(--color-accent);
   margin-bottom: 12px;
 }
 
 .quiz-result-score {
-  font-size: 32px;
+  font-size: var(--font-hero);
   font-weight: 700;
   color: #333;
   margin-bottom: 4px;
 }
 
 .quiz-result-pct {
-  font-size: 16px;
+  font-size: var(--font-md);
   color: #666;
   margin-bottom: 8px;
 }
 
 .quiz-result-date {
   font-size: 13px;
-  color: #B0B0B0;
+  color: var(--gray-600);
   margin-bottom: 16px;
 }
 
 .quiz-restart-btn {
   padding: 8px 24px;
-  background: #F5F0E8;
+  background: var(--gray-100);
   border: 1px solid #D4CFC4;
   border-radius: 8px;
-  font-size: 14px;
+  font-size: var(--font-base);
   color: #666;
   cursor: pointer;
 }
 
 .quiz-restart-btn:hover { background: #EDE5DA; }
 
+/* ==== 可访问性 ==== */
+
+/* 焦点样式 */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.btn:focus-visible, .input-primary:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* 减弱动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
