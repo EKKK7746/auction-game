@@ -136,7 +136,13 @@ body {
 }
 
 /* ★ 有顶部栏的页面，预留固定顶部栏高度，避免内容被遮挡 */
-.view:has(.page-topbar) {
+/* 不使用 :has()（兼容性差），直接列出所有有 topbar 的 view ID */
+#view-mode.active,
+#view-login.active,
+#view-lobby.active,
+#view-room-wait.active,
+#view-collection.active,
+#view-auth.active {
   padding-top: 56px;
 }
 

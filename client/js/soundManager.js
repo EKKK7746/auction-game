@@ -56,23 +56,38 @@ SoundManager.init();
 // ========== 全局 playSound 兼容层 ==========
 // 将旧 playSound 事件名映射到 audio.js 音效名
 const _soundNameMap = {
-  click:      'click',
-  bid:        'coin',
-  diceRoll:   'diceShake',
-  cardFlip:   'cardFlip',
-  winCard:    'victory',
-  auctionEnd: 'click',
-  gameOver:   'gameOver',
+  click:           'click',
+  bid:             'bid',
+  diceRoll:        'diceShake',
+  cardFlip:        'cardFlip',
+  cardReveal:      'cardReveal',
+  winCard:         'victory',
+  auctionEnd:      'commission',
+  gameOver:        'gameOver',
+  gameStart:       'gameStart',
+  defeat:          'defeat',
+  phaseChange:     'phaseChange',
+  roundStart:      'roundStart',
+  commission:      'commission',
+  tradeProposal:   'tradeProposal',
+  tradeSuccess:    'tradeSuccess',
+  tradeReject:     'tradeReject',
+  tickUrgent:      'tickUrgent',
+  coinGain:        'coinGain',
+  coinLose:        'coinLose',
+  qianShake:       'qianShake',
+  qianPop:         'qianPop',
 };
 
-// ========== 音效去重：同一音效 300ms 内不重复播放 ==========
+// ========== 音效去重：同一音效 300ms 内不重复播放（tickUrgent 例外 200ms） ==========
 const _soundLastPlayed = {};
 
 // 用 SoundManager 覆写 playSound
 window.playSound = function(name) {
   if (!SoundManager.enabled) return;
   const now = Date.now();
-  if (_soundLastPlayed[name] && now - _soundLastPlayed[name] < 300) return;
+  const dedupMs = (name === 'tickUrgent') ? 200 : 300;
+  if (_soundLastPlayed[name] && now - _soundLastPlayed[name] < dedupMs) return;
   _soundLastPlayed[name] = now;
   const mapped = _soundNameMap[name] || name;
   SoundManager.play(mapped);

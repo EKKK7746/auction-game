@@ -230,6 +230,11 @@ function _renderPhaseBar(view) {
   const phaseIcon = PHASE_ICONS[view.phase] || '🏛️';
 
   if (card && !card.hidden) {
+    // ★ 卡牌从隐藏变为揭示时播放音效
+    const wasHidden = _lastView?.revealedCard?.hidden === true || !_lastView?.revealedCard;
+    if (wasHidden && _lastView?.phase === view.phase) {
+      playSound('cardReveal');
+    }
     iconEl.style.display = 'none';
     cardMiniEl.style.display = 'flex';
     cardFramedEl.innerHTML = typeof getCardFramedImageHtml === 'function'
@@ -346,6 +351,12 @@ function _renderActionArea(view) {
   }
 
   if (prevPhase && prevPhase !== newPhase) {
+    // ★ 阶段切换音效
+    if (newPhase === 'auction') {
+      playSound('roundStart');
+    } else {
+      playSound('phaseChange');
+    }
     // 离开交易阶段时清理提案缓存
     if (prevPhase === 'trade') {
       _pendingTradeProposal = null;
@@ -499,7 +510,9 @@ function _renderAuctionResult(view, container) {
   const result = view.lastBidResults;
   if (!result) return;
 
-  if (typeof playSound === 'function') playSound('confirm');
+  if (typeof playSound === 'function') {
+    playSound(result.allPass ? 'phaseChange' : 'commission');
+  }
 
   if (!result.allPass) {
     _showCrownBurst(result.winnerName, result.commissionRate);
@@ -1022,6 +1035,10 @@ function _renderTrade(view, container) {
         else fillEl.style.background = '#5B7B5E';
       }
       if (textEl) textEl.textContent = remain === 0 ? '已结束' : `${remain}秒`;
+      // ★ 倒计时最后5秒播放紧迫滴答声
+      if (remain > 0 && remain <= 5) {
+        playSound('tickUrgent');
+      }
       if (remain <= 0) {
         clearInterval(_tradeCountdownInterval);
         _tradeCountdownInterval = null;
@@ -1140,6 +1157,10 @@ function skipTrade() {
 // 监听交易提案（全房间广播，含详情）
 onSocket('trade:proposal', (data) => {
     window.__MW_DEBUG__ && console.log('[Trade] 收到交易提案公示:', data);
+    // ★ 交易提案提示音（仅目标玩家听到）
+    if (data && data.toId === socket.id) {
+      playSound('tradeProposal');
+    }
     _pendingTradeProposal = data;
     // 即时更新浮窗
     const floatPanel = document.querySelector('.trade-float-panel');
@@ -1182,10 +1203,12 @@ onSocket('trade:proposal', (data) => {
 onSocket('trade:result', (data) => {
   if (data && data.success) {
     showToast(`✅ ${data.fromNick} 与 ${data.toNick} 交易成功！`, 'info');
+    playSound('tradeSuccess');
   } else {
     const reason = (data && data.reason) || '交易未完成';
     const msg = reason === 'rejected' ? '❌ 对方拒绝了交易' : `❌ ${reason}`;
     showToast(msg, 'error');
+    playSound('tradeReject');
     // 交易被拒时，如果是发起方则记录
     if (reason === 'rejected' && data && data.fromId === socket.id) {
       if (typeof recordTradeRejected === 'function') recordTradeRejected();
@@ -1514,7 +1537,13 @@ function _renderSettle(view, container) {
   container.className = 'game-action-area';
 
   if (_lastView && _lastView.phase === 'rollDice' && typeof playSound === 'function') {
-    playSound('victory');
+    // ★ 掷骰结算：赢家播放胜利音，其他人播放金币支出音
+    const me = view.players.find(p => p.isMe);
+    if (me && me.id === winnerId) {
+      playSound('victory');
+    } else {
+      playSound('coinLose');
+    }
   }
 
   const results = view.diceResults || {};
@@ -1643,6 +1672,8 @@ function _renderSettle(view, container) {
       doEndRound();
     } else {
       updateBar();
+      // ★ 最后3秒紧迫声
+      if (remain <= 3) playSound('tickUrgent');
     }
   }, 1000);
 }
