@@ -106,14 +106,14 @@ body {
   min-height: 100vh;
   display: flex;
   justify-content: center;
-  overflow-x: hidden; /* ★ 防止 topbar 100vw breakout 引起水平滚动 */
+  overflow-x: hidden; /* ★ 防止页面内容意外撑出水平滚动 */
 }
 
 #app {
   width: 100%;
   max-width: 480px;
   min-height: 100vh;
-  padding: 16px;
+  padding: 0 16px 16px;
   display: flex;
   flex-direction: column;
 }
@@ -133,6 +133,11 @@ body {
 
 .view.active {
   display: flex;
+}
+
+/* ★ 有顶部栏的页面，预留固定顶部栏高度，避免内容被遮挡 */
+.view:has(.page-topbar) {
+  padding-top: 56px;
 }
 
 /* ==== 基础组件 (Shared Components) ==== */
@@ -5383,8 +5388,10 @@ body.tutorial-lock #app .tg-clickable * {
 
 /* 统一页面顶部栏 */
 .page-topbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
   z-index: 100;
   display: flex;
   align-items: center;
@@ -5393,10 +5400,8 @@ body.tutorial-lock #app .tg-clickable * {
   border-bottom: 1px solid var(--gray-300);
   gap: 12px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-  /* ★ 突破父容器宽度限制，占满屏幕宽度 */
-  width: 100vw;
-  margin-left: calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
+  /* ★ 固定定位：始终吸附屏幕顶端，不随滚动移动 */
+  width: 100%;
   box-sizing: border-box;
 }
 .page-topbar-back {
