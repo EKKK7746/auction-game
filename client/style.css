@@ -1461,6 +1461,12 @@ body {
   color: #FFD700;
 }
 
+/* 决斗结果垂直布局时 divider 样式微调 */
+.duel-vs.duel-vs-result .duel-vs-divider {
+  font-size: 20px;
+  padding: 2px 0;
+}
+
 /* Duel 结果 */
 .duel-result {
   margin-top: 20px;
@@ -1478,7 +1484,8 @@ body {
   color: #888 !important;
 }
 .duel-vs.duel-vs-result {
-  gap: 20px;
+  flex-direction: column;
+  gap: 12px;
   margin: 16px 0;
 }
 .duel-vs-side {
