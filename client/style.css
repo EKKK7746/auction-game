@@ -106,6 +106,7 @@ body {
   min-height: 100vh;
   display: flex;
   justify-content: center;
+  overflow-x: hidden; /* ★ 防止 topbar 100vw breakout 引起水平滚动 */
 }
 
 #app {
@@ -5392,6 +5393,11 @@ body.tutorial-lock #app .tg-clickable * {
   border-bottom: 1px solid var(--gray-300);
   gap: 12px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  /* ★ 突破父容器宽度限制，占满屏幕宽度 */
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
+  box-sizing: border-box;
 }
 .page-topbar-back {
   background: none;
@@ -5401,7 +5407,9 @@ body.tutorial-lock #app .tg-clickable * {
   cursor: pointer;
   padding: 6px 0;
   font-weight: 500;
-  min-width: 44px;
+  /* ★ 固定宽度，确保 x 轴位置一致 */
+  width: 72px;
+  flex-shrink: 0;
   text-align: left;
   transition: opacity 0.15s;
 }
@@ -5418,7 +5426,9 @@ body.tutorial-lock #app .tg-clickable * {
   margin: 0;
 }
 .page-topbar-right {
-  min-width: 44px;
+  /* ★ 固定宽度与返回按钮一致，确保标题居中 */
+  width: 72px;
+  flex-shrink: 0;
   text-align: right;
   display: flex;
   align-items: center;
