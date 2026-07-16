@@ -1138,6 +1138,18 @@ body {
   text-align: center;
 }
 
+/* 拍卖师鉴定特权提示 */
+.auctioneer-hint {
+  font-size: 13px;
+  color: #8B6914;
+  background: #FFF8DC;
+  border: 1px solid #D4AF37;
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
 /* 报价按钮矩阵 */
 
 .bid-grid {
@@ -1247,6 +1259,36 @@ body {
   gap: 4px;
   font-size: var(--font-md);
   color: #999;
+}
+
+/* 旁观押注按钮 */
+.side-bet-btn {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  margin-top: 8px;
+  border: 2px solid #8B6914;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #FFF8DC, #F5E6A3);
+  color: #8B6914;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.side-bet-btn:hover {
+  background: linear-gradient(135deg, #F5E6A3, #E8D48B);
+  border-color: #D4AF37;
+}
+.side-bet-done {
+  text-align: center;
+  padding: 6px 12px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: #5B7B5E;
+  background: #F0F7F0;
+  border-radius: 8px;
+  border: 1px solid #5B7B5E;
 }
 
 .dice-btn.upgrade {
@@ -4167,7 +4209,8 @@ body.tutorial-lock #app .tg-clickable * {
 .sd-rank { width: 22px; text-align: center; flex-shrink: 0; }
 .sd-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #E0D8D0; }
 .sd-dice { width: 32px; text-align: center; color: var(--gray-700); flex-shrink: 0; }
-.sd-val { width: 28px; text-align: right; font-weight: 600; color: #D4AF37; flex-shrink: 0; }
+.sd-val { text-align: right; font-weight: 600; color: #D4AF37; flex-shrink: 0; }
+.sd-effect-tag { font-size: 11px; font-weight: 400; color: #5B7B5E; margin-left: 4px; }
 
 .settle-comm-detail {
   font-size: var(--font-sm);

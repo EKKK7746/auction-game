@@ -144,7 +144,7 @@ function doSelectDiceWithUpgrade(diceType) {
 
 function doSelectDice(diceType) {
   if (diceType !== 'pass' && _lastView) {
-    const costs = _lastView.diceCosts || { d4: 1, d6: 2, d12: 4, d20: 6 };
+    const costs = _lastView.diceCosts || { d4: 1, d6: 2, d8: 3, d12: 4, d20: 5 };
     const me = _lastView.players.find(p => p.isMe);
     const myFunds = me ? me.funds : 0;
     if (myFunds < costs[diceType]) {
@@ -159,9 +159,20 @@ function doSelectDice(diceType) {
   });
 }
 
+/** 旁观押注：掷骰前押注1💰 */
+function doPlaceSideBet() {
+  socket.emit('game:place_side_bet', GameState.roomId, (res) => {
+    if (!res.success) {
+      showToast(res.error || '押注失败', 'error');
+    } else {
+      showToast('押注成功！花费1💰', 'info');
+    }
+  });
+}
+
 function onUpgradeCheckChange() {
   const checked = document.getElementById('useUpgradeCheck')?.checked || false;
-  const UPGRADE_MAP = { d4: 'd6', d6: 'd12', d12: 'd20' };
+  const UPGRADE_MAP = { d4: 'd6', d6: 'd8', d8: 'd12', d12: 'd20' };
   const previews = document.querySelectorAll('.dice-upgrade-preview');
   const buttons = document.querySelectorAll('.dice-btn');
 

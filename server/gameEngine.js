@@ -11,7 +11,7 @@ const CARDS = [
   // --- 3分·国之重器（4张）---
   { id: 'sxqts', name: '青铜神树',    score: 3, effect: null },            // 三星堆·商
   { id: 'qsbmy', name: '兵马俑',      score: 3, effect: null },            // 秦·始皇陵
-  { id: 'qmht',  name: '清明上河图',  score: 3, effect: 'extraScore' },    // 宋·终局+2分
+  { id: 'qmht',  name: '清明上河图',  score: 3, effect: 'extraScore' },    // 宋·终局+3分
   { id: 'syfz',  name: '四羊方尊',    score: 3, effect: null },            // 商·青铜巅峰
   // --- 2分·珍品雅器（8张）---
   { id: 'slj',   name: '双鸾双兽镜',  score: 2, effect: 'duel' },          // 汉·镜中决斗
@@ -51,14 +51,14 @@ const SPEED_CARDS = CARDS.filter(c =>
 // 默认常量（向后兼容，实际由 mode 决定）
 let MAX_ROUNDS = 10;
 let STARTING_FUNDS = 12;
-const DICE_TYPES = ['d4', 'd6', 'd12', 'd20'];
+const DICE_TYPES = ['d4', 'd6', 'd8', 'd12', 'd20'];
 const VALID_COMMISSIONS = [10, 20, 30, 40, 50];
 
 /** 骰子费用 */
-const DICE_COSTS = { d4: 1, d6: 2, d12: 4, d20: 6, pass: 0 };
+const DICE_COSTS = { d4: 1, d6: 2, d8: 3, d12: 4, d20: 5, pass: 0 };
 
 /** 骰子升级映射 */
-const DICE_UPGRADE = { d4: 'd6', d6: 'd12', d12: 'd20' };
+const DICE_UPGRADE = { d4: 'd6', d6: 'd8', d8: 'd12', d12: 'd20' };
 
 // -------------------- 内部状态 --------------------
 
@@ -407,7 +407,7 @@ function selectDice(roomId, playerId, diceType) {
   if (state.diceSelections.hasOwnProperty(playerId)) return { error: '你已经选过骰子了' };
 
   if (!DICE_TYPES.includes(diceType) && diceType !== 'pass') {
-    return { error: '骰子类型无效，可选: d4, d6, d12, d20, pass' };
+    return { error: '骰子类型无效，可选: d4, d6, d8, d12, d20, pass' };
   }
 
   const p = state.players.find(p => p.id === playerId);
@@ -443,6 +443,8 @@ function selectDice(roomId, playerId, diceType) {
   }
 
   // 全部选完 → 检查是否所有人 done
+
+  // 全部选完 → 检查是否所有人 done
   if (allDiceIn(state)) {
     _markPlayerDone(roomId, playerId);
     return { ok: true };
@@ -450,6 +452,36 @@ function selectDice(roomId, playerId, diceType) {
 
   broadcast(roomId);
   return { ok: true, waiting: true };
+}
+
+// -------------------- 4a. 旁观押注 — placeSideBet --------------------
+
+/**
+ * placeSideBet(roomId, playerId, bet)
+ * 掷骰前全员可选押注1💰
+ * - 掷骰参与者：押注"我赢此卡" → 赢了返2💰(净赚1)，输了扣1💰
+ * - 旁观者（拍卖师/放弃者）：押注"有人赢此卡" → 有人赢返2💰，卡被丢弃扣1💰
+ */
+function placeSideBet(roomId, playerId, bet) {
+  const state = games.get(roomId);
+  if (!state) return { error: '游戏不存在' };
+  if (state.phase !== 'rentDice') return { error: '当前不是租骰阶段' };
+
+  const p = state.players.find(p => p.id === playerId);
+  if (!p) return { error: '玩家不存在' };
+
+  // 只能押注一次
+  if (state.sideBets && state.sideBets[playerId]) return { error: '你已经押注了' };
+
+  // 押注额固定1💰
+  if (p.funds < 1) return { error: '资金不足，需要1💰押注' };
+
+  if (!state.sideBets) state.sideBets = {};
+  p.funds -= 1;
+  state.sideBets[playerId] = true;
+  console.log(`[引擎] ${p.nickname} 旁观押注1💰`);
+  broadcast(roomId);
+  return { ok: true };
 }
 
 // -------------------- 4b. 敦煌飞天升级 — upgradeDice --------------------
@@ -542,8 +574,31 @@ function _markPlayerDone(roomId, playerId) {
   setTimeout(() => resolveRoll(roomId), 5000);
 }
 
+// -------------------- 追赶保底 + 末轮冲刺 辅助函数 --------------------
+
+/** 追赶保底：持卡最少的玩家获得掷骰+1（不超过骰子面数） */
+function _catchUpBonus(playerId, state) {
+  const activeIds = Object.keys(state.diceSelections).filter(pid =>
+    state.diceSelections[pid] !== 'pass' && state.diceSelections[pid] !== 'auctioneer'
+  );
+  if (activeIds.length === 0) return 0;
+  const cardCounts = activeIds.map(pid => {
+    const p = state.players.find(pp => pp.id === pid);
+    return p ? p.cards.length : 999;
+  });
+  const minCards = Math.min(...cardCounts);
+  const p = state.players.find(pp => pp.id === playerId);
+  return (p && p.cards.length === minCards) ? 1 : 0;
+}
+
+/** 末轮冲刺：最后一轮全员双掷取高 */
+function _isFinalRound(state) {
+  return state.deck.length === 0 || state.round >= state.maxRounds;
+}
+
 function _computeAllRolls(state) {
   state.diceResults = {};
+  const isFinal = _isFinalRound(state);
   for (const playerId of Object.keys(state.diceSelections)) {
     const choice = state.diceSelections[playerId];
     if (choice === 'pass' || choice === 'auctioneer') {
@@ -553,16 +608,26 @@ function _computeAllRolls(state) {
     const sides = parseInt(choice.slice(1));
     const p = state.players.find(p => p.id === playerId);
     const hasReroll = hasRerollAbility(p);
-    if (hasReroll) {
+    const catchUp = _catchUpBonus(playerId, state);
+    const useDoubleRoll = hasReroll || isFinal;
+
+    if (useDoubleRoll) {
       const v1 = rollDice(sides);
       const v2 = rollDice(sides);
-      const value = Math.max(v1, v2);
-      state.diceResults[playerId] = { value, v1, v2, reroll: true };
-      console.log(`[引擎] ${p.nickname} 掷 ${choice}: ${v1}/${v2} → ${value} (rerollDice)`);
+      let value = Math.max(v1, v2);
+      if (catchUp) value = Math.min(value + catchUp, sides);
+      state.diceResults[playerId] = { value, v1, v2, reroll: hasReroll, catchUp: catchUp > 0, finalSprint: isFinal };
+      console.log(`[引擎] ${p.nickname} 掷 ${choice}: ${v1}/${v2} → ${value}${catchUp ? '(追赶+1)' : ''}${hasReroll ? '(rerollDice)' : ''}${isFinal ? '(末轮冲刺)' : ''}`);
     } else {
-      const value = rollDice(sides);
-      state.diceResults[playerId] = value;
-      console.log(`[引擎] ${p.nickname} 掷 ${choice}=${value}`);
+      let rawValue = rollDice(sides);
+      let value = catchUp ? Math.min(rawValue + catchUp, sides) : rawValue;
+      if (catchUp) {
+        state.diceResults[playerId] = { value, rawValue, catchUp: true };
+        console.log(`[引擎] ${p.nickname} 掷 ${choice}=${rawValue}+1→${value} (追赶保底)`);
+      } else {
+        state.diceResults[playerId] = value;
+        console.log(`[引擎] ${p.nickname} 掷 ${choice}=${value}`);
+      }
     }
   }
 }
@@ -587,18 +652,29 @@ function rollOneDice(roomId, playerId) {
   const sides = parseInt(choice.slice(1));
   const p = state.players.find(p => p.id === playerId);
 
-  // rerollDice 效果
+  // rerollDice / 末轮冲刺 / 追赶保底
   const hasReroll = hasRerollAbility(p);
-  if (hasReroll) {
+  const isFinal = _isFinalRound(state);
+  const catchUp = _catchUpBonus(playerId, state);
+  const useDoubleRoll = hasReroll || isFinal;
+
+  if (useDoubleRoll) {
     const v1 = rollDice(sides);
     const v2 = rollDice(sides);
-    const value = Math.max(v1, v2);
-    console.log(`[引擎] ${p.nickname} 掷 ${choice}: ${v1}/${v2} → ${value} (rerollDice)`);
-    state.diceResults[playerId] = { value, v1, v2, reroll: true };
+    let value = Math.max(v1, v2);
+    if (catchUp) value = Math.min(value + catchUp, sides);
+    state.diceResults[playerId] = { value, v1, v2, reroll: hasReroll, catchUp: catchUp > 0, finalSprint: isFinal };
+    console.log(`[引擎] ${p.nickname} 掷 ${choice}: ${v1}/${v2} → ${value}${catchUp ? '(追赶+1)' : ''}${hasReroll ? '(rerollDice)' : ''}${isFinal ? '(末轮冲刺)' : ''}`);
   } else {
-    const value = rollDice(sides);
-    console.log(`[引擎] ${p.nickname} 掷 ${choice}=${value}`);
-    state.diceResults[playerId] = value;
+    let rawValue = rollDice(sides);
+    let value = catchUp ? Math.min(rawValue + catchUp, sides) : rawValue;
+    if (catchUp) {
+      state.diceResults[playerId] = { value, rawValue, catchUp: true };
+      console.log(`[引擎] ${p.nickname} 掷 ${choice}=${rawValue}+1→${value} (追赶保底)`);
+    } else {
+      state.diceResults[playerId] = value;
+      console.log(`[引擎] ${p.nickname} 掷 ${choice}=${value}`);
+    }
   }
 
   // 给 pass 玩家补 null
@@ -695,6 +771,8 @@ function resolveRoll(roomId) {
       return awardCard(roomId, state.auctioneerId);
     } else {
       console.log('[引擎] 无人掷骰且无拍卖师，卡牌丢弃 → 自动推进回合');
+      // 旁观押注结算：卡牌丢弃，所有押注者输
+      _resolveSideBets(state, null);
       state.revealedCard = null;
       broadcast(roomId);
       // 安全网：2s 后自动推进（discarded 卡牌不需要长展示）
@@ -781,20 +859,24 @@ function _resolveRecursive(participants, diceSelections, depth, state) {
     return { winnerId: tied[0], tieDepth: depth };
   }
 
-  // 平局 → 重掷（保留 rerollDice 效果）
+  // 平局 → 重掷（保留 rerollDice / 末轮冲刺 / 追赶保底 效果）
   console.log(`[引擎] 平局! ${tied.length} 人重掷 (深度 ${depth + 1})`);
+  const isFinal = _isFinalRound(state);
   const reRolled = {};
   for (const pid of tied) {
     const choice = diceSelections[pid];
     const sides = parseInt(choice.slice(1));
     const p = state.players.find(p => p.id === pid);
     const hasReroll = hasRerollAbility(p);
+    const catchUp = _catchUpBonus(pid, state);
+    const useDoubleRoll = hasReroll || isFinal;
     let value;
-    if (hasReroll) {
+    if (useDoubleRoll) {
       value = Math.max(rollDice(sides), rollDice(sides));
     } else {
       value = rollDice(sides);
     }
+    if (catchUp) value = Math.min(value + catchUp, sides);
     reRolled[pid] = value;
   }
   return _resolveRecursive(reRolled, diceSelections, depth + 1, state);
@@ -918,7 +1000,7 @@ function duelRentDice(socket, io, roomId, diceType, useUpgrade = false) {
   if (useUpgrade && diceType !== 'pass') {
     const hasScholar = player.cards.some(c => c.id === 'dhft' && !c.used);
     if (hasScholar) {
-      const UPGRADE_MAP = { 'd4': 'd6', 'd6': 'd12', 'd12': 'd20', 'd20': 'd20' };
+      const UPGRADE_MAP = { 'd4': 'd6', 'd6': 'd8', 'd8': 'd12', 'd12': 'd20', 'd20': 'd20' };
       finalDiceType = UPGRADE_MAP[diceType] || diceType;
       // 标记已使用
       const scholarCard = player.cards.find(c => c.id === 'dhft');
@@ -1230,7 +1312,50 @@ function duelRentDiceById(roomId, playerId, diceType, useUpgrade) {
 const CARD_MAP = {};
 CARDS.forEach(c => { CARD_MAP[c.id] = c.name; });
 
-// -------------------- 7. 发卡 — awardCard --------------------
+// -------------------- 7. 旁观押注结算 --------------------
+
+/**
+ * _resolveSideBets(state, winnerId)
+ * winnerId: 获胜玩家ID，null 表示卡牌被丢弃
+ * 掷骰参与者押注"我赢此卡" → 赢了返2💰，输了扣1(已扣)
+ * 旁观者押注"有人赢此卡" → 有人赢返2💰，丢弃扣1(已扣)
+ */
+function _resolveSideBets(state, winnerId) {
+  if (!state.sideBets) return;
+  const hasWinner = winnerId !== null;
+  state._sideBetResults = {};
+  for (const [pid, bet] of Object.entries(state.sideBets)) {
+    if (!bet) continue;
+    const p = state.players.find(pp => pp.id === pid);
+    if (!p) continue;
+
+    // 判断是否押注成功
+    let won = false;
+    if (p.id === winnerId) {
+      // 参与者押注自己赢 → 成功
+      won = true;
+    } else if (state.diceSelections[pid] && state.diceSelections[pid] !== 'pass' && state.diceSelections[pid] !== 'auctioneer') {
+      // 参与者押注但未赢 → 失败
+      won = false;
+    } else {
+      // 旁观者（拍卖师/pass）押注"有人赢" → 有人赢则成功
+      won = hasWinner;
+    }
+
+    if (won) {
+      p.funds += 2;  // 返还2💰（净赚1💰）
+      console.log(`[引擎] ${p.nickname} 旁观押注成功！+2💰（净赚1💰）`);
+    } else {
+      // 已扣1💰，无需再扣
+      console.log(`[引擎] ${p.nickname} 旁观押注失败，-1💰`);
+    }
+    state._sideBetResults[pid] = { won, nickname: p.nickname };
+  }
+  // 清理本轮押注记录
+  state.sideBets = {};
+}
+
+// -------------------- 7b. 发卡 — awardCard --------------------
 
 function awardCard(roomId, winnerId) {
   const state = games.get(roomId);
@@ -1250,6 +1375,9 @@ function awardCard(roomId, winnerId) {
   }
   player.cards.push(cardData);
   console.log(`[引擎] ${player.nickname} 获得卡牌: ${card.name}${card.effect ? ' [' + card.effect + ']' : ''}`);
+
+  // 旁观押注结算
+  _resolveSideBets(state, winnerId);
 
   // 不在此处清除 revealedCard — settle 阶段需要它来展示卡牌信息
   // revealedCard 将在 endRound 中清除
@@ -1607,16 +1735,16 @@ function calculateCardScore(cards) {
     if (hasDragonPhoenix && s === 1) s = 2;
     total += s;
   }
-  // extraScore（清明上河图）：终局额外+2分
+  // extraScore（清明上河图）：终局额外+3分
   if (cards.some(c => c.id === 'qmht')) {
-    total += 2;
+    total += 3;
   }
   return total;
 }
 
 /**
  * 最终排名：调整后总分 desc → 资金 desc（平局决胜）
- * 调整后总分 = 卡牌分 + floor(资金 / 3)
+ * 调整后总分 = 卡牌分 + floor(资金 / 2)
  * 资金也相同 → 共享排名
  */
 function calculateFinalScores(roomId) {
@@ -1625,7 +1753,7 @@ function calculateFinalScores(roomId) {
 
   const scores = state.players.map(p => {
     const cs = calculateCardScore(p.cards);
-    const adjusted = cs + Math.floor(p.funds / 3);
+    const adjusted = cs + Math.floor(p.funds / 2);
     return {
       id: p.id,
       nickname: p.nickname,
@@ -1665,19 +1793,17 @@ function calculateFinalScores(roomId) {
 // -------------------- 10. 玩家视角裁剪 --------------------
 
 /**
- * 根据卡牌分值和玩家身份决定是否隐藏1分卡信息
- * - 2/3分卡：所有人可见完整信息
- * - 1分卡：只有拍卖师可见完整信息，其他人只看到分值
+ * 根据玩家身份决定卡牌信息可见度（暗牌机制）
+ * - 拍卖师（鉴定特权）：可见完整信息（name, score, effect, dynasty 等）
+ * - 非拍卖师：只看到分值 ★X分 和 id，其他信息隐藏
+ * - 结算阶段：所有人可见完整信息（由调用方直接传 { ...card }）
  */
 function sanitizeRevealedCard(card, isAuctioneer) {
   if (!card) return null;
-  // 2/3分卡：所有人可见完整信息
-  if (card.score >= 2) return { ...card };
-  // 1分卡：只有拍卖师可见完整信息，其他人只看到分值
-  if (card.score === 1 && !isAuctioneer) {
-    return { score: 1, id: card.id, hidden: true };
-  }
-  return { ...card };
+  // 拍卖师可见完整信息
+  if (isAuctioneer) return { ...card };
+  // 非拍卖师只看到分值和 id（暗牌）
+  return { score: card.score, id: card.id, hidden: true };
 }
 
 function getPlayerView(fullState, playerId) {
@@ -1722,7 +1848,7 @@ function getPlayerView(fullState, playerId) {
         funds: p.funds,
         cardCount: p.cards.length,
         cardScore: cs,
-        adjustedScore: cs + Math.floor(p.funds / 3),
+        adjustedScore: cs + Math.floor(p.funds / 2),
         isBot: !!p.isBot,
         managed: !!p.managed,  // 托管标识
         skin: p.skin || {},    // 外观皮肤同步
@@ -1849,22 +1975,36 @@ function getPlayerView(fullState, playerId) {
           base.diceSelections[p.id] = 'waiting';
         }
       }
-      // 1分卡信息隐藏：非拍卖师只看到分值
+      // 暗牌机制：非拍卖师只看到分值，拍卖师可见完整信息
       base.revealedCard = fullState.revealedCard
         ? sanitizeRevealedCard(fullState.revealedCard, isAuctioneer)
         : null;
+      // 拍卖师鉴定特权：下一张牌的分值提示
+      if (isAuctioneer && fullState.deck.length > 0) {
+        base.nextCardHint = { score: fullState.deck[0].score };
+      }
+      // 旁观押注状态
+      base.sideBets = fullState.sideBets ? { ...fullState.sideBets } : {};
+      base.hasSideBet = !!fullState.sideBets?.[playerId];
       break;
     }
 
     case 'rollDice': {
       base.diceSelections = { ...fullState.diceSelections };
       base.diceResults = { ...fullState.diceResults };
-      // 掷骰阶段：1分卡仍对非拍卖师隐藏（竞标信息不对称）
+      // 暗牌机制：掷骰阶段仍对非拍卖师隐藏卡牌详情
       base.revealedCard = fullState.revealedCard
         ? sanitizeRevealedCard(fullState.revealedCard, isAuctioneer)
         : null;
+      // 拍卖师鉴定特权
+      if (isAuctioneer && fullState.deck.length > 0) {
+        base.nextCardHint = { score: fullState.deck[0].score };
+      }
       // P0-3: 平局重掷信息
       if (fullState.tieInfo) base.tieInfo = fullState.tieInfo;
+      // 旁观押注状态
+      base.sideBets = fullState.sideBets ? { ...fullState.sideBets } : {};
+      base.hasSideBet = !!fullState.sideBets?.[playerId];
       break;
     }
 
@@ -1879,6 +2019,8 @@ function getPlayerView(fullState, playerId) {
       if (fullState.tieInfo) base.tieInfo = fullState.tieInfo;
       // 暗标竞标结果（结算展示用）
       if (fullState.lastBidResults) base.lastBidResults = fullState.lastBidResults;
+      // 旁观押注结算结果
+      if (fullState._sideBetResults) base.sideBetResults = fullState._sideBetResults;
       break;
     }
 
@@ -1952,7 +2094,7 @@ function getSpectatorView(fullState) {
       funds: p.funds,
       cardCount: p.cards.length,
       cardScore: calculateCardScore(p.cards),
-      adjustedScore: calculateCardScore(p.cards) + Math.floor(p.funds / 3),
+      adjustedScore: calculateCardScore(p.cards) + Math.floor(p.funds / 2),
       isBot: !!p.isBot,
       managed: !!p.managed,  // 托管标识
       skin: p.skin || {},    // 外观皮肤同步

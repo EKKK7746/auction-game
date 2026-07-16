@@ -296,7 +296,7 @@ function evaluateCardValue(card, playerCards) {
 
   // 特效价值
   if (card.effect === 'duel') value += 1.5;
-  if (card.effect === 'extraScore') value += 2;
+  if (card.effect === 'extraScore') value += 3;
   if (card.effect === 'soloReroll') value += 1.5;
   if (card.effect === 'passiveIncome') value += 1.5;
   if (card.effect === 'streakShield') value += 1;
@@ -422,14 +422,16 @@ function selectCardStrategy(playerId, state) {
 
 function _simpleDiceSelect(cardValue, funds) {
   if (cardValue >= 3) {
-    if (funds >= 6) return 'd20';
+    if (funds >= 5) return 'd20';
     if (funds >= 4) return 'd12';
+    if (funds >= 3) return 'd8';
     if (funds >= 2) return 'd6';
     if (funds >= 1) return 'd4';
     return 'pass';
   }
   if (cardValue >= 2) {
-    if (funds >= 4) return 'd12';
+    if (funds >= 4) return Math.random() < 0.5 ? 'd12' : 'd8';
+    if (funds >= 3) return 'd8';
     if (funds >= 2) return 'd6';
     if (funds >= 1) return 'd4';
     return 'pass';
@@ -439,21 +441,24 @@ function _simpleDiceSelect(cardValue, funds) {
 
 function _smartDiceSelect(effectiveValue, funds) {
   if (effectiveValue >= 4) {
-    if (funds >= 6) return 'd20';
+    if (funds >= 5) return 'd20';
     if (funds >= 4) return 'd12';
+    if (funds >= 3) return 'd8';
     if (funds >= 2) return 'd6';
     if (funds >= 1) return 'd4';
     return 'pass';
   }
   if (effectiveValue >= 3) {
-    if (funds >= 6) return Math.random() < 0.6 ? 'd20' : 'd12';
+    if (funds >= 5) return Math.random() < 0.6 ? 'd20' : 'd12';
     if (funds >= 4) return 'd12';
+    if (funds >= 3) return Math.random() < 0.5 ? 'd8' : 'd6';
     if (funds >= 2) return 'd6';
     if (funds >= 1) return 'd4';
     return 'pass';
   }
   if (effectiveValue >= 2) {
-    if (funds >= 4) return Math.random() < 0.5 ? 'd12' : 'd6';
+    if (funds >= 4) return Math.random() < 0.5 ? 'd12' : 'd8';
+    if (funds >= 3) return Math.random() < 0.5 ? 'd8' : 'd6';
     if (funds >= 2) return 'd6';
     if (funds >= 1) return Math.random() < 0.5 ? 'd4' : 'pass';
     return 'pass';

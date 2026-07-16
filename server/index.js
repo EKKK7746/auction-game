@@ -456,7 +456,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // --- 选骰子（d4/d6/d12/d20/pass） ---
+  // --- 选骰子（d4/d6/d8/d12/d20/pass） ---
   socket.on('game:select_dice', (roomId, diceType, callback) => {
     if (typeof callback !== 'function') callback = () => {};
     if (gameEngine.unmanagePlayer(roomId, socket.id)) {
@@ -481,6 +481,17 @@ io.on('connection', (socket) => {
       callback({ success: false, error: result.error });
     } else {
       callback({ success: true, waiting: result.waiting });
+    }
+  });
+
+  // --- 旁观押注（掷骰前可选押注1💰） ---
+  socket.on('game:place_side_bet', (roomId, callback) => {
+    if (typeof callback !== 'function') callback = () => {};
+    const result = gameEngine.placeSideBet(roomId, socket.id, true);
+    if (result.error) {
+      callback({ success: false, error: result.error });
+    } else {
+      callback({ success: true });
     }
   });
 

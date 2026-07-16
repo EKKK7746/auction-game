@@ -45,7 +45,7 @@ const CARD_LORE = {
     brief: '八千真人大小陶俑组成地下军团，千人千面无一雷同。被誉为"世界第八大奇迹"。'
   },
   qmht: {
-    skillName: '传世', skillType: '被动', skillDesc: '持有此画者终局额外加2分',
+    skillName: '传世', skillType: '被动', skillDesc: '持有此画者终局额外加3分',
     dynasty: '北宋', excavatedYear: '传世品', museum: '故宫博物院',
     brief: '张择端绘，纵24.8cm、横528.7cm，描摹汴京清明时节的繁华景象。人物逾八百、舟车数十，是中国古代风俗画的巅峰之作。'
   },

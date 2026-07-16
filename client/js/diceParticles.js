@@ -7,7 +7,7 @@
  *   3. GLOW   (2200-3000ms) — 骰子金光脉冲，数字稳定
  *   4. DISSOLVE (3000-4000ms) — 粒子向外飘散，淡出
  *
- * 支持的骰子: d4(三角), d6(方形), d12(五边), d20(六边)
+ * 支持的骰子: d4(三角), d6(方形), d8(八边), d12(五边), d20(六边)
  */
 
 (function () {
@@ -249,7 +249,7 @@
     const W = _canvasW || 360;
     const H = _canvasH || 300;
     const CX = W / 2, CY = H / 2;
-    const SIDES = { d4: 3, d6: 4, d12: 5, d20: 6 };
+    const SIDES = { d4: 3, d6: 4, d8: 8, d12: 5, d20: 6 };
     const sides = SIDES[diceType] || 4;
 
     // 骰子轮廓半径也按画布缩放

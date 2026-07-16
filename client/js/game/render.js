@@ -67,7 +67,7 @@ function renderGame(view) {
     if (_lastView.phase === 'rentDice' && (view.phase === 'rollDice' || view.phase === 'settle')) {
       const myDice = view.diceSelections?.[socket.id];
       if (myDice && myDice !== 'pass' && myDice !== 'auctioneer' && typeof recordDiceRented === 'function') {
-        const costs = view.diceCosts || { d4: 1, d6: 2, d12: 4, d20: 6 };
+        const costs = view.diceCosts || { d4: 1, d6: 2, d8: 3, d12: 4, d20: 5 };
         const me = view.players.find(p => p.id === socket.id);
         const fundsAfter = me ? me.funds : 0;
         recordDiceRented(myDice, costs[myDice] || 0, fundsAfter);
@@ -80,7 +80,7 @@ function renderGame(view) {
       // 掷骰结果记录
       if (myResult != null && myDice && myDice !== 'pass' && myDice !== 'auctioneer') {
         const val = typeof myResult === 'object' ? myResult.value : myResult;
-        const maxValues = { d4: 4, d6: 6, d12: 12, d20: 20 };
+        const maxValues = { d4: 4, d6: 6, d8: 8, d12: 12, d20: 20 };
         const isMax = val === maxValues[myDice];
         if (typeof recordDiceRoll === 'function') recordDiceRoll(myDice, val, isMax);
         if (typeof updateSessionStats === 'function') updateSessionStats({ finalRollValue: val });
@@ -89,7 +89,7 @@ function renderGame(view) {
       if (view.auctioneerId === socket.id && view.commissionRate != null) {
         const auctioneer = view.players.find(p => p.id === socket.id);
         const hasShiQuan = auctioneer?.cards?.some(c => c.id === 'sq');
-        const DICE_COSTS = { d4: 1, d6: 2, d12: 4, d20: 6, pass: 0 };
+        const DICE_COSTS = { d4: 1, d6: 2, d8: 3, d12: 4, d20: 5, pass: 0 };
         let totalDiceCost = 0;
         for (const [pid, sel] of Object.entries(view.diceSelections || {})) {
           if (pid !== view.auctioneerId && sel !== 'pass' && sel !== 'auctioneer') {
@@ -249,11 +249,12 @@ function _renderPhaseBar(view) {
       cardInfoEl.style.display = cardInfoEl.innerHTML ? 'block' : 'none';
     }
   } else if (card && card.hidden) {
+    // 暗牌机制：非拍卖师只看到分值，不显示名称/技能详情
     iconEl.style.display = 'flex';
     cardMiniEl.style.display = 'none';
     iconEl.textContent = '❓';
-    cardNameEl.textContent = '待揭示';
-    cardScoreEl.textContent = '';
+    cardNameEl.textContent = '暗牌';
+    cardScoreEl.textContent = `★ ${card.score} 分`;
     if (cardInfoEl) cardInfoEl.style.display = 'none';
   } else {
     iconEl.style.display = 'flex';
@@ -684,24 +685,25 @@ function _renderRentDice(view, container) {
   container.className = 'game-action-area my-turn';
 
   const isSpeedMode = view._mode === 'speed';
-  const costs = view.diceCosts || { d4: 1, d6: 2, d12: 4, d20: 6, pass: 0 };
+  const costs = view.diceCosts || { d4: 1, d6: 2, d8: 3, d12: 4, d20: 5, pass: 0 };
   const remainingCards = view.deckSize || 0;
   const d4Free = costs.d4 === 0 || remainingCards <= 2;  // 末两轮免费
   const me = view.players.find(p => p.id === socket.id);
   const myFunds = me ? me.funds : 0;
   const hasUpgrade = view.hasUpgrade;
 
-  const UPGRADE_MAP = { d4: 'd6', d6: 'd12', d12: 'd20' };
+  const UPGRADE_MAP = { d4: 'd6', d6: 'd8', d8: 'd12', d12: 'd20' };
 
   const diceTypes = [
     { type: 'd4', sides: 4, cost: costs.d4, free: d4Free },
     { type: 'd6', sides: 6, cost: costs.d6, free: false },
+    { type: 'd8', sides: 8, cost: costs.d8, free: false },
     { type: 'd12', sides: 12, cost: costs.d12, free: false },
     { type: 'd20', sides: 20, cost: costs.d20, free: false },
   ];
 
-  const diceLabels = { d4: '4面骰', d6: '6面骰', d12: '12面骰', d20: '20面骰' };
-  const diceRanges = { d4: '1-4', d6: '1-6', d12: '1-12', d20: '1-20' };
+  const diceLabels = { d4: '4面骰', d6: '6面骰', d8: '8面骰', d12: '12面骰', d20: '20面骰' };
+  const diceRanges = { d4: '1-4', d6: '1-6', d8: '1-8', d12: '1-12', d20: '1-20' };
 
   const buttons = diceTypes.map(d => {
     const canAfford = d.free || myFunds >= d.cost;
@@ -717,14 +719,31 @@ function _renderRentDice(view, container) {
 
   const upgradeCheckbox = hasUpgrade ? _buildUpgradeCheckbox() : '';
 
+  // 拍卖师鉴定特权：下一张牌分值提示
+  const nextHint = view.nextCardHint;
+  const nextHintHtml = nextHint
+    ? `<div class="auctioneer-hint">🔍 鉴定特权：下一张牌 ★${nextHint.score}分</div>`
+    : '';
+
+  // 旁观押注按钮（已押注则显示确认状态）
+  const hasSideBet = view.hasSideBet;
+  const canBet = myFunds >= 1 && !hasSideBet;
+  const betHtml = canBet
+    ? `<button class="side-bet-btn" onclick="doPlaceSideBet()">押注1💰 碰运气</button>`
+    : hasSideBet
+      ? `<div class="side-bet-done">✅ 已押注1💰</div>`
+      : '';
+
   // 拍品信息卡片（已在上方展示区显示，操作区只保留骰子按钮）
   container.innerHTML = `
     <div class="action-title">${isSpeedMode ? '⚡ 极速模式 — 选择骰子' : '🎲 选择你的骰子'}</div>
+    ${nextHintHtml}
     <div class="dice-grid">
       ${buttons}
       <button class="dice-btn pass-btn-full"
         onclick="doSelectDiceWithUpgrade('pass')">本轮放弃</button>
     </div>
+    ${betHtml}
     ${upgradeCheckbox}
   `;
 
@@ -1329,7 +1348,7 @@ function _renderDuelRentDice(view, container) {
 
   container.className = 'game-action-area my-turn';
 
-  const costs = { d4: 1, d6: 2, d12: 4, d20: 6 };
+  const costs = { d4: 1, d6: 2, d8: 3, d12: 4, d20: 5 };
   const me = view.players.find(p => p.id === socket.id);
   const myFunds = me?.funds || 0;
   const hasUpgrade = me?.hasUpgrade || false;
@@ -1337,12 +1356,13 @@ function _renderDuelRentDice(view, container) {
   const diceTypes = [
     { type: 'd4', sides: 4, cost: costs.d4 },
     { type: 'd6', sides: 6, cost: costs.d6 },
+    { type: 'd8', sides: 8, cost: costs.d8 },
     { type: 'd12', sides: 12, cost: costs.d12 },
     { type: 'd20', sides: 20, cost: costs.d20 },
   ];
 
-  const diceLabels = { d4: '4面骰', d6: '6面骰', d12: '12面骰', d20: '20面骰' };
-  const diceRanges = { d4: '1-4', d6: '1-6', d12: '1-12', d20: '1-20' };
+  const diceLabels = { d4: '4面骰', d6: '6面骰', d8: '8面骰', d12: '12面骰', d20: '20面骰' };
+  const diceRanges = { d4: '1-4', d6: '1-6', d8: '1-8', d12: '1-12', d20: '1-20' };
 
   const buttons = diceTypes.map(d => {
     const canAfford = myFunds >= d.cost;
@@ -1584,16 +1604,22 @@ function _renderSettle(view, container) {
     })
     .map((p, i) => {
       const hasResult = results.hasOwnProperty(p.id) && results[p.id] !== null;
-      const val = hasResult ? _val(results[p.id]) : null;
+      const resultObj = hasResult ? results[p.id] : null;
+      const val = hasResult ? _val(resultObj) : null;
       const dice = view.diceSelections?.[p.id] || (p.id === view.auctioneerId ? '—' : '?');
       const isWinner = p.id === winnerId;
       const isAuctioneer = p.id === view.auctioneerId;
       const medals = ['🥇','🥈','🥉'];
+      // 追赶保底 / 末轮冲刺 标识
+      const tags = [];
+      if (resultObj && typeof resultObj === 'object' && resultObj.catchUp) tags.push('追赶+1');
+      if (resultObj && typeof resultObj === 'object' && resultObj.finalSprint) tags.push('末轮冲刺');
+      const tagHtml = tags.length ? `<span class="sd-effect-tag">${tags.join(' ')}</span>` : '';
       return `<div class="settle-dice-row ${isWinner ? 'is-winner' : ''} ${isAuctioneer ? 'is-auctioneer' : ''}">
         <span class="sd-rank">${i<3 ? medals[i] : '#'+(i+1)}</span>
         <span class="sd-name">${p.nickname}${isAuctioneer ? ' 👑' : ''}</span>
         <span class="sd-dice">${dice}</span>
-        <span class="sd-val">${hasResult ? val : '—'}</span>
+        <span class="sd-val">${hasResult ? val : '—'}${tagHtml}</span>
       </div>`;
     }).join('');
 
@@ -1604,7 +1630,7 @@ function _renderSettle(view, container) {
   let penalty = Math.max(0, auctioneerStreak - 1);
   if (hasShield) penalty = Math.floor(penalty / 2);
 
-  const DICE_COSTS = { d4: 1, d6: 2, d12: 4, d20: 6, pass: 0 };
+  const DICE_COSTS = { d4: 1, d6: 2, d8: 3, d12: 4, d20: 5, pass: 0 };
   let totalDiceCost = 0;
   for (const [pid, sel] of Object.entries(view.diceSelections || {})) {
     if (pid !== view.auctioneerId && sel !== 'pass' && sel !== 'auctioneer') {

@@ -46,7 +46,10 @@ const EVENT_SCHEMAS = {
   },
   'game:select_dice': {
     roomId:   { type: 'string', len: 6 },
-    diceType: { type: 'string', enum: ['d4', 'd6', 'd12', 'd20', 'pass'] },
+    diceType: { type: 'string', enum: ['d4', 'd6', 'd8', 'd12', 'd20', 'pass'] },
+  },
+  'game:place_side_bet': {
+    roomId:   { type: 'string', len: 6 },
   },
   'game:roll_dice': {
     roomId:   { type: 'string', len: 6 },
