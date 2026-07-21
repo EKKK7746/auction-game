@@ -33,7 +33,7 @@
 
         case 'rentDice':
           return [
-            { type: 'info', text: '选骰子争夺卡牌！\n骰子面数=点数范围：\n4面骰(1-4)  6面骰(1-6)\n12面骰(1-12)  20面骰(1-20)\n面数越多赢面越大，但费用也越高。\n上方卡片展示了当前拍品的完整信息。' },
+            { type: 'info', text: '选骰子争夺卡牌！\n骰子面数=点数范围：\n4面骰(1-4)  6面骰(1-6)\n8面骰(1-8)  12面骰(1-12)  20面骰(1-20)\n面数越多赢面越大，但费用也越高。\n非拍卖师只能看到文物分值（★X分），\n拍卖师可鉴定完整卡牌信息。\n\n可花1💰押注碰运气：\n参与者赢卡→返2💰，旁观者猜有人赢→返2💰。' },
             { type: 'action', text: '点击 6面骰租骰——性价比最高。', target: '.dice-btn[data-dice-type="d6"]', advanceOn: 'diceSelected' },
           ];
 
@@ -44,7 +44,7 @@
 
         case 'settle':
           return [
-            { type: 'info', text: '结算完成！\n赢家获得卡牌，拍卖师收佣金。\n终局只看卡牌总分，金币仅用于平局。', advanceOn: 'phaseChange' },
+            { type: 'info', text: '结算完成！\n赢家获得卡牌，拍卖师收佣金。\n终局总分 = 卡牌分 + floor(资金/2)，\n清明上河图终局额外+3分。', advanceOn: 'phaseChange' },
           ];
 
         default:

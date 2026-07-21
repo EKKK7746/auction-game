@@ -7,7 +7,7 @@
  *   3. GLOW   (2200-3000ms) — 骰子金光脉冲，数字稳定
  *   4. DISSOLVE (3000-4000ms) — 粒子向外飘散，淡出
  *
- * 支持的骰子: d4(三角), d6(方形), d8(八边), d12(五边), d20(六边)
+ * 支持的骰子: d4(三角), d6(方形), d8(菱形), d12(五边), d20(六边)
  */
 
 (function () {
@@ -92,9 +92,9 @@
   /**
    * 生成正多边形顶点（骰子轮廓）
    */
-  function polygonVertices(cx, cy, r, sides) {
+  function polygonVertices(cx, cy, r, sides, rotation) {
     const verts = [];
-    const startAngle = -Math.PI / 2; // 顶部开始
+    const startAngle = -Math.PI / 2 + (rotation || 0); // 顶部开始，可旋转
     for (let i = 0; i < sides; i++) {
       const a = startAngle + (2 * Math.PI * i) / sides;
       verts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
@@ -249,14 +249,16 @@
     const W = _canvasW || 360;
     const H = _canvasH || 300;
     const CX = W / 2, CY = H / 2;
-    const SIDES = { d4: 3, d6: 4, d8: 8, d12: 5, d20: 6 };
+    const SIDES = { d4: 3, d6: 4, d8: 4, d12: 5, d20: 6 };
+    const ROTATION = { d6: Math.PI / 4 }; // d6旋转45°呈正方形，d8保持菱形(正八面体投影)
     const sides = SIDES[diceType] || 4;
+    const rot = ROTATION[diceType] || 0;
 
     // 骰子轮廓半径也按画布缩放
     const diceR = DICE_OUTLINE_R * (W / 360);
 
     // 生成骰子轮廓目标点
-    const verts = polygonVertices(CX, CY, diceR, sides);
+    const verts = polygonVertices(CX, CY, diceR, sides, rot);
     const outlineTargets = samplePolygonEdges(verts, Math.floor(PARTICLE_COUNT * 0.45));
 
     // 数字采样区：按骰子内切圆比例，避免数字超出轮廓被截断导致歪斜
@@ -275,8 +277,8 @@
       const CX3 = W * 0.75, CY3 = H / 2;
       // 两骰并排，各占一半空间
       const R2 = 62 * (W / 360);
-      const verts2 = polygonVertices(CX2, CY2, R2, sides);
-      const verts3 = polygonVertices(CX3, CY3, R2, sides);
+      const verts2 = polygonVertices(CX2, CY2, R2, sides, rot);
+      const verts3 = polygonVertices(CX3, CY3, R2, sides, rot);
       // 轮廓少分点，把粒子留给数字
       outlineTargets2 = samplePolygonEdges(verts2, Math.floor(PARTICLE_COUNT * 0.10));
       outlineTargets3 = samplePolygonEdges(verts3, Math.floor(PARTICLE_COUNT * 0.10));

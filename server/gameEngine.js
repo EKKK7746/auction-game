@@ -2720,6 +2720,7 @@ module.exports = {
   submitBid,
   selectCard,
   selectDice,
+  placeSideBet,
   upgradeDice,
   selectDiceWithUpgrade,
   rollAllDice,
